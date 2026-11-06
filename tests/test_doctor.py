@@ -34,6 +34,22 @@ def test_squash_commit_is_the_visible_hole(repo, capsys):
     assert "squash or fast-forward suspected" in out
 
 
+def test_merge_arrivals_are_attributed(repo, capsys):
+    """WIP that arrived inside a --no-ff merge must not be flagged — only the chain is audited."""
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/1-thing"], repo)
+    (repo / "code.py").write_text("work", encoding="utf-8")
+    gitwrap.run(["add", "code.py"], repo)
+    gitwrap.run(["commit", "-q", "-m", "wip inside the branch"], repo)
+    gitwrap.run(["push", "-q", "-u", "origin", "feature/p/1-thing"], repo)
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-thing'", "feature/p/1-thing"],
+        repo,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    assert doctor_mod.run(repo) == 0
+
+
 def test_registry_edits_are_attributed(repo, capsys):
     (repo / "tasks.yml").write_text(
         REGISTRY + "    - id: 2\n      summary: b\n", encoding="utf-8"
