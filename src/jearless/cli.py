@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from jearless import __version__, registry
+from jearless import add as add_mod
 from jearless import take as take_mod
 from jearless.errors import JearlessError
 
@@ -67,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     cwd = Path.cwd()
     try:
+        if args.command == "add":
+            add_mod.add(cwd, args.project, args.summary, args.points)
+            return 0
         if args.command == "take":
             print(take_mod.take(cwd, args.project, args.id))
             return 0
