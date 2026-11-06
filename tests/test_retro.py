@@ -67,6 +67,14 @@ def test_retro_on_time(repo, capsys):
     assert "p_1: planned 11-01→11-02, actual 11-01→11-02, on time" in capsys.readouterr().out
 
 
+def test_retro_sub_day_earliness_is_not_a_day(repo, capsys):
+    """Finishing 20 minutes early is 'on time', not 'a day early' (timedelta floor trap)."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T08:40:00")
+    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
+    retro_mod.run(repo, repo / "plan.md")
+    assert "actual 11-01→11-02, on time" in capsys.readouterr().out
+
+
 def test_retro_missing_plan(repo):
     with pytest.raises(Exception, match="cannot read the plan"):
         retro_mod.run(repo, repo / "no-such-plan.md")

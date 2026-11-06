@@ -54,7 +54,9 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
         bar = actual[tid]
         actual_start = datetime.fromisoformat(bar.start)
         actual_end = datetime.fromisoformat(bar.end)
-        shift = (actual_end - planned_end).days
+        # calendar-day diff: timedelta.days floors toward -infinity, so finishing
+        # 20 minutes early would otherwise report as a full day early
+        shift = (actual_end.date() - planned_end.date()).days
         verdict = "on time" if shift == 0 else f"end {shift:+d}d"
         print(
             f"  {tid}: planned {planned_start:%m-%d}→{planned_end:%m-%d}, "
