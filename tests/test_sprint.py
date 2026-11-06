@@ -69,11 +69,12 @@ def test_deleting_branch_returns_task_to_available(board, capsys):
     take_mod.take(board, "p", 1)
     sprint_mod.run(board)
     assert "in_progress (1):" in capsys.readouterr().out
-    gitwrap.run(["push", "origin", "--delete", "feature/p/1-first-task", "-q"], board)
+    gitwrap.run(["push", "-q", "origin", "--delete", "feature/p/1-first-task"], board)
     sprint_mod.run(board)
     out = capsys.readouterr().out
     assert "in_progress (0):" in out
-    assert "available (1):" in out and "p/1" in out
+    # p/2 and p/3 were never taken: all three are available again
+    assert "available (3):" in out and "p/1" in out
 
 
 def test_sprint_requires_a_remote(empty_repo, monkeypatch, capsys):
