@@ -1,44 +1,43 @@
-# План реализации
+# Implementation plan
 
-Дата: 2026-11-06. Дизайн — в README.md (конституция проекта, спорили и доказывали). План — как строим. Имя решено: **jearless**. Пакет `jearless`, консольная команда `jear` (алиас `jearless`), конфиг `.jearless.toml`. Слоган: «Fearless. Jira-less. Никакая Jira не нужна — хватит гита».
+Date: 2026-11-06. The design lives in README.md (the project constitution — argued and proven). This file is how we build it. The name is settled: **jearless**. Package `jearless`, console command `jear` (alias `jearless`), config `.jearless.toml`. Slogan: "Fearless. Jira-less. No Jira needed — bare git is enough."
 
-## Технические решения (и почему)
+## Technical decisions (and why)
 
-- **Python 3.11+, установка через pipx.** Зависимость одна — ruamel.yaml. Остальное stdlib.
-- **Гит через subprocess.** Нулевые зависимости и полная прозрачность флагов. GitPython тянет gitdb и прячет параметры — а наш инструмент ровно про точную семантику гита; прятать её нельзя.
-- **Версионирование — auto-version-hook** (pre-commit, pin `v1.0.0`, конфиг `.version-hook.yml`): бамп версии едет с фича-веткой, main защищён, merge-коммиты не трогаются (`skip_merges`) — инвариант «main двигают только слияния» соблюдён. Версия потока — `env.yml`; версия пакета в pyproject синхронизируется в релизный шаг (задача tooling/9).
-- **CLI на argparse.** Инструмент проповедует минимализм — пусть фреймворков будет ноль.
-- **ruamel.yaml (режим rt) — единственный YAML-парсер.** Правки с сохранением комментариев (закрывает риск round-trip из README); чтение тоже им — файлы килобайтные, замер 2026-11-06 показал, что производительность не проблема на любых масштабах.
-- **Тесты — фабрики репозиториев во временных папках** (паттерн наших демо в /tmp) + golden-файлы для генератора. Никаких моков гита — только настоящие репы с настоящими merge.
-- **Конфиг — `.jearless.toml`:** регекс ветки, шаблон строки чейнджлога, маппинг префикс → секция.
+- **Python 3.11+, installed via pipx.** One dependency — ruamel.yaml. Everything else is stdlib.
+- **Git via subprocess.** Zero dependencies and full flag transparency. GitPython drags in gitdb and hides parameters — and our tool is precisely about the exact semantics of git; hiding it is out of the question.
+- **Versioning via auto-version-hook** (pre-commit, pinned `v1.0.0`, config `.version-hook.yml`): the version bump rides the feature branch, main is protected, merge commits are untouched (`skip_merges`) — the "main moves only by merges" invariant holds. The flow version lives in `env.yml`; the package version in pyproject is synced by the release step (task tooling/9).
+- **CLI on argparse.** The tool preaches minimalism — let the framework count be zero.
+- **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
+- **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
+- **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping.
 
-## CLI-поверхность (маппинг на README)
+## The CLI surface (mapped to the README)
 
-| Команда | Механика | Фаза |
+| Command | Mechanics | Phase |
 |---|---|---|
-| `add <проект> "summary" [--points N]` | дописать задачу в реестр (комментарии целы); следующий id = максимум по реестру ∧ архивам ∧ веткам | 1 |
-| `take <проект> <id>` | реестр → слаг; проверить origin (ls-remote — истина, не кэш); ветка `feature/<проект>/<id>-<слаг>`; push. Гонку арбитрует сервер | 1 |
-| `sprint` | fetch --prune; джойн реестр × ветки origin × merge-лог; состояния available / in_progress / done | 1 |
-| `changelog --from <тег> --to <тег> --dry-run` | merge-коммиты → регекс конфига → секции по префиксам; summary из реестра (union с архивами) | 2 |
-| `doctor` | безатрибутные коммиты на main (не merge и не правки реестра) — видимая дырка; нарушения именования веток; невалидный реестр | 2 |
-| `timeline --live \| --snapshot <тег>` | mermaid gantt факта; live — не коммитится; snapshot — релизный артефакт | 3 |
-| `retro <план.md>` | джойн id полос плана (гант-контракт) с фактическим таймлайном; огрехи планирования | 3 |
-| `archive <тег>` | вынос done в `archive_<тег>.yml` — только по триггеру эргономики | 4 |
+| `add <project> "summary" [--points N]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches | 1 |
+| `take <project> <id>` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `feature/<project>/<id>-<slug>`; push. The server arbitrates the race | 1 |
+| `sprint` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done | 1 |
+| `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |
+| `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
+| `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
+| `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
+| `archive <tag>` | move done tasks into `archive_<tag>.yml` — only on the ergonomics trigger | 4 |
 
-## Фазы и Definition of Done
+## Phases and Definitions of Done
 
-- **Ф0. Скелет:** pyproject, рама CLI, схема конфига, обёртка над git (subprocess), линт. DoD: `--help` работает; пустые состояния (нет тегов, нет веток, пустой реестр) не валют команды.
-- **Ф1. Ядро цикла:** add + take + sprint. DoD: задача берётся одним пушем; спринт собирается из трёх источников; тест гонки — два take из двух клонов на один remote, второй получает «занято»; удаление ветки возвращает задачу в available.
-- **Ф2. Журнал:** changelog + doctor. DoD: golden-тесты на фабричной репе с обеими формами merge-сообщений («Merge branch …» и «Merge pull request …»); сквош-коммит подсвечен doctor'ом; dry-run — режим по умолчанию.
-- **Ф3. Время:** timeline live/snapshot + retro. DoD: в снимок попадают author date первого коммита ветки и committer date merge; план с id задач сцепляется с фактом.
-- **Ф4. Отложенное (по триггеру):** archive, velocity-аналитика по union реестра и архивов.
+- **Phase 0. Skeleton:** pyproject, the CLI frame, the config schema, the git wrapper (subprocess), lint. DoD: `--help` works; empty states (no tags, no branches, an empty registry) do not crash commands.
+- **Phase 1. The core loop:** add + take + sprint. DoD: a task is taken with a single push; the sprint is assembled from three sources; the race test — two takes from two clones against one remote, the second one gets "taken"; deleting a branch returns the task to available.
+- **Phase 2. The journal:** changelog + doctor. DoD: golden tests on a factory repository with both merge message forms ("Merge branch …" and "Merge pull request …"); a squash commit is highlighted by doctor; dry-run is the default mode.
+- **Phase 3. Time:** timeline live/snapshot + retro. DoD: the snapshot carries the author date of the branch's first commit and the committer date of the merge; a plan with task ids joins with the facts.
+- **Phase 4. Deferred (on trigger):** archive, velocity analytics over the union of the registry and the archives.
 
-## Чего сознательно нет (и это фича)
+## What is deliberately absent (and that is a feature)
 
-Статусы и исполнители (выводятся, не хранятся), CI-интеграции, веб-морда, демоны, хуки, уведомления. Потребовалось — время уходить в Issues / git-bug / Backlog.md, не достраивать сюда.
+Statuses and assignees (derived, not stored), CI integrations, a web UI, daemons, hooks, notifications. The moment those are needed — time to leave for Issues / git-bug / Backlog.md, not to build them in here.
 
-## Открытые вопросы реализации
+## Open implementation questions
 
-- Язык слагов и транслитерация (тянется из README).
-- `take` для задачи вне реестра: отказ или флаг `--adhoc` — этим же закроется вопрос «ветки мимо регекса».
-- Детектинг fast-forward ретроспективно невозможен (следа нет) — doctor ловит только безатрибутные коммиты.
+- `take` for a task missing from the registry: refuse, or an `--adhoc` flag — this would also settle the "branches off the regex" question.
+- Detecting a fast-forward retroactively is impossible (it leaves no trace) — doctor catches only unattributed commits.
