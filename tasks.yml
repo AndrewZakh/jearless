@@ -1,62 +1,64 @@
-# Вечный реестр задач jearless (README: замороженные факты, без живого состояния).
-# Статус не хранится: available = здесь без ветки; in_progress = ветка на origin;
-# done = merge-коммит в main.
+# The eternal jearless task registry (README: frozen facts only, no live state).
+# Status is never stored: available = here without a branch; in_progress = a branch
+# on origin; done = a merge commit in main. Language is English — the GitHub norm;
+# transliteration is only a fallback inside `take`.
 tasks:
   tooling:
     - id: 1
-      summary: add — дописать задачу в реестр
+      summary: add — append a task to the registry
       description: |
-        Текстовая вставка в tasks.yml с сохранением комментариев.
-        Следующий id = максимум по реестру, архивам и существующим веткам.
+        Text insertion into tasks.yml preserving comments.
+        Next id = max over the registry, archives and existing branches.
       story_points: 1
     - id: 2
-      summary: take — взять задачу одним пушем
+      summary: take — claim a task with a single push
       description: |
-        Слаг из summary, ветка feature/<проект>/<id>-<слаг>,
-        проверка занятости через ls-remote, немедленный push.
-        Гонку арбитрирует сервер: non-fast-forward = «занято».
+        Slug from summary, branch feature/<project>/<id>-<slug>,
+        occupancy check via ls-remote, immediate push.
+        The server arbitrates the race: non-fast-forward = "taken".
       story_points: 2
     - id: 3
-      summary: sprint — джойн трёх источников
+      summary: sprint — a join of three sources
       description: |
-        fetch --prune; реестр × ветки origin × merge-лог.
-        Состояния available / in_progress / done, ключ (проект, номер).
+        fetch --prune; registry × origin branches × merge log.
+        States available / in_progress / done, the key is (project, number).
       story_points: 3
     - id: 4
-      summary: changelog — генератор из merge-коммитов
+      summary: changelog — a generator over merge commits
       description: |
-        Регекс и секции из .jearless.toml, summary из реестра.
-        Обе формы merge-сообщений («Merge branch» и «Merge pull request»),
-        dry-run — режим по умолчанию.
+        Regex and sections from .jearless.toml, summary from the registry.
+        Both merge message forms ("Merge branch" and "Merge pull request"),
+        dry-run is the default mode.
       story_points: 3
     - id: 5
-      summary: doctor — видимая дырка
+      summary: doctor — the visible hole
       description: |
-        Безатрибутные коммиты на main (не merge и не правки реестра),
-        нарушения именования веток, невалидный tasks.yml.
+        Unattributed commits on main (neither merges nor registry edits),
+        branch naming violations, invalid tasks.yml.
       story_points: 2
     - id: 6
-      summary: timeline — live и snapshot
+      summary: timeline — live and snapshot
       description: |
-        Mermaid gantt факта: старт — author date первого коммита ветки,
-        конец — committer date merge-коммита. Live не коммитится,
-        snapshot — релизный артефакт.
+        Mermaid gantt of the facts: start = author date of the branch's
+        first commit, end = committer date of the merge commit.
+        Live is never committed; the snapshot is a release artifact.
       story_points: 3
     - id: 7
-      summary: retro — план против факта
+      summary: retro — plan versus actual
       description: |
-        Джойн id полос ганта-контракта с фактическим таймлайном,
-        огрехи планирования на ретроспективе.
+        Join plan gantt bar ids with the actual timeline;
+        planning misses for the retrospective.
       story_points: 2
     - id: 8
-      summary: archive — вынос done-задач
+      summary: archive — moving done tasks out
       description: |
-        По тегу релиза в archive_<тег>.yml, только done-задачи,
-        запуск по триггеру эргономики (замер 2026-11-06: скорость — не триггер).
+        By release tag into archive_<tag>.yml, done tasks only,
+        triggered by ergonomics (measurement 2026-11-06: speed is not the trigger).
       story_points: 1
     - id: 9
-      summary: релизный шаг — связка тег, чейнджлог и env.yml
+      summary: release step — tag, changelog and env.yml in one move
       description: |
-        Синхронизация версии pyproject.toml с env.yml (auto-version-hook),
-        тег релиза, генерация чейнджлога и снимка таймлайна одним шагом.
+        Sync the pyproject.toml version with env.yml (auto-version-hook),
+        the release tag, changelog generation and the timeline snapshot
+        as a single step.
       story_points: 2

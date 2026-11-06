@@ -39,7 +39,7 @@ def test_minimal_registry(tmp_path: Path):
 
 
 def test_status_field_forbidden(tmp_path: Path):
-    # Хранимый статус — вторая база данных; реестр обязан отказаться (README).
+    # A stored status is a second database; the registry must refuse (README).
     (tmp_path / "tasks.yml").write_text(
         "tasks:\n  p:\n    - id: 1\n      summary: x\n      status: available\n",
         encoding="utf-8",
@@ -50,7 +50,7 @@ def test_status_field_forbidden(tmp_path: Path):
 
 def test_entry_without_id_rejected(tmp_path: Path):
     (tmp_path / "tasks.yml").write_text(
-        "tasks:\n  p:\n    - summary: нет id\n",
+        "tasks:\n  p:\n    - summary: no id\n",
         encoding="utf-8",
     )
     with pytest.raises(RegistryError, match="id"):
@@ -58,6 +58,6 @@ def test_entry_without_id_rejected(tmp_path: Path):
 
 
 def test_malformed_yaml_rejected(tmp_path: Path):
-    (tmp_path / "tasks.yml").write_text("tasks:\n  p: [незакрытая\n", encoding="utf-8")
+    (tmp_path / "tasks.yml").write_text("tasks:\n  p: [unclosed\n", encoding="utf-8")
     with pytest.raises(RegistryError):
         registry.load(tmp_path)

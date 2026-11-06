@@ -13,27 +13,27 @@ def test_defaults_without_file(tmp_path: Path):
     assert m.group("project") == "door_design"
     assert m.group("num") == "16"
     assert m.group("slug") == "paint-it-black"
-    # без слага — тоже валидно; дефисы вместо слэшей — не наш формат
+    # no slug is also valid; hyphens instead of slashes are not our format
     assert cfg.match_branch("feature/door_design/16") is not None
     assert cfg.match_branch("feature-door_design-16") is None
-    assert cfg.sections["feature"] == "Добавлено"
+    assert cfg.sections["feature"] == "Added"
 
 
 def test_custom_config_overrides(tmp_path: Path):
-    # literal-string (одинарные кавычки): TOML не требует экранировать \d
+    # literal string (single quotes): TOML does not require escaping \d
     toml_text = (
         "[branch]\n"
         r"pattern = '^(?P<type>feat)/(?P<project>[a-z]+)/(?P<num>\d+)$'" + "\n"
         "\n"
         "[changelog.sections]\n"
-        'feat = "Новые возможности"\n'
+        'feat = "New features"\n'
     )
     (tmp_path / ".jearless.toml").write_text(toml_text, encoding="utf-8")
     cfg = config.load(tmp_path)
     assert cfg.match_branch("feat/door/1") is not None
     assert cfg.match_branch("feature/door/1") is None
-    assert cfg.sections["feat"] == "Новые возможности"
-    assert cfg.sections["feature"] == "Добавлено"  # дефолты не затираются
+    assert cfg.sections["feat"] == "New features"
+    assert cfg.sections["feature"] == "Added"  # defaults are not wiped
 
 
 def test_broken_pattern_rejected(tmp_path: Path):
