@@ -1,0 +1,62 @@
+# Вечный реестр задач jearless (README: замороженные факты, без живого состояния).
+# Статус не хранится: available = здесь без ветки; in_progress = ветка на origin;
+# done = merge-коммит в main.
+tasks:
+  tooling:
+    - id: 1
+      summary: add — дописать задачу в реестр
+      description: |
+        Текстовая вставка в tasks.yml с сохранением комментариев.
+        Следующий id = максимум по реестру, архивам и существующим веткам.
+      story_points: 1
+    - id: 2
+      summary: take — взять задачу одним пушем
+      description: |
+        Слаг из summary, ветка feature/<проект>/<id>-<слаг>,
+        проверка занятости через ls-remote, немедленный push.
+        Гонку арбитрирует сервер: non-fast-forward = «занято».
+      story_points: 2
+    - id: 3
+      summary: sprint — джойн трёх источников
+      description: |
+        fetch --prune; реестр × ветки origin × merge-лог.
+        Состояния available / in_progress / done, ключ (проект, номер).
+      story_points: 3
+    - id: 4
+      summary: changelog — генератор из merge-коммитов
+      description: |
+        Регекс и секции из .jearless.toml, summary из реестра.
+        Обе формы merge-сообщений («Merge branch» и «Merge pull request»),
+        dry-run — режим по умолчанию.
+      story_points: 3
+    - id: 5
+      summary: doctor — видимая дырка
+      description: |
+        Безатрибутные коммиты на main (не merge и не правки реестра),
+        нарушения именования веток, невалидный tasks.yml.
+      story_points: 2
+    - id: 6
+      summary: timeline — live и snapshot
+      description: |
+        Mermaid gantt факта: старт — author date первого коммита ветки,
+        конец — committer date merge-коммита. Live не коммитится,
+        snapshot — релизный артефакт.
+      story_points: 3
+    - id: 7
+      summary: retro — план против факта
+      description: |
+        Джойн id полос ганта-контракта с фактическим таймлайном,
+        огрехи планирования на ретроспективе.
+      story_points: 2
+    - id: 8
+      summary: archive — вынос done-задач
+      description: |
+        По тегу релиза в archive_<тег>.yml, только done-задачи,
+        запуск по триггеру эргономики (замер 2026-11-06: скорость — не триггер).
+      story_points: 1
+    - id: 9
+      summary: релизный шаг — связка тег, чейнджлог и env.yml
+      description: |
+        Синхронизация версии pyproject.toml с env.yml (auto-version-hook),
+        тег релиза, генерация чейнджлога и снимка таймлайна одним шагом.
+      story_points: 2
