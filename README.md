@@ -1,6 +1,6 @@
 # jearless
 
-**Fearless. Jira-less.** No Jira needed — bare git is enough.
+**Fearless. Jearless.** Task tracking and a changelog on bare git — for small teams.
 
 *Why the name: by ear — a faint echo of Jira; by sight — fearless; spelled with an error — and we track errors for a living; a jearless sprint — a fast run without fat.*
 
@@ -70,7 +70,7 @@ The sprint and all analytics are joins on the key (subproject, number), computed
 - **Local origin/* refs are a cache, not the truth:** without `fetch --prune`, ghosts of deleted branches keep tasks "taken" forever.
 - Only single-line changelog entries; multi-paragraph ones are a backup path of towncrier-style fragments.
 - The insurance against someone else's squash/rebase is **a task trailer in the commit message** (`Task: door_design/16`; modern gits even have `git commit --trailer`): it rides in the object itself and survives a squash if it made it into the squash message. git notes and refs/replace were rejected as metadata channels: they do not travel with a default clone/fetch and forges do not show them. When a squash has already happened, the key cannot be attached retroactively (amend would rewrite main) — which is why the generator's dry-run must highlight unattributed commits loudly: the hole must be visible, not silent.
-- The applicability boundary: the moment you need labels, assignees or task discussion — move to Issues, do not build a hybrid.
+- The applicability boundary: the moment you need labels, assignees or task discussion — move to Issues, do not build a hybrid. Jira earns its keep for large teams and corporate scale; jearless is for the small and the swift.
 
 ## Open questions
 
