@@ -16,8 +16,9 @@ IN_PROGRESS = "in_progress"
 DONE = "done"
 
 # Both merge message forms (README): local merges and forge "Create a merge commit".
+# The owner segment carries no slashes; the branch name after it may (feature/p/1-x).
 _MERGE_BRANCH_RE = re.compile(r"^Merge branch '([^']+)'")
-_MERGE_PR_RE = re.compile(r"^Merge pull request #\d+ from \S+/(\S+)")
+_MERGE_PR_RE = re.compile(r"^Merge pull request #\d+ from [^/\s]+/(\S+)")
 
 
 def branch_from_merge_subject(subject: str) -> str | None:
