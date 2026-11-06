@@ -1,8 +1,10 @@
 """doctor: the visible hole — unattributed commits, naming violations, a sick registry.
 
-A commit on main is attributed when it is a merge (the branch name is the key)
-or touches nothing but the registry (a sanctioned human edit, README).
-Everything else is a hole: a squash, a fast-forward or plain drift.
+The audit walks the first-parent chain of main: a commit there is attributed
+when it is a merge (the branch name is the key) or touches nothing but the
+registry (a sanctioned human edit, README). Commits that arrived inside a
+--no-ff merge hang off second parents and are attributed by that merge.
+Everything else on the chain is a hole: a squash, a fast-forward or plain drift.
 """
 
 from pathlib import Path
@@ -40,7 +42,9 @@ def _is_registry_edit(cwd: Path, sha: str) -> bool:
 def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
     ref = f"{remote}/main"
     try:
-        log = gitwrap.out(["log", ref, "--format=%H%x1f%P%x1f%s"], cwd)
+        # first-parent only: WIP that arrived inside a --no-ff merge is attributed
+        # by that merge, not audited on its own
+        log = gitwrap.out(["log", "--first-parent", ref, "--format=%H%x1f%P%x1f%s"], cwd)
     except GitError:
         findings.append(f"main: no {ref} — nothing to audit yet")
         return
