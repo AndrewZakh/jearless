@@ -99,7 +99,8 @@ def run(cwd: Path, snapshot: str | None = None, remote: str = "origin") -> int:
         title = "jearless — live"
     print("gantt")
     print(f"    title {title}")
-    print(f"    dateFormat {_DATE}")
+    # mermaid's own tokens, not strftime patterns — %Y would not render
+    print("    dateFormat YYYY-MM-DDTHH:mm:ss")
     print("    axisFormat %d.%m %H:%M")
     for project in sorted({b.project for b in bars}):
         print(f"    section {project}")
