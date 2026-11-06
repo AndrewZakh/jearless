@@ -12,6 +12,7 @@ from jearless import __version__
 from jearless import add as add_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
+from jearless import retro as retro_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
 from jearless import timeline as timeline_mod
@@ -88,6 +89,8 @@ def main(argv: list[str] | None = None) -> int:
             return doctor_mod.run(cwd)
         if args.command == "timeline":
             return timeline_mod.run(cwd, snapshot=args.snapshot)
+        if args.command == "retro":
+            return retro_mod.run(cwd, Path(args.plan))
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
