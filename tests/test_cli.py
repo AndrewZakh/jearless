@@ -30,8 +30,6 @@ def test_subcommand_help(command):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["timeline", "--live"],
-        ["timeline", "--snapshot", "v1.1"],
         ["retro", "plan.md"],
         ["archive"],
     ],

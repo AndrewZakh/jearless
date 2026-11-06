@@ -14,6 +14,7 @@ from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
+from jearless import timeline as timeline_mod
 from jearless.errors import JearlessError
 
 PHASES = {
@@ -85,6 +86,8 @@ def main(argv: list[str] | None = None) -> int:
             return changelog_mod.run(cwd, from_tag=args.from_tag, to_tag=args.to_tag)
         if args.command == "doctor":
             return doctor_mod.run(cwd)
+        if args.command == "timeline":
+            return timeline_mod.run(cwd, snapshot=args.snapshot)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
