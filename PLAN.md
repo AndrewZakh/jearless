@@ -6,7 +6,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 
 - **Python 3.11+, installed via pipx.** One dependency — ruamel.yaml. Everything else is stdlib.
 - **Git via subprocess.** Zero dependencies and full flag transparency. GitPython drags in gitdb and hides parameters — and our tool is precisely about the exact semantics of git; hiding it is out of the question.
-- **Versioning via auto-version-hook** (pre-commit, pinned `v1.0.0`, config `.version-hook.yml`): the version bump rides the feature branch, main is protected, merge commits are untouched (`skip_merges`) — the "main moves only by merges" invariant holds. The flow version lives in `env.yml`; the package version in pyproject is synced by the release step (task tooling/9).
+- **Versioning via auto-version-hook** (pre-commit, pinned `v1.1.0`, config `.version-hook.yml`): the version bump rides the feature branch, main is protected, merge commits are untouched (`skip_merges`) — the "main moves only by merges" invariant holds. The flow version lives in `env.yml`; the package version in pyproject mirrors it automatically (`version_files`, hook v1.1.0).
 - **CLI on argparse.** The tool preaches minimalism — let the framework count be zero.
 - **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
 - **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
