@@ -12,6 +12,7 @@ from jearless import __version__
 from jearless import add as add_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
+from jearless import release as release_mod
 from jearless import retro as retro_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
@@ -66,6 +67,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("retro", help="plan versus actual (Phase 3)")
     p.add_argument("plan")
 
+    p = sub.add_parser(
+        "release", help="tag + changelog + timeline snapshot in one move (task tooling/9)"
+    )
+    p.add_argument("--tag", default=None, metavar="TAG")
+
     sub.add_parser("archive", help="move done tasks out (Phase 4, on trigger)")
 
     return parser
@@ -91,6 +97,8 @@ def main(argv: list[str] | None = None) -> int:
             return timeline_mod.run(cwd, snapshot=args.snapshot)
         if args.command == "retro":
             return retro_mod.run(cwd, Path(args.plan))
+        if args.command == "release":
+            return release_mod.run(cwd, tag=args.tag)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:

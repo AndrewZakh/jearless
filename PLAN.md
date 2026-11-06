@@ -24,6 +24,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
 | `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
 | `archive <tag>` | move done tasks into `archive_<tag>.yml` — only on the ergonomics trigger | 4 |
+| `release [--tag TAG]` | tag + changelog section + timeline snapshot in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them | — |
 
 ## Phases and Definitions of Done
 
