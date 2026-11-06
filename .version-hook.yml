@@ -1,7 +1,7 @@
 ---
-# jearless × auto-version-hook: версия живёт в env.yml и едет с фича-веткой.
-# Инвариант README («main двигают только слияния») соблюдён: main защищён,
-# merge-коммиты не трогаются (skip_merges), бамп происходит в ветке.
+# jearless × auto-version-hook: the version lives in env.yml and rides the
+# feature branch. The README invariant ("main moves only by merges") holds:
+# main is protected, merge commits are skipped, the bump happens in the branch.
 
 version:
   file: env.yml
@@ -15,11 +15,11 @@ git:
 branch_flow:
   - name: main
     regex: '^main$'
-    protected: true    # прямой коммит в main никогда не бампит версию
+    protected: true    # a direct commit to main never bumps the version
     policy: keep
 
   - name: feature
-    regex: '^feature/' # feature/<проект>/<id>-<слаг> — вся таксономия README
+    regex: '^feature/' # feature/<project>/<id>-<slug> — the whole README taxonomy
     target: main
     policy: increment
     bump: minor
@@ -40,4 +40,4 @@ branch_flow:
 hooks:
   auto_stage: true
   on_error: fail
-  skip_merges: true    # на merge-коммитах не действует — их двигает устав
+  skip_merges: true    # does not act on merge commits — the charter moves those

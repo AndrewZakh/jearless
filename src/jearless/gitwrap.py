@@ -1,7 +1,7 @@
-"""Гит через subprocess: никаких библиотек-посредников, все флаги на виду.
+"""Git via subprocess: no intermediary libraries, all flags in plain sight.
 
-Обоснование — PLAN.md: jearless про точную семантику гита,
-поэтому вызовы не прячутся за обёртками вроде GitPython.
+Rationale in PLAN.md: jearless is about the precise semantics of git,
+so git calls must not be hidden behind wrappers like GitPython.
 """
 
 import subprocess
@@ -11,7 +11,7 @@ from jearless.errors import JearlessError
 
 
 class GitError(JearlessError):
-    """git завершился с ненулевым кодом."""
+    """git exited with a non-zero code."""
 
 
 def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -26,7 +26,7 @@ def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
 
 
 def run(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    """Выполнить git, при ошибке — GitError с stderr одной строкой."""
+    """Run git; on failure raise GitError with stderr as a single line."""
     proc = _git(args, cwd)
     if proc.returncode != 0:
         detail = proc.stderr.strip() or proc.stdout.strip()
@@ -48,13 +48,13 @@ def is_repo(cwd: Path) -> bool:
 
 
 def has_commits(cwd: Path) -> bool:
-    """Свежий `git init` — репозиторий, но без коммитов: пустое состояние Ф0."""
+    """A fresh `git init` is a repository without commits: a Phase 0 empty state."""
     proc = _git(["rev-parse", "--verify", "--quiet", "HEAD"], cwd)
     return proc.returncode == 0
 
 
 def remote_heads(cwd: Path, remote: str = "origin", pattern: str | None = None) -> dict[str, str]:
-    """Ветки на remote — источник истины о занятости (README), не локальный кэш."""
+    """Branches on the remote — the source of truth about occupancy (README), not a cache."""
     args = ["ls-remote", "--heads", remote]
     if pattern:
         args.append(pattern)

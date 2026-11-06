@@ -42,11 +42,11 @@ def test_subcommand_help(command):
 )
 def test_stubs_exit_cleanly(argv, capsys):
     assert cli.main(argv) == 0
-    assert "не реализовано" in capsys.readouterr().out
+    assert "not implemented" in capsys.readouterr().out
 
 
 def test_sprint_stub_survives_empty_registry(empty_repo: Path, monkeypatch, capsys):
-    """DoD Ф0: пустое состояние (нет реестра, нет коммитов) не валит команду."""
+    """Phase 0 DoD: the empty state (no registry, no commits) does not crash a command."""
     monkeypatch.chdir(empty_repo)
     assert cli.main(["sprint"]) == 0
-    assert "реестр: 0 задач" in capsys.readouterr().out
+    assert "registry: 0 tasks" in capsys.readouterr().out

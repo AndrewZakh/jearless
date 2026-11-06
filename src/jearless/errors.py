@@ -1,5 +1,5 @@
-"""Базовая ошибка: доходит до пользователя одной строкой, без трейсбека."""
+"""The base error: reaches the user as a single line, without a traceback."""
 
 
 class JearlessError(RuntimeError):
-    """Родитель всех ошибок jearless — CLI ловит её и печатает кратко."""
+    """Parent of all jearless errors — the CLI catches it and prints it briefly."""

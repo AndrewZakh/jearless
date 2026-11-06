@@ -7,7 +7,7 @@ from jearless import gitwrap
 
 @pytest.fixture
 def empty_repo(tmp_path: Path) -> Path:
-    """Свежая репа в подкаталоге tmp_path: сам tmp_path остаётся «не репой»."""
+    """A fresh repo in a tmp_path subdirectory: tmp_path itself stays a non-repo."""
     repo = tmp_path / "repo"
     repo.mkdir()
     gitwrap.run(["init", "-q", "-b", "main"], repo)

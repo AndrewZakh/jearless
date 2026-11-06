@@ -1,4 +1,4 @@
-"""Вечный реестр задач tasks.yml: только замороженные факты, без живого состояния (README)."""
+"""The eternal task registry tasks.yml: frozen facts only, no live state (README)."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,12 +10,12 @@ from jearless.errors import JearlessError
 
 REGISTRY_NAME = "tasks.yml"
 
-# Поля живого состояния в реестре запрещены: состояние знает гит (README).
+# Live-state fields are forbidden in the registry: git knows the state (README).
 FORBIDDEN_FIELDS = {"status"}
 
 
 class RegistryError(JearlessError):
-    """tasks.yml есть, но не читается или нарушает контракт."""
+    """tasks.yml exists but cannot be read or violates the contract."""
 
 
 @dataclass(frozen=True)
@@ -43,23 +43,23 @@ class Registry:
 
 def _task_from_entry(project: str, entry: object, where: str) -> Task:
     if not isinstance(entry, dict):
-        raise RegistryError(f"{where}: запись задачи не является отображением")
+        raise RegistryError(f"{where}: a task entry is not a mapping")
     for banned in FORBIDDEN_FIELDS:
         if banned in entry:
             raise RegistryError(
-                f"{where}: поле '{banned}' запрещено — живое состояние выводится из гита,"
-                " а не хранится (README)"
+                f"{where}: the field '{banned}' is forbidden — live state is derived"
+                " from git, not stored (README)"
             )
     if "id" not in entry or not isinstance(entry["id"], int) or entry["id"] < 1:
-        raise RegistryError(f"{where}: обязательное поле 'id' — целое >= 1")
+        raise RegistryError(f"{where}: the field 'id' is required — an integer >= 1")
     if not isinstance(entry.get("summary"), str) or not entry["summary"].strip():
-        raise RegistryError(f"{where}: обязательное поле 'summary' — непустая строка")
+        raise RegistryError(f"{where}: the field 'summary' is required — a non-empty string")
     description = entry.get("description", "")
     if not isinstance(description, str):
-        raise RegistryError(f"{where}: 'description' должно быть строкой")
+        raise RegistryError(f"{where}: 'description' must be a string")
     points = entry.get("story_points")
     if points is not None and not isinstance(points, int):
-        raise RegistryError(f"{where}: 'story_points' должно быть целым")
+        raise RegistryError(f"{where}: 'story_points' must be an integer")
     return Task(
         project=project,
         id=entry["id"],
@@ -72,20 +72,20 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
 def load(cwd: Path) -> Registry:
     path = cwd / REGISTRY_NAME
     if not path.exists():
-        return Registry()  # пустое состояние: реестра нет — это не ошибка
-    yaml = YAML(typ="rt")  # round-trip: комментарии переживут будущие правки
+        return Registry()  # empty state: no registry — not an error
+    yaml = YAML(typ="rt")  # round-trip: comments survive future edits
     try:
         data = yaml.load(path)
     except YAMLError as exc:
         raise RegistryError(f"{REGISTRY_NAME}: {exc}") from exc
     if data is None:
-        return Registry()  # пустой файл — тоже законное пустое состояние
+        return Registry()  # an empty file is also a valid empty state
     if not isinstance(data, dict) or not isinstance(data.get("tasks", {}), dict):
-        raise RegistryError(f"{REGISTRY_NAME}: ожидается структура 'tasks: <подпроект>: [записи]'")
+        raise RegistryError(f"{REGISTRY_NAME}: expected the structure 'tasks: <project>: [entries]'")
     registry = Registry()
     for project, entries in data.get("tasks", {}).items():
         if not isinstance(entries, list):
-            raise RegistryError(f"{REGISTRY_NAME}: подпроект '{project}' — ожидается список задач")
+            raise RegistryError(f"{REGISTRY_NAME}: project '{project}' — a list of tasks expected")
         registry.tasks[str(project)] = [
             _task_from_entry(str(project), entry, f"{REGISTRY_NAME}: {project}[{i}]")
             for i, entry in enumerate(entries)
