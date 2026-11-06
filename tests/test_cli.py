@@ -31,7 +31,6 @@ def test_subcommand_help(command):
     "argv",
     [
         ["add", "door_design", "Paint it black"],
-        ["take", "door_design", "1"],
         ["changelog", "--from", "v1.0", "--to", "v1.1", "--dry-run"],
         ["doctor"],
         ["timeline", "--live"],

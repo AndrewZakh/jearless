@@ -22,3 +22,18 @@ def repo_with_commit(empty_repo: Path) -> Path:
     gitwrap.run(["add", "base.txt"], empty_repo)
     gitwrap.run(["commit", "-q", "-m", "init"], empty_repo)
     return empty_repo
+
+
+@pytest.fixture
+def origin_and_clone(tmp_path: Path):
+    """A bare origin plus a working clone: take/sprint truth lives on the remote."""
+    bare = tmp_path / "origin.git"
+    bare.mkdir()
+    gitwrap.run(["init", "--quiet", "--bare", "-b", "main"], bare)
+    clone = tmp_path / "work"
+    clone.mkdir()
+    gitwrap.run(["init", "-q", "-b", "main"], clone)
+    gitwrap.run(["config", "user.email", "test@example.com"], clone)
+    gitwrap.run(["config", "user.name", "Test"], clone)
+    gitwrap.run(["remote", "add", "origin", str(bare)], clone)
+    return bare, clone
