@@ -44,7 +44,10 @@ def _entries_from_history(
     return sections, skipped
 
 
-def run(cwd: Path, from_tag: str | None = None, to_tag: str | None = None) -> int:
+def render(
+    cwd: Path, from_tag: str | None = None, to_tag: str | None = None, header: str | None = None
+) -> str:
+    """The changelog as text; `header` overrides the section title (used by release)."""
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
     to_ref = to_tag or "HEAD"
@@ -55,20 +58,24 @@ def run(cwd: Path, from_tag: str | None = None, to_tag: str | None = None) -> in
     except gitwrap.GitError as exc:
         raise JearlessError(f"cannot read history {rev_range}: {exc}") from exc
 
-    print("# Changelog")
-    print(f"## {to_tag or _UNRELEASED} ({date})" if date else f"## {to_tag or _UNRELEASED}")
-    for prefix, title in cfg.sections.items():
+    lines = ["# Changelog"]
+    title = header or to_tag or _UNRELEASED
+    lines.append(f"## {title} ({date})" if date else f"## {title}")
+    for prefix, section_title in cfg.sections.items():
         entries = sorted(sections.pop(prefix, []))
         if not entries:
             continue
-        print(f"### {title}")
-        for _, line in entries:
-            print(f"- {line}")
+        lines.append(f"### {section_title}")
+        lines.extend(f"- {line}" for _, line in entries)
     others = sorted((key, line) for entries in sections.values() for key, line in entries)
     if others:
-        print("### Other")
-        for _, line in others:
-            print(f"- {line}")
+        lines.append("### Other")
+        lines.extend(f"- {line}" for _, line in others)
     if skipped:
-        print(f"# {skipped} off-taxonomy merge(s) skipped — the visible hole (README)")
+        lines.append(f"# {skipped} off-taxonomy merge(s) skipped — the visible hole (README)")
+    return "\n".join(lines) + "\n"
+
+
+def run(cwd: Path, from_tag: str | None = None, to_tag: str | None = None) -> int:
+    print(render(cwd, from_tag=from_tag, to_tag=to_tag), end="")
     return 0

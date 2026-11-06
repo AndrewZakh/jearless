@@ -1,10 +1,11 @@
 """doctor: the visible hole — unattributed commits, naming violations, a sick registry.
 
 The audit walks the first-parent chain of main: a commit there is attributed
-when it is a merge (the branch name is the key) or touches nothing but the
-registry (a sanctioned human edit, README). Commits that arrived inside a
---no-ff merge hang off second parents and are attributed by that merge.
-Everything else on the chain is a hole: a squash, a fast-forward or plain drift.
+when it is a merge (the branch name is the key) or touches nothing but
+sanctioned artifacts — the registry, the changelog, timeline snapshots (README).
+Commits that arrived inside a --no-ff merge hang off second parents and are
+attributed by that merge. Everything else on the chain is a hole: a squash,
+a fast-forward or plain drift.
 """
 
 from pathlib import Path
@@ -34,9 +35,17 @@ def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: 
             findings.append(f"branch: '{name}' starts like a task branch but misses the pattern")
 
 
-def _is_registry_edit(cwd: Path, sha: str) -> bool:
+# Sanctioned artifacts: bookkeeping, not task work. env.yml version bumps
+# normally ride branches via the hook; a direct one is human bookkeeping.
+_SANCTIONED_EXACT = frozenset({REGISTRY_NAME, "CHANGELOG.md", "env.yml"})
+_SANCTIONED_PREFIXES = ("archive_", "snapshots/")
+
+
+def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:
     files = gitwrap.lines(["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], cwd)
-    return all(f == REGISTRY_NAME or f.startswith("archive_") for f in files)
+    return all(
+        f in _SANCTIONED_EXACT or f.startswith(_SANCTIONED_PREFIXES) for f in files
+    )
 
 
 def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
@@ -54,8 +63,8 @@ def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
         sha, parents, subject = line.split("\x1f", 2)
         if len(parents.split()) > 1:
             continue  # a merge: attributed by its branch name
-        if _is_registry_edit(cwd, sha):
-            continue  # a sanctioned human edit (add a task, fix the registry)
+        if _is_sanctioned_edit(cwd, sha):
+            continue  # a sanctioned human edit: a task, the changelog, a snapshot
         findings.append(
             f"main: unattributed commit {sha[:7]} \"{subject}\" "
             f"(not a merge, not a registry edit) — squash or fast-forward suspected"

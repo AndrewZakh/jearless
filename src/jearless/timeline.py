@@ -88,24 +88,34 @@ def _sanitize(label: str) -> str:
     return re.sub(r"[:,\n]", " ", label).strip()
 
 
-def run(cwd: Path, snapshot: str | None = None, remote: str = "origin") -> int:
+def render(
+    cwd: Path, snapshot: str | None = None, remote: str = "origin", title: str | None = None
+) -> str:
+    """The gantt as text; `title` overrides the chart title (used by release)."""
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
     if snapshot:
         bars = merge_bars(cwd, cfg, reg, snapshot)
-        title = f"jearless — snapshot {snapshot}"
+        title = title or f"jearless — snapshot {snapshot}"
     else:
         bars = live_bars(cwd, cfg, reg, remote)
-        title = "jearless — live"
-    print("gantt")
-    print(f"    title {title}")
-    # mermaid's own tokens, not strftime patterns — %Y would not render
-    print("    dateFormat YYYY-MM-DDTHH:mm:ss")
-    print("    axisFormat %d.%m %H:%M")
+        title = title or "jearless — live"
+    lines = [
+        "gantt",
+        f"    title {title}",
+        # mermaid's own tokens, not strftime patterns — %Y would not render
+        "    dateFormat YYYY-MM-DDTHH:mm:ss",
+        "    axisFormat %d.%m %H:%M",
+    ]
     for project in sorted({b.project for b in bars}):
-        print(f"    section {project}")
+        lines.append(f"    section {project}")
         for bar in sorted(
             (b for b in bars if b.project == project), key=lambda b: (b.start, b.num)
         ):
-            print(f"    {_sanitize(bar.label)} :{bar.project}_{bar.num}, {bar.start}, {bar.end}")
+            lines.append(f"    {_sanitize(bar.label)} :{bar.project}_{bar.num}, {bar.start}, {bar.end}")
+    return "\n".join(lines) + "\n"
+
+
+def run(cwd: Path, snapshot: str | None = None, remote: str = "origin") -> int:
+    print(render(cwd, snapshot=snapshot, remote=remote), end="")
     return 0
