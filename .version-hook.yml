@@ -1,0 +1,43 @@
+---
+# jearless × auto-version-hook: версия живёт в env.yml и едет с фича-веткой.
+# Инвариант README («main двигают только слияния») соблюдён: main защищён,
+# merge-коммиты не трогаются (skip_merges), бамп происходит в ветке.
+
+version:
+  file: env.yml
+  key: version
+  parse_regex: '^v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$'
+
+git:
+  remote: origin
+  fetch: true
+
+branch_flow:
+  - name: main
+    regex: '^main$'
+    protected: true    # прямой коммит в main никогда не бампит версию
+    policy: keep
+
+  - name: feature
+    regex: '^feature/' # feature/<проект>/<id>-<слаг> — вся таксономия README
+    target: main
+    policy: increment
+    bump: minor
+    reset_lower_parts: false
+
+  - name: fix
+    regex: '^fix/'
+    target: main
+    policy: increment
+    bump: patch
+    reset_lower_parts: false
+
+  - name: chore
+    regex: '^chore/'
+    target: main
+    policy: ignore
+
+hooks:
+  auto_stage: true
+  on_error: fail
+  skip_merges: true    # на merge-коммитах не действует — их двигает устав
