@@ -30,7 +30,6 @@ def test_subcommand_help(command):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["add", "door_design", "Paint it black"],
         ["changelog", "--from", "v1.0", "--to", "v1.1", "--dry-run"],
         ["doctor"],
         ["timeline", "--live"],

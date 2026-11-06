@@ -70,24 +70,27 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
 
 
 def load(cwd: Path) -> Registry:
-    path = cwd / REGISTRY_NAME
+    return load_path(cwd / REGISTRY_NAME)
+
+
+def load_path(path: Path) -> Registry:
     if not path.exists():
         return Registry()  # empty state: no registry — not an error
     yaml = YAML(typ="rt")  # round-trip: comments survive future edits
     try:
         data = yaml.load(path)
     except YAMLError as exc:
-        raise RegistryError(f"{REGISTRY_NAME}: {exc}") from exc
+        raise RegistryError(f"{path.name}: {exc}") from exc
     if data is None:
         return Registry()  # an empty file is also a valid empty state
     if not isinstance(data, dict) or not isinstance(data.get("tasks", {}), dict):
-        raise RegistryError(f"{REGISTRY_NAME}: expected the structure 'tasks: <project>: [entries]'")
+        raise RegistryError(f"{path.name}: expected the structure 'tasks: <project>: [entries]'")
     registry = Registry()
     for project, entries in data.get("tasks", {}).items():
         if not isinstance(entries, list):
-            raise RegistryError(f"{REGISTRY_NAME}: project '{project}' — a list of tasks expected")
+            raise RegistryError(f"{path.name}: project '{project}' — a list of tasks expected")
         registry.tasks[str(project)] = [
-            _task_from_entry(str(project), entry, f"{REGISTRY_NAME}: {project}[{i}]")
+            _task_from_entry(str(project), entry, f"{path.name}: {project}[{i}]")
             for i, entry in enumerate(entries)
         ]
     return registry
