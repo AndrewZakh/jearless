@@ -4,6 +4,7 @@ Rationale in PLAN.md: jearless is about the precise semantics of git,
 so git calls must not be hidden behind wrappers like GitPython.
 """
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -14,7 +15,7 @@ class GitError(JearlessError):
     """git exited with a non-zero code."""
 
 
-def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
+def _git(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", *args],
         cwd=cwd,
@@ -22,12 +23,15 @@ def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
         encoding="utf-8",
         errors="replace",
         check=False,
+        env={**os.environ, **env} if env else None,
     )
 
 
-def run(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
+def run(
+    args: list[str], cwd: Path, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess:
     """Run git; on failure raise GitError with stderr as a single line."""
-    proc = _git(args, cwd)
+    proc = _git(args, cwd, env)
     if proc.returncode != 0:
         detail = proc.stderr.strip() or proc.stdout.strip()
         raise GitError(f"git {' '.join(args)}: {detail}")
