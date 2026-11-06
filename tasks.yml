@@ -56,9 +56,9 @@ tasks:
         triggered by ergonomics (measurement 2026-11-06: speed is not the trigger).
       story_points: 1
     - id: 9
-      summary: release step — tag, changelog and env.yml in one move
+      summary: release step — tag, changelog and timeline snapshot in one move
       description: |
-        Sync the pyproject.toml version with env.yml (auto-version-hook),
-        the release tag, changelog generation and the timeline snapshot
-        as a single step.
+        The release tag, changelog generation and the timeline snapshot
+        as a single step. Version sync is no longer here: pyproject mirrors
+        env.yml automatically (auto-version-hook v1.1.0 version_files).
       story_points: 2
