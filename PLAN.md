@@ -1,6 +1,6 @@
 # Implementation plan
 
-Date: 2026-11-06. The design lives in README.md (the project constitution — argued and proven). This file is how we build it. The name is settled: **jearless**. Package `jearless`, console command `jear` (alias `jearless`), config `.jearless.toml`. Slogan: "Fearless. Jira-less. No Jira needed — bare git is enough."
+Date: 2026-11-06. The design lives in README.md (the project constitution — argued and proven). This file is how we build it. The name is settled: **jearless**. Package `jearless`, console command `jear` (alias `jearless`), config `.jearless.toml`. Slogan: "Fearless. Jearless. Bare git is enough — for small teams."
 
 ## Technical decisions (and why)
 
