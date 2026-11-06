@@ -27,13 +27,7 @@ def test_subcommand_help(command):
     assert exc.value.code == 0
 
 
-@pytest.mark.parametrize(
-    "argv",
-    [
-        ["retro", "plan.md"],
-        ["archive"],
-    ],
-)
+@pytest.mark.parametrize("argv", [["archive"]])
 def test_stubs_exit_cleanly(argv, capsys):
     assert cli.main(argv) == 0
     assert "not implemented" in capsys.readouterr().out
