@@ -44,6 +44,8 @@ def test_empty_repo_timeline_is_valid_gantt(repo, capsys):
     assert timeline_mod.run(repo, snapshot="origin/main") == 0
     out = capsys.readouterr().out
     assert out.startswith("gantt") and "section" not in out
+    # mermaid tokens, not strftime patterns — %Y in dateFormat would not render
+    assert "dateFormat YYYY-MM-DDTHH:mm:ss" in out
 
 
 def test_snapshot_carries_author_and_committer_dates(repo, capsys):
