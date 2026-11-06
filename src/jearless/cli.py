@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from jearless import __version__, registry
+from jearless import take as take_mod
 from jearless.errors import JearlessError
 
 PHASES = {
@@ -66,6 +67,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     cwd = Path.cwd()
     try:
+        if args.command == "take":
+            print(take_mod.take(cwd, args.project, args.id))
+            return 0
         if args.command == "sprint":
             # Phase 0: a live probe of the empty states — there may be no registry at all.
             reg = registry.load(cwd)
