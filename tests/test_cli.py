@@ -43,8 +43,8 @@ def test_stubs_exit_cleanly(argv, capsys):
     assert "not implemented" in capsys.readouterr().out
 
 
-def test_sprint_stub_survives_empty_registry(empty_repo: Path, monkeypatch, capsys):
-    """Phase 0 DoD: the empty state (no registry, no commits) does not crash a command."""
+def test_sprint_without_remote_fails_cleanly(empty_repo: Path, monkeypatch, capsys):
+    """A clean single-line error, not a traceback (the charter for every empty state)."""
     monkeypatch.chdir(empty_repo)
-    assert cli.main(["sprint"]) == 0
-    assert "registry: 0 tasks" in capsys.readouterr().out
+    assert cli.main(["sprint"]) == 1
+    assert "cannot fetch" in capsys.readouterr().err

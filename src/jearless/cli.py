@@ -8,8 +8,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from jearless import __version__, registry
+from jearless import __version__
 from jearless import add as add_mod
+from jearless import sprint as sprint_mod
 from jearless import take as take_mod
 from jearless.errors import JearlessError
 
@@ -75,10 +76,7 @@ def main(argv: list[str] | None = None) -> int:
             print(take_mod.take(cwd, args.project, args.id))
             return 0
         if args.command == "sprint":
-            # Phase 0: a live probe of the empty states — there may be no registry at all.
-            reg = registry.load(cwd)
-            print(f"not implemented (Phase {PHASES['sprint']}); registry: {reg.count()} tasks")
-            return 0
+            return sprint_mod.run(cwd)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
