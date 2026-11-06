@@ -73,6 +73,15 @@ def load(cwd: Path) -> Registry:
     return load_path(cwd / REGISTRY_NAME)
 
 
+def load_all(cwd: Path) -> Registry:
+    """The registry plus every archive: the identity source for the changelog and analytics."""
+    combined = load(cwd)
+    for path in sorted(cwd.glob("archive_*.yml")):
+        for project, tasks in load_path(path).tasks.items():
+            combined.tasks.setdefault(project, []).extend(tasks)
+    return combined
+
+
 def load_path(path: Path) -> Registry:
     if not path.exists():
         return Registry()  # empty state: no registry — not an error

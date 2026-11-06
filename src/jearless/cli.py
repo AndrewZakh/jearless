@@ -10,6 +10,7 @@ from pathlib import Path
 
 from jearless import __version__
 from jearless import add as add_mod
+from jearless import changelog as changelog_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
 from jearless.errors import JearlessError
@@ -45,10 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
 
-    p = sub.add_parser("changelog", help="changelog from merge commits (Phase 2)")
+    p = sub.add_parser(
+        "changelog", help="changelog from merge commits (Phase 2); dry-run is the only mode"
+    )
     p.add_argument("--from", dest="from_tag", default=None, metavar="TAG")
     p.add_argument("--to", dest="to_tag", default=None, metavar="TAG")
-    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--dry-run", action="store_true", help="accepted for symmetry; always dry")
 
     sub.add_parser("doctor", help="diagnostics: unattributed commits etc. (Phase 2)")
 
@@ -77,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "sprint":
             return sprint_mod.run(cwd)
+        if args.command == "changelog":
+            return changelog_mod.run(cwd, from_tag=args.from_tag, to_tag=args.to_tag)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
