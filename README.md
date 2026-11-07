@@ -4,6 +4,37 @@
 
 *Why the name: by ear — a faint echo of Jira; by sight — fearless; spelled with an error — and we track errors for a living; a jearless sprint — a fast run without fat.*
 
+## Install
+
+From PyPI, straight into an isolated environment:
+
+```sh
+pipx install jearless        # the intended way for daily use
+```
+
+For development, one command builds the venv with everything. There is
+deliberately **no requirements.txt**: `pyproject.toml` is the single authored
+source of dependencies, and a second list would drift.
+
+```sh
+uv venv && uv pip install -e ".[dev]"                          # uv
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"     # plain pip
+```
+
+## Quickstart
+
+Inside your git repository:
+
+```sh
+jear add door "paint it black" --points 2   # a task in the eternal registry
+jear take door 1                            # branch feature/door/1-paint-it-black, pushed
+# ... work, then a true merge (--no-ff) ...
+jear sprint                                 # available / in_progress / done — derived from git
+```
+
+No statuses are ever stored: the registry holds frozen facts, git holds
+everything alive. See [The idea](#the-idea) for the full model.
+
 **Status:** the design has stabilized; the mechanism is built around the eternal registry; the name is settled — jearless (2026-11-06). This file records the decisions and their rationale — it is not a specification. The implementation plan lives in [PLAN.md](PLAN.md).
 
 ## The idea
