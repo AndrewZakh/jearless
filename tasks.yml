@@ -62,3 +62,18 @@ tasks:
         as a single step. Version sync is no longer here: pyproject mirrors
         env.yml automatically (auto-version-hook v1.1.0 version_files).
       story_points: 2
+    - id: 10
+      summary: add — duplicate guard: keyword-overlap warning and confirmation
+      description: |
+        Tokenize summaries (lowercase, alphanumeric runs, drop stopwords,
+        strip the plural 's'): simple means, no stemming rabbit hole.
+        Weight words by mini-IDF computed over the registry union archives:
+        "task"/"registry" cost less than "gantt" — self-adapting, ~5 lines.
+        Score = weighted Jaccard; containment guards short-inside-long pairs.
+        On score >= threshold (default 0.6, [duplicate] in .jearless.toml):
+        list top-3 matches with percent and derived state, prompt
+        "Are you sure to add? [y/N]" — safe default N. Non-TTY stdin
+        declines with exit 1 and a --yes hint; --yes skips the guard.
+        Compare against the registry union archives: a duplicate of a DONE
+        task is the common case — the warning shows "(done)" next to it.
+      story_points: 2
