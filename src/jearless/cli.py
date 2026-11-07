@@ -43,6 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("project")
     p.add_argument("summary")
     p.add_argument("--points", type=int, default=None)
+    p.add_argument("--yes", action="store_true", help="skip the duplicate guard")
 
     p = sub.add_parser("take", help="take a task: branch + push (Phase 1)")
     p.add_argument("project")
@@ -82,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     cwd = Path.cwd()
     try:
         if args.command == "add":
-            add_mod.add(cwd, args.project, args.summary, args.points)
+            add_mod.add(cwd, args.project, args.summary, args.points, yes=args.yes)
             return 0
         if args.command == "take":
             print(take_mod.take(cwd, args.project, args.id))

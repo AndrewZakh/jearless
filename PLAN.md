@@ -16,7 +16,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 
 | Command | Mechanics | Phase |
 |---|---|---|
-| `add <project> "summary" [--points N]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches | 1 |
+| `add <project> "summary" [--points N] [--yes]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches; the duplicate guard warns on keyword overlap and asks `y/N` (non-TTY declines, `--yes` skips) | 1 |
 | `take <project> <id>` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `feature/<project>/<id>-<slug>`; push. The server arbitrates the race | 1 |
 | `sprint` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done | 1 |
 | `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |

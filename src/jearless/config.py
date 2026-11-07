@@ -16,6 +16,7 @@ DEFAULT_BRANCH_PATTERN = (
 REQUIRED_GROUPS = ("type", "project", "num")
 DEFAULT_SECTIONS = {"feature": "Added", "fix": "Fixed"}
 DEFAULT_LINE_TEMPLATE = "{project}-{num}: {summary}"
+DEFAULT_DUPLICATE_THRESHOLD = 0.6
 
 
 class ConfigError(JearlessError):
@@ -27,6 +28,7 @@ class Config:
     branch_pattern: re.Pattern
     sections: dict[str, str]
     line_template: str
+    duplicate_threshold: float = DEFAULT_DUPLICATE_THRESHOLD
 
     def match_branch(self, name: str) -> re.Match | None:
         return self.branch_pattern.match(name)
@@ -54,9 +56,14 @@ def load(cwd: Path) -> Config:
             raise ConfigError(f"{CONFIG_NAME}: {exc}") from exc
     branch = data.get("branch", {})
     changelog = data.get("changelog", {})
+    duplicate = data.get("duplicate", {})
+    threshold = duplicate.get("threshold", DEFAULT_DUPLICATE_THRESHOLD)
+    if not isinstance(threshold, (int, float)) or not 0 < threshold <= 1:
+        raise ConfigError("[duplicate] threshold must be a number in (0, 1]")
     sections = {**DEFAULT_SECTIONS, **changelog.get("sections", {})}
     return Config(
         branch_pattern=_compile_branch_pattern(branch.get("pattern", DEFAULT_BRANCH_PATTERN)),
         sections=sections,
         line_template=changelog.get("line_template", DEFAULT_LINE_TEMPLATE),
+        duplicate_threshold=float(threshold),
     )

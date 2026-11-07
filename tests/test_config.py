@@ -46,3 +46,19 @@ def test_pattern_without_required_groups_rejected(tmp_path: Path):
     (tmp_path / ".jearless.toml").write_text('[branch]\npattern = "^.*$"\n', encoding="utf-8")
     with pytest.raises(ConfigError):
         config.load(tmp_path)
+
+
+def test_duplicate_threshold_default_and_override(tmp_path: Path):
+    assert config.load(tmp_path).duplicate_threshold == 0.6
+    (tmp_path / ".jearless.toml").write_text(
+        "[duplicate]\nthreshold = 0.9\n", encoding="utf-8"
+    )
+    assert config.load(tmp_path).duplicate_threshold == 0.9
+
+
+def test_duplicate_threshold_validated(tmp_path: Path):
+    (tmp_path / ".jearless.toml").write_text(
+        "[duplicate]\nthreshold = 1.5\n", encoding="utf-8"
+    )
+    with pytest.raises(ConfigError):
+        config.load(tmp_path)
