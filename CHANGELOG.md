@@ -1,4 +1,9 @@
 # Changelog
+## v0.10.4 (2026-11-07)
+### Added
+- tooling-10: add — duplicate guard: keyword-overlap warning and confirmation
+# 1 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.9.4 (2026-11-07)
 ### Added
 - tooling-1: add — append a task to the registry
