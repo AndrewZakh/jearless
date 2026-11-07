@@ -63,7 +63,7 @@ tasks:
         env.yml automatically (auto-version-hook v1.1.0 version_files).
       story_points: 2
     - id: 10
-      summary: add — duplicate guard: keyword-overlap warning and confirmation
+      summary: "add — duplicate guard: keyword-overlap warning and confirmation"
       description: |
         Tokenize summaries (lowercase, alphanumeric runs, drop stopwords,
         strip the plural 's'): simple means, no stemming rabbit hole.
