@@ -1,9 +1,10 @@
+import sys
 from pathlib import Path
 
 import pytest
 
 from jearless import add as add_mod
-from jearless import gitwrap
+from jearless import gitwrap, registry
 from jearless.errors import JearlessError
 
 REGISTRY_WITH_COMMENT = """\
@@ -67,3 +68,52 @@ def test_offline_falls_back_to_registry(tmp_path: Path, capsys):
 def test_invalid_project_rejected(tmp_path: Path):
     with pytest.raises(JearlessError, match="project names"):
         add_mod.add(tmp_path, "Bad-Name", "x")
+
+
+# --- the duplicate guard (task tooling/10) ---
+
+DUP_REGISTRY = "tasks:\n  p:\n    - id: 1\n      summary: add a task to the registry\n"
+
+
+def test_duplicate_warning_and_decline(tmp_path: Path, monkeypatch, capsys):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda *_: "")  # Enter = the safe default N
+    with pytest.raises(JearlessError, match="declined"):
+        add_mod.add(tmp_path, "p", "add a task to the registry")
+    out = capsys.readouterr().out
+    assert "warning: similar tasks exist" in out
+    assert "p/1" in out and "100%" in out
+    # the prompt itself belongs to the real input() — the mock replaces it
+    # declined — the registry is untouched
+    assert registry.load(tmp_path).count() == 1
+
+
+def test_duplicate_confirmed_with_y(tmp_path: Path, monkeypatch, capsys):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda *_: "y")
+    assert add_mod.add(tmp_path, "p", "add a task to the registry") == 2
+    assert "warning: similar tasks exist" in capsys.readouterr().out
+    assert registry.load(tmp_path).count() == 2
+
+
+def test_non_tty_declines_with_hint(tmp_path: Path, monkeypatch, capsys):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
+    with pytest.raises(JearlessError, match="--yes"):
+        add_mod.add(tmp_path, "p", "add a task to the registry")
+    assert "warning: similar tasks exist" in capsys.readouterr().out
+    assert registry.load(tmp_path).count() == 1
+
+
+def test_yes_flag_skips_the_guard(tmp_path: Path, capsys):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    assert add_mod.add(tmp_path, "p", "add a task to the registry", yes=True) == 2
+    assert "warning" not in capsys.readouterr().out
+
+
+def test_unrelated_summary_passes_silently(tmp_path: Path, capsys):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    assert add_mod.add(tmp_path, "p", "deploy the production cluster") == 2
+    assert "warning" not in capsys.readouterr().out
