@@ -63,7 +63,7 @@ tasks:
         env.yml automatically (auto-version-hook v1.1.0 version_files).
       story_points: 2
     - id: 10
-      summary: "add — duplicate guard: keyword-overlap warning and confirmation"
+      summary: 'add — duplicate guard: keyword-overlap warning and confirmation'
       description: |
         Tokenize summaries (lowercase, alphanumeric runs, drop stopwords,
         strip the plural 's'): simple means, no stemming rabbit hole.
@@ -76,4 +76,20 @@ tasks:
         declines with exit 1 and a --yes hint; --yes skips the guard.
         Compare against the registry union archives: a duplicate of a DONE
         task is the common case — the warning shows "(done)" next to it.
+      story_points: 2
+    - id: 11
+      summary: double-merge resilience — the same branch merged twice after a restore
+      description: |
+        Scenario: feature/p/N merged, then the branch is restored after a
+        local/remote divergence and merged again — main now carries TWO merge
+        commits naming the same branch. Audit every derived surface:
+        changelog (duplicate entry inside one range; worse — a task re-shipped
+        in a later range when its first merge predates from_tag), timeline
+        (two bars sharing the mermaid id project_num), retro (dict overwrite —
+        the oldest bar currently wins the join; decide explicitly).
+        Sprint and doctor are expected safe (set semantics; merges always
+        attributed). Hypothesis to implement: dedupe by (project, number)
+        keeping the FIRST arrival — a task shipped in the version of its first
+        merge; re-merges are artifacts. Test factory: merge, reset/restore,
+        merge again, then run every command.
       story_points: 2
