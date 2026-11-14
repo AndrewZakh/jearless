@@ -1,0 +1,72 @@
+# Frozen history: tasks done as of v0.10.4, moved out of tasks.yml by `jear archive v0.10.4`.
+# Identity for analytics is the union of tasks.yml and the archives (registry.load_all).
+tasks:
+  tooling:
+    - id: 1
+      summary: add — append a task to the registry
+      description: |
+        Text insertion into tasks.yml preserving comments.
+        Next id = max over the registry, archives and existing branches.
+      story_points: 1
+    - id: 2
+      summary: take — claim a task with a single push
+      description: |
+        Slug from summary, branch feature/<project>/<id>-<slug>,
+        occupancy check via ls-remote, immediate push.
+        The server arbitrates the race: non-fast-forward = "taken".
+      story_points: 2
+    - id: 3
+      summary: sprint — a join of three sources
+      description: |
+        fetch --prune; registry × origin branches × merge log.
+        States available / in_progress / done, the key is (project, number).
+      story_points: 3
+    - id: 4
+      summary: changelog — a generator over merge commits
+      description: |
+        Regex and sections from .jearless.toml, summary from the registry.
+        Both merge message forms ("Merge branch" and "Merge pull request"),
+        dry-run is the default mode.
+      story_points: 3
+    - id: 5
+      summary: doctor — the visible hole
+      description: |
+        Unattributed commits on main (neither merges nor registry edits),
+        branch naming violations, invalid tasks.yml.
+      story_points: 2
+    - id: 6
+      summary: timeline — live and snapshot
+      description: |
+        Mermaid gantt of the facts: start = author date of the branch's
+        first commit, end = committer date of the merge commit.
+        Live is never committed; the snapshot is a release artifact.
+      story_points: 3
+    - id: 7
+      summary: retro — plan versus actual
+      description: |
+        Join plan gantt bar ids with the actual timeline;
+        planning misses for the retrospective.
+      story_points: 2
+    - id: 9
+      summary: release step — tag, changelog and timeline snapshot in one move
+      description: |
+        The release tag, changelog generation and the timeline snapshot
+        as a single step. Version sync is no longer here: pyproject mirrors
+        env.yml automatically (auto-version-hook v1.1.0 version_files).
+      story_points: 2
+    - id: 10
+      summary: 'add — duplicate guard: keyword-overlap warning and confirmation'
+      description: |
+        Tokenize summaries (lowercase, alphanumeric runs, drop stopwords,
+        strip the plural 's'): simple means, no stemming rabbit hole.
+        Weight words by mini-IDF computed over the registry union archives:
+        "task"/"registry" cost less than "gantt" — self-adapting, ~5 lines.
+        Score = weighted Jaccard; containment guards short-inside-long pairs.
+        On score >= threshold (default 0.6, [duplicate] in .jearless.toml):
+        list top-3 matches with percent and derived state, prompt
+        "Are you sure to add? [y/N]" — safe default N. Non-TTY stdin
+        declines with exit 1 and a --yes hint; --yes skips the guard.
+        Compare against the registry union archives: a duplicate of a DONE
+        task is the common case — the warning shows "(done)" next to it.
+      depends_on: 1
+      story_points: 2
