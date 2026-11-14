@@ -76,6 +76,7 @@ tasks:
         declines with exit 1 and a --yes hint; --yes skips the guard.
         Compare against the registry union archives: a duplicate of a DONE
         task is the common case — the warning shows "(done)" next to it.
+      depends_on: 1
       story_points: 2
     - id: 11
       summary: double-merge resilience — the same branch merged twice after a restore
@@ -92,4 +93,17 @@ tasks:
         keeping the FIRST arrival — a task shipped in the version of its first
         merge; re-merges are artifacts. Test factory: merge, reset/restore,
         merge again, then run every command.
+      story_points: 2
+    - id: 12
+      summary: 'graph — the dependency view: task links and a mermaid flowchart'
+      description: |
+        depends_on is a frozen authorial fact (the story_points rule): a bare
+        number points inside the same project, "project/num" crosses projects.
+        Mermaid gantt cannot draw arrows — the view is a flowchart (jear graph),
+        a PLAN-side artifact, the gantt contract's sibling, not a timeline
+        feature. No gating: a link never blocks take — at most an annotation,
+        like the duplicate guard. Validation: targets must exist in the
+        registry ∪ archives (archiving cannot orphan a link), cycles refused,
+        doctor reports broken links as findings. add gains --depends
+        (repeatable); sprint annotates "after p/N".
       story_points: 2
