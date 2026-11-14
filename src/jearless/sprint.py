@@ -10,15 +10,24 @@ generated-at · git@sha stamp: staleness is visible (a sha mismatch says the
 report is stale). Writes happen only on content change — a no-op refresh
 leaves the tree clean. Committing the refresh is the human's move: nothing
 automatic writes to main.
+
+`--rag <plan>` adds the red-yellow-green view over the authored plan (task
+tooling/18): red = blocked by an undone depends_on target, yellow = aging
+(taken-never-started, or stalled past [rag] aging_days), green = alive —
+all derived, never stored, rows in the plan's own order (the sprint priority).
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from jearless import config, gitwrap, registry, state
+from jearless import plan as plan_mod
 from jearless.errors import JearlessError
 
 _SECTION_ORDER = (state.IN_PROGRESS, state.AVAILABLE, state.DONE)
+
+_DATE = "%Y-%m-%dT%H:%M:%S"
+_UTC = {"TZ": "UTC"}
 
 DEFAULT_DASHBOARD = "sprint.md"
 CHUNK_BEGIN = "<!-- jear:sprint:begin -->"
@@ -111,19 +120,91 @@ def _write_dashboard(path: Path, block: str) -> str:
     return f"{path.name}: dashboard chunk refreshed — commit it to publish"
 
 
-def run(cwd: Path, write: str | None = None, remote: str = "origin") -> int:
+def _rag_rows(cwd: Path, cfg: config.Config, plan_path: Path, remote: str) -> list[str]:
+    """The RAG join (task tooling/18): planned tasks in the plan's own order.
+
+    Red = blocked by an undone depends_on target (the existing graph —
+    no blocked_by field). Yellow = aging: taken-never-started past N days
+    (aged from the branch point — pushes carry no date; the one derivable
+    anchor), or started-but-stalled (last own commit older than N).
+    Green = alive. Pending = not taken yet. Nothing is stored.
+    """
+    plan_obj = plan_mod.load_plan(plan_path, registry.load_all(cwd))
+    view = state.compute(cwd, cfg, registry.load(cwd), remote)
+    by_key = {(tv.task.project, tv.task.id): tv for tv in view.tasks}
+    done = {key for key, tv in by_key.items() if tv.state == state.DONE}
+    # naive UTC: the git dates it is compared against render via TZ=UTC
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    rows: list[str] = []
+    for entry in plan_obj.entries:
+        key = entry.task
+        spec = f"{key[0]}/{key[1]}"
+        tv = by_key.get(key)
+        label = f"{spec}  {tv.task.summary}" if tv else f"{spec}  (archived)"
+        if tv is None or tv.state == state.DONE:
+            rows.append(f"  DONE    {label}")
+            continue
+        blocked = next((d for d in tv.task.depends_on if d not in done), None)
+        if blocked:
+            rows.append(f"  RED     {label}  — blocked by {blocked[0]}/{blocked[1]} (not done)")
+            continue
+        if tv.state == state.AVAILABLE:
+            rows.append(f"  PENDING {label}  — not taken")
+            continue
+        branch = tv.branch
+        own = gitwrap.lines(["rev-list", branch, "--not", f"{remote}/main"], cwd)
+        if not own:
+            anchor = gitwrap.out(
+                ["log", "-1", "--format=%cd", "--date=format-local:%Y-%m-%d", branch],
+                cwd,
+                env=_UTC,
+            )
+            age = (now - datetime.fromisoformat(anchor)).days
+            if age > cfg.rag_aging_days:
+                rows.append(
+                    f"  YELLOW  {label}  — taken, never started (aged from the branch point"
+                    f" {anchor}; pushes carry no date)"
+                )
+            else:
+                rows.append(f"  TAKEN   {label}  — taken, not started")
+            continue
+        last = gitwrap.out(
+            ["log", "-1", "--format=%cd", f"--date=format-local:{_DATE}", branch], cwd, env=_UTC
+        )
+        age = (now - datetime.fromisoformat(last)).days
+        if age > cfg.rag_aging_days:
+            rows.append(
+                f"  YELLOW  {label}  — stalled, last own commit {last} ({age} days ago)"
+            )
+        else:
+            rows.append(f"  GREEN   {label}  — alive, last own commit {last} ({age} days ago)")
+    return rows
+
+
+def run(cwd: Path, write: str | None = None, rag: str | None = None, remote: str = "origin") -> int:
     try:
         gitwrap.run(["fetch", "--quiet", "--prune", remote], cwd)
     except gitwrap.GitError as exc:
         raise JearlessError(
             f"cannot fetch '{remote}': the sprint truth lives on the remote"
         ) from exc
-    view = state.compute(cwd, config.load(cwd), registry.load(cwd), remote)
+    cfg = config.load(cwd)
+    view = state.compute(cwd, cfg, registry.load(cwd), remote)
     if write is None:
         _print_terminal(view)
+        if rag:
+            plan_path = Path(rag)
+            if not plan_path.exists():
+                raise JearlessError(f"{plan_path}: no such plan file")
+            rows = _rag_rows(cwd, cfg, plan_path, remote)
+            print(f"rag (plan {plan_path.name}, aging {cfg.rag_aging_days} days):")
+            for row in rows:
+                print(row)
         return 0
     # resolve against the cwd PARAM, not the process cwd: an absolute PATH
     # replaces the prefix (pathlib semantics), a relative one anchors at the repo
     path = cwd / (write or DEFAULT_DASHBOARD)
     print(_write_dashboard(path, _markdown_block(view, cwd)))
     return 0
+

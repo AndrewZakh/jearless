@@ -69,6 +69,12 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="refresh the markdown dashboard (default ./sprint.md); bare sprint only prints",
     )
+    p.add_argument(
+        "--rag",
+        default=None,
+        metavar="PLAN_FILE",
+        help="add the red-yellow-green view over the given sprint plan (task tooling/18)",
+    )
 
     p = sub.add_parser(
         "changelog", help="changelog from merge commits (Phase 2); dry-run is the only mode"
@@ -123,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
             print(take_mod.take(cwd, args.project, args.id))
             return 0
         if args.command == "sprint":
-            return sprint_mod.run(cwd, write=args.write)
+            return sprint_mod.run(cwd, write=args.write, rag=args.rag)
         if args.command == "changelog":
             return changelog_mod.run(cwd, from_tag=args.from_tag, to_tag=args.to_tag)
         if args.command == "doctor":

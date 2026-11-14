@@ -5,6 +5,8 @@ from jearless import sprint as sprint_mod
 from jearless import state as state_mod
 from jearless import take as take_mod
 
+RAG_PLAN = "plan:\n  goal: rag\n  tasks:\n    - task: p/1\n    - task: p/2\n    - task: p/3\n"
+
 REGISTRY = """\
 tasks:
   p:
@@ -157,3 +159,107 @@ def test_sprint_write_cli_wiring(board, monkeypatch):
     monkeypatch.chdir(board)
     assert cli.main(["sprint", "--write", "via-cli.md"]) == 0
     assert (board / "via-cli.md").exists()
+
+
+# --- the RAG view (task tooling/18) ---
+
+
+def _write_rag_plan(board):
+    plan_path = board / ".jearless" / "plans" / "sprint_9.yml"
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
+    plan_path.write_text(RAG_PLAN, encoding="utf-8")
+    return plan_path
+
+
+def _merge_planned(board, branch: str):
+    """Walk a planned task through the charter: branch, commit, push, --no-ff merge."""
+    gitwrap.run(["checkout", "-q", "-b", branch], board)
+    (board / f"{branch.replace('/', '_')}.txt").write_text("done", encoding="utf-8")
+    gitwrap.run(["add", "."], board)
+    gitwrap.run(["commit", "-q", "-m", "wip"], board)
+    gitwrap.run(["push", "-q", "-u", "origin", branch], board)
+    gitwrap.run(["checkout", "-q", "main"], board)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", f"Merge branch '{branch}'", branch], board)
+    gitwrap.run(["push", "-q", "origin", "main"], board)
+
+
+def test_rag_pending_and_blocked(board, capsys):
+    """Nothing taken: p/1 pending; p/2 red — blocked by the undone p/1."""
+    plan_path = _write_rag_plan(board)
+    assert sprint_mod.run(board, rag=str(plan_path)) == 0
+    out = capsys.readouterr().out
+    assert "rag (plan sprint_9.yml, aging 3 days):" in out
+    assert "PENDING p/1" in out and "not taken" in out
+    assert "RED     p/2" in out and "blocked by p/1 (not done)" in out
+
+
+def test_rag_green_then_done(board, capsys):
+    plan_path = _write_rag_plan(board)
+    take_mod.take(board, "p", 1)
+    (board / "w1.txt").write_text("work", encoding="utf-8")
+    gitwrap.run(["add", "w1.txt"], board)
+    gitwrap.run(["commit", "-q", "-m", "fresh work"], board)  # no env: born now
+    gitwrap.run(["push", "-q", "origin", "feature/p/1-first-task"], board)
+    capsys.readouterr()
+    assert sprint_mod.run(board, rag=str(plan_path)) == 0
+    out = capsys.readouterr().out
+    assert "GREEN   p/1" in out and "alive" in out and "(0 days ago)" in out
+    # merging makes it done; p/2's block dissolves into pending
+    gitwrap.run(["checkout", "-q", "main"], board)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-first-task'",
+         "feature/p/1-first-task"],
+        board,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], board)
+    capsys.readouterr()
+    assert sprint_mod.run(board, rag=str(plan_path)) == 0
+    out = capsys.readouterr().out
+    assert "DONE    p/1" in out
+    assert "PENDING p/2" in out  # the block dissolved: p/1 is done
+
+
+def test_rag_yellow_stalled_and_taken(board, capsys):
+    from datetime import UTC, datetime, timedelta
+
+    plan_path = _write_rag_plan(board)
+    # p/1 merges first: p/2's block dissolves, its own aging becomes visible
+    _merge_planned(board, "feature/p/1-first-task")
+    take_mod.take(board, "p", 2)
+    stale = (datetime.now(UTC) - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%S")
+    (board / "w2.txt").write_text("slow", encoding="utf-8")
+    gitwrap.run(["add", "w2.txt"], board)
+    gitwrap.run(["commit", "-q", "-m", "stalled work"], board,
+                env={"GIT_COMMITTER_DATE": stale, "GIT_AUTHOR_DATE": stale})
+    gitwrap.run(["push", "-q", "origin", "feature/p/2-second-task"], board)
+    take_mod.take(board, "p", 3)  # claimed, zero commits, fresh branch point
+    capsys.readouterr()
+    assert sprint_mod.run(board, rag=str(plan_path)) == 0
+    out = capsys.readouterr().out
+    assert "YELLOW  p/2" in out and "stalled" in out and "(10 days ago)" in out
+    assert "TAKEN   p/3" in out and "not started" in out  # fresh branch point: not yellow yet
+
+
+def test_rag_aging_config_turns_yellow_green(board, capsys):
+    from datetime import UTC, datetime, timedelta
+
+    (board / ".jearless.toml").write_text("[rag]\naging_days = 30\n", encoding="utf-8")
+    plan_path = _write_rag_plan(board)
+    _merge_planned(board, "feature/p/1-first-task")
+    take_mod.take(board, "p", 2)
+    stale = (datetime.now(UTC) - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%S")
+    (board / "w2.txt").write_text("slow", encoding="utf-8")
+    gitwrap.run(["add", "w2.txt"], board)
+    gitwrap.run(["commit", "-q", "-m", "stalled work"], board,
+                env={"GIT_COMMITTER_DATE": stale, "GIT_AUTHOR_DATE": stale})
+    gitwrap.run(["push", "-q", "origin", "feature/p/2-second-task"], board)
+    capsys.readouterr()
+    assert sprint_mod.run(board, rag=str(plan_path)) == 0
+    out = capsys.readouterr().out
+    assert "GREEN   p/2" in out  # 10 days < 30: alive again
+    assert "aging 30 days" in out
+
+
+def test_rag_missing_plan_file_refused(board):
+    with pytest.raises(Exception, match="no such plan file"):
+        sprint_mod.run(board, rag=str(board / "nope.yml"))
