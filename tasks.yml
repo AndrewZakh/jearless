@@ -126,3 +126,17 @@ tasks:
         points, after-links, branches — the same canonical join, second
         renderer (the changelog/timeline render/run pattern).
       story_points: 2
+    - id: 14
+      summary: sprint dashboard on every MR — a GitHub Action posting a sticky PR comment
+      description: |
+        The dashboard rides the forge, not the tree: a pull_request Action
+        installs the PR's own jearless (pip install . — the PR tests its own
+        tool), renders jear timeline --live (mermaid — GitHub renders it
+        directly in comments) plus the sprint board, and maintains ONE sticky
+        comment per MR (gh pr comment --edit-last --create-if-none).
+        Discussion surface, never a ref move: the "zero CI with write access"
+        pros line means code, and is amended in README. sprint.md stays
+        human-run. A concurrency group per MR cancels superseded runs;
+        fetch-depth 0 so the join reads the full merge history. Bare sprint
+        stays a pure view; this is presentation, not state.
+      story_points: 2
