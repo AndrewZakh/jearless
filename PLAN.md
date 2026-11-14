@@ -24,7 +24,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
 | `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
-| `archive <tag>` | move done tasks into `archive_<tag>.yml` — only on the ergonomics trigger | 4 |
+| `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); available/in_progress always live in tasks.yml, identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen | 4 |
 | `release [--tag TAG]` | tag + changelog section + timeline snapshot in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them | — |
 | `graph` | mermaid flowchart of the registry's `depends_on` links — the plan-side dependency view (gantt cannot draw arrows); refuses unknown targets and cycles, doctor reports them as findings | — |
 

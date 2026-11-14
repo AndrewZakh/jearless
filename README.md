@@ -86,6 +86,7 @@ The sprint and all analytics are joins on the key (subproject, number), computed
 - Branch prefixes are the taxonomy: "Added / Fixed" sections come for free.
 - Merge commits make a task an object of history: `--merges` between tags is the task journal; a merge commit's diff is the whole task at once.
 - **Re-merges are artifacts** (task tooling/11): the same branch merged twice (divergence, restore) puts two merge commits naming one task into main. Every derived surface keeps the FIRST arrival — a task ships in the version of its first merge; the changelog collapses re-merges aloud, the timeline keeps the earliest bar, sprint's done is a set.
+- **Archiving cuts by the release tag** (task tooling/8, implemented): `jear archive <tag>` moves done-as-of-tag tasks into `archive_<tag>.yml` — the same frozen boundary as the changelog and the timeline snapshot; available/in_progress always live in tasks.yml; identity for analytics is the union of the registry and the archives; the archive file is frozen (one tag, one file) and the move is human-run. The trigger is ergonomics, not speed (the benchmark showed a minute of query time needs millions of tasks).
 - Version binding is free: whatever is merged between v1.2 and v1.3 lands under the v1.3 heading.
 - The registry is versioned with the code, reviewed in merges, available offline.
 
