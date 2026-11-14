@@ -17,6 +17,7 @@ REQUIRED_GROUPS = ("type", "project", "num")
 DEFAULT_SECTIONS = {"feature": "Added", "fix": "Fixed"}
 DEFAULT_LINE_TEMPLATE = "{project}-{num}: {summary}"
 DEFAULT_DUPLICATE_THRESHOLD = 0.6
+DEFAULT_RAG_AGING_DAYS = 3
 
 
 class ConfigError(JearlessError):
@@ -29,6 +30,7 @@ class Config:
     sections: dict[str, str]
     line_template: str
     duplicate_threshold: float = DEFAULT_DUPLICATE_THRESHOLD
+    rag_aging_days: int = DEFAULT_RAG_AGING_DAYS
 
     def match_branch(self, name: str) -> re.Match | None:
         return self.branch_pattern.match(name)
@@ -60,10 +62,15 @@ def load(cwd: Path) -> Config:
     threshold = duplicate.get("threshold", DEFAULT_DUPLICATE_THRESHOLD)
     if not isinstance(threshold, (int, float)) or not 0 < threshold <= 1:
         raise ConfigError("[duplicate] threshold must be a number in (0, 1]")
+    rag = data.get("rag", {})
+    aging = rag.get("aging_days", DEFAULT_RAG_AGING_DAYS)
+    if not isinstance(aging, int) or isinstance(aging, bool) or aging < 1:
+        raise ConfigError("[rag] aging_days must be a positive integer")
     sections = {**DEFAULT_SECTIONS, **changelog.get("sections", {})}
     return Config(
         branch_pattern=_compile_branch_pattern(branch.get("pattern", DEFAULT_BRANCH_PATTERN)),
         sections=sections,
         line_template=changelog.get("line_template", DEFAULT_LINE_TEMPLATE),
         duplicate_threshold=float(threshold),
+        rag_aging_days=aging,
     )

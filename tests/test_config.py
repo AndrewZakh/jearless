@@ -62,3 +62,18 @@ def test_duplicate_threshold_validated(tmp_path: Path):
     )
     with pytest.raises(ConfigError):
         config.load(tmp_path)
+
+
+def test_rag_aging_days_default_and_override(tmp_path: Path):
+    assert config.load(tmp_path).rag_aging_days == 3
+    (tmp_path / ".jearless.toml").write_text("[rag]\naging_days = 14\n", encoding="utf-8")
+    assert config.load(tmp_path).rag_aging_days == 14
+
+
+def test_rag_aging_days_validated(tmp_path: Path):
+    (tmp_path / ".jearless.toml").write_text("[rag]\naging_days = 0\n", encoding="utf-8")
+    with pytest.raises(ConfigError):
+        config.load(tmp_path)
+    (tmp_path / ".jearless.toml").write_text('[rag]\naging_days = "3"\n', encoding="utf-8")
+    with pytest.raises(ConfigError):
+        config.load(tmp_path)
