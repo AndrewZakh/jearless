@@ -78,7 +78,7 @@ The sprint and all analytics are joins on the key (subproject, number), computed
 
 ## Pros
 
-- One database — git history plus the eternal registry of facts. Zero state files, zero hooks with write access, zero CI jobs pushing to main.
+- One database — git history plus the eternal registry of facts. Zero state files, zero hooks with write access, zero CI jobs pushing to main (the MR dashboard bot only posts a PR comment — a discussion surface, never a ref; task tooling/14).
 - Taking a task is one push, zero commits; undoing it is deleting the branch.
 - The task card lives in the registry forever: velocity and any analytics over done tasks lose no data.
 - The race for a task is resolved by the server, atomically, without locks or queues.

@@ -1,0 +1,60 @@
+# The MR dashboard (task tooling/14): the board rides the forge, not the tree.
+# The workflow installs the PR's own jearless, renders the live timeline
+# (mermaid renders right in GitHub comments) plus the sprint board, and keeps
+# ONE sticky comment per MR. Discussion surface only — no ref moves, so the
+# "main moves only by merges" invariant is untouched; sprint.md stays human-run.
+
+name: sprint dashboard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sprint-dashboard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the join reads the full merge history
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install the PR's own jearless
+        run: pip install .
+
+      - name: render the dashboard
+        run: |
+          {
+            echo "<!-- jear:sprint-dashboard -->"
+            echo "## 🐭 jearless — the actual timeline"
+            echo ""
+            echo '```mermaid'
+            jear timeline --live
+            echo '```'
+            echo ""
+            echo "## The board"
+            echo ""
+            echo '```'
+            jear sprint
+            echo '```'
+            echo ""
+            echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — the frozen copy lives in sprint.md (jear sprint --write)_"
+          } > dashboard.md
+
+      - name: post the sticky comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --edit-last --create-if-none --body-file dashboard.md
