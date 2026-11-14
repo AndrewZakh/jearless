@@ -44,6 +44,8 @@ def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: 
 
 # Sanctioned artifacts: bookkeeping, not task work. env.yml version bumps
 # normally ride branches via the hook; a direct one is human bookkeeping.
+# Markdown is documentation bookkeeping too — the sprint dashboard lives in
+# .md chunks (task tooling/13). Accepted price: a docs-only squash is invisible.
 _SANCTIONED_EXACT = frozenset({REGISTRY_NAME, "CHANGELOG.md", "env.yml"})
 _SANCTIONED_PREFIXES = ("archive_", "snapshots/")
 
@@ -51,7 +53,10 @@ _SANCTIONED_PREFIXES = ("archive_", "snapshots/")
 def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:
     files = gitwrap.lines(["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], cwd)
     return all(
-        f in _SANCTIONED_EXACT or f.startswith(_SANCTIONED_PREFIXES) for f in files
+        f in _SANCTIONED_EXACT
+        or f.startswith(_SANCTIONED_PREFIXES)
+        or f.endswith(".md")
+        for f in files
     )
 
 

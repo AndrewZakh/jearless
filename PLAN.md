@@ -18,7 +18,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 |---|---|---|
 | `add <project> "summary" [--points N] [--yes]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches; the duplicate guard warns on keyword overlap and asks `y/N` (non-TTY declines, `--yes` skips) | 1 |
 | `take <project> <id>` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `feature/<project>/<id>-<slug>`; push. The server arbitrates the race | 1 |
-| `sprint` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done | 1 |
+| `sprint [--write [PATH]]` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done. Bare = pure print. `--write` refreshes a markdown dashboard (default `./sprint.md`): create-with-markers / replace-chunk / refuse a human file; a generated-at · git@sha stamp makes staleness visible; *.md-only commits are sanctioned as docs bookkeeping | 1 |
 | `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |
 | `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
