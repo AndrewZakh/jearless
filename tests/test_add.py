@@ -117,3 +117,37 @@ def test_unrelated_summary_passes_silently(tmp_path: Path, capsys):
     (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
     assert add_mod.add(tmp_path, "p", "deploy the production cluster") == 2
     assert "warning" not in capsys.readouterr().out
+
+
+# --- --depends (task tooling/12) ---
+
+
+def test_add_with_depends_writes_the_link(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    assert add_mod.add(tmp_path, "p", "linked task", depends=["1"]) == 2
+    reg = registry.load(tmp_path)
+    assert reg.tasks["p"][1].depends_on == (("p", 1),)
+    assert "depends_on" in (tmp_path / "tasks.yml").read_text(encoding="utf-8")
+
+
+def test_add_depends_cross_project(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: a\n  door:\n    - id: 1\n      summary: b\n",
+        encoding="utf-8",
+    )
+    add_mod.add(tmp_path, "p", "cross", depends=["door/1"])
+    reg = registry.load(tmp_path)
+    assert reg.tasks["p"][1].depends_on == (("door", 1),)
+
+
+def test_add_depends_missing_target(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    with pytest.raises(JearlessError, match="no such task"):
+        add_mod.add(tmp_path, "p", "dangling", depends=["99"])
+    assert registry.load(tmp_path).count() == 1  # untouched
+
+
+def test_add_depends_self_rejected(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
+    with pytest.raises(JearlessError, match="cannot point at itself"):
+        add_mod.add(tmp_path, "p", "ouroboros", depends=["2"])  # 2 is the next id

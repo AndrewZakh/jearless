@@ -4,7 +4,9 @@ import pytest
 
 from jearless import __version__, cli
 
-ALL_COMMANDS = ["add", "take", "sprint", "changelog", "doctor", "timeline", "retro", "archive"]
+ALL_COMMANDS = [
+    "add", "take", "sprint", "changelog", "doctor", "graph", "timeline", "retro", "archive",
+]
 
 
 def test_version():

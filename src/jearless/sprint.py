@@ -23,6 +23,8 @@ def run(cwd: Path, remote: str = "origin") -> int:
             line = f"  {tv.task.project}/{tv.task.id}  {tv.task.summary}"
             if tv.task.story_points is not None:
                 line += f" ({tv.task.story_points} pt)"
+            if tv.task.depends_on:
+                line += "  after " + ", ".join(f"{p}/{n}" for p, n in tv.task.depends_on)
             if tv.branch:
                 line += f"  [{tv.branch}]"
             print(line)

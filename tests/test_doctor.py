@@ -74,3 +74,24 @@ def test_invalid_registry_reported(repo, capsys):
     )
     assert doctor_mod.run(repo) == 1
     assert "status" in capsys.readouterr().out
+
+
+def test_broken_link_is_a_finding(repo, capsys):
+    (repo / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: a\n      depends_on: 99\n",
+        encoding="utf-8",
+    )
+    assert doctor_mod.run(repo) == 1
+    assert "links:" in capsys.readouterr().out
+
+
+def test_link_cycle_is_a_finding(repo, capsys):
+    (repo / "tasks.yml").write_text(
+        "tasks:\n  p:\n"
+        "    - id: 1\n      summary: a\n      depends_on: 2\n"
+        "    - id: 2\n      summary: b\n      depends_on: 1\n",
+        encoding="utf-8",
+    )
+    assert doctor_mod.run(repo) == 1
+    out = capsys.readouterr().out  # one drain: a second readouterr() returns empty
+    assert "links:" in out and "cycle" in out

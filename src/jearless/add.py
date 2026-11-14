@@ -84,6 +84,7 @@ def add(
     points: int | None = None,
     remote: str = "origin",
     yes: bool = False,
+    depends: list[str] | None = None,
 ) -> int:
     if not PROJECT_RE.match(project):
         raise JearlessError("project names are [a-z0-9_]: they live in branch names")
@@ -104,6 +105,19 @@ def add(
         )
     next_id = max(candidates) + 1
 
+    deps = registry.parse_dep_spec(project, depends) if depends else ()
+    if deps:
+        # self-dep first: the new task cannot exist in load_all yet, so the
+        # existence loop would misreport this as "no such task"
+        if (project, next_id) in deps:
+            raise JearlessError("--depends: the new task cannot point at itself")
+        known = {(t.project, t.id) for t in registry.load_all(cwd).all()}
+        for dep in deps:
+            if dep not in known:
+                raise JearlessError(
+                    f"--depends {dep[0]}/{dep[1]}: no such task in the registry or archives"
+                )
+
     path = cwd / REGISTRY_NAME
     yaml = YAML(typ="rt")  # round-trip: comments survive the append
     yaml.indent(mapping=2, sequence=4, offset=2)
@@ -114,6 +128,10 @@ def add(
     if not isinstance(data, dict):
         raise JearlessError(f"{REGISTRY_NAME}: expected a mapping at the top level")
     entry: dict = {"id": next_id, "summary": summary}
+    if deps:
+        entry["depends_on"] = [
+            dep[1] if dep[0] == project else f"{dep[0]}/{dep[1]}" for dep in deps
+        ]
     if points is not None:
         entry["story_points"] = points
     data.setdefault("tasks", {}).setdefault(project, []).append(entry)

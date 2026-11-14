@@ -22,6 +22,13 @@ def _check_registry(cwd: Path, findings: list[str]) -> None:
         findings.append(f"registry: {exc}")
 
 
+def _check_links(cwd: Path, findings: list[str]) -> None:
+    try:
+        registry.check_links(registry.load_all(cwd))
+    except RegistryError as exc:
+        findings.append(f"links: {exc}")
+
+
 def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: str) -> None:
     try:
         heads = gitwrap.remote_heads(cwd, remote)
@@ -74,6 +81,7 @@ def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
 def run(cwd: Path, remote: str = "origin") -> int:
     findings: list[str] = []
     _check_registry(cwd, findings)
+    _check_links(cwd, findings)
     cfg = config.load(cwd)
     _check_branches(cwd, cfg, findings, remote)
     _check_unattributed(cwd, findings, remote)

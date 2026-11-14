@@ -58,6 +58,54 @@ def test_entry_without_id_rejected(tmp_path: Path):
 
 
 def test_malformed_yaml_rejected(tmp_path: Path):
-    (tmp_path / "tasks.yml").write_text("tasks:\n  p: [unclosed\n", encoding="utf-8")
+    (tmp_path / "tasks.yml").write_text("tasks:\n  p: [незакрытая\n", encoding="utf-8")
     with pytest.raises(RegistryError):
         registry.load(tmp_path)
+
+
+def test_depends_on_bare_and_cross_project(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(
+        "tasks:\n"
+        "  p:\n"
+        "    - id: 1\n      summary: a\n"
+        "    - id: 2\n      summary: b\n      depends_on: [1, other/3]\n",
+        encoding="utf-8",
+    )
+    reg = registry.load(tmp_path)
+    assert reg.tasks["p"][1].depends_on == (("p", 1), ("other", 3))
+
+
+def test_depends_on_invalid_entry_rejected(tmp_path: Path):
+    (tmp_path / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: a\n      depends_on: p-1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RegistryError, match="depends_on"):
+        registry.load(tmp_path)
+
+
+def test_check_links_unknown_target():
+    reg = registry.Registry(
+        tasks={"p": [registry.Task("p", 1, "a", depends_on=(("p", 99),))]}
+    )
+    with pytest.raises(registry.RegistryError, match="no such task"):
+        registry.check_links(reg)
+
+
+def test_check_links_cycle():
+    reg = registry.Registry(
+        tasks={
+            "p": [
+                registry.Task("p", 1, "a", depends_on=(("p", 2),)),
+                registry.Task("p", 2, "b", depends_on=(("p", 1),)),
+            ]
+        }
+    )
+    with pytest.raises(registry.RegistryError, match="cycle"):
+        registry.check_links(reg)
+
+
+def test_check_links_self_reference():
+    reg = registry.Registry(tasks={"p": [registry.Task("p", 1, "a", depends_on=(("p", 1),))]})
+    with pytest.raises(registry.RegistryError, match="cycle"):
+        registry.check_links(reg)
