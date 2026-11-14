@@ -10,6 +10,7 @@ from pathlib import Path
 
 from jearless import __version__
 from jearless import add as add_mod
+from jearless import archive as archive_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import graph as graph_mod
@@ -91,7 +92,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--tag", default=None, metavar="TAG")
 
-    sub.add_parser("archive", help="move done tasks out (Phase 4, on trigger)")
+    p = sub.add_parser("archive", help="move done-as-of-tag tasks into archive_<tag>.yml")
+    p.add_argument("tag", metavar="TAG")
 
     return parser
 
@@ -121,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
             return retro_mod.run(cwd, Path(args.plan))
         if args.command == "release":
             return release_mod.run(cwd, tag=args.tag)
+        if args.command == "archive":
+            return archive_mod.run(cwd, args.tag)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
