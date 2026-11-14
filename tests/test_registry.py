@@ -63,6 +63,55 @@ def test_malformed_yaml_rejected(tmp_path: Path):
         registry.load(tmp_path)
 
 
+# --- the .jearless/ home (task tooling/15) ---
+
+
+def test_home_registry_wins(tmp_path: Path):
+    (tmp_path / ".jearless").mkdir()
+    (tmp_path / ".jearless" / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 7\n      summary: home task\n", encoding="utf-8"
+    )
+    reg = registry.load(tmp_path)
+    assert reg.count() == 1 and reg.tasks["p"][0].summary == "home task"
+    assert reg.path == tmp_path / ".jearless" / "tasks.yml"
+    assert reg.nudge is False
+
+
+def test_root_registry_is_the_legacy_fallback(tmp_path: Path, capsys):
+    (tmp_path / "tasks.yml").write_text(MINIMAL, encoding="utf-8")
+    reg = registry.load(tmp_path)
+    assert reg.path == tmp_path / "tasks.yml" and reg.nudge is True
+    assert "canonical home" in capsys.readouterr().err  # a warning: stderr, never stdout
+    registry.load(tmp_path)  # the nudge prints once per registry path
+    assert "canonical home" not in capsys.readouterr().err
+
+
+def test_two_live_registries_refused(tmp_path: Path):
+    (tmp_path / ".jearless").mkdir()
+    (tmp_path / ".jearless" / "tasks.yml").write_text(MINIMAL, encoding="utf-8")
+    (tmp_path / "tasks.yml").write_text(MINIMAL, encoding="utf-8")
+    with pytest.raises(RegistryError, match="two live registries"):
+        registry.load(tmp_path)
+
+
+def test_birth_path_is_the_home(tmp_path: Path):
+    reg = registry.load(tmp_path)  # no registry anywhere — not an error
+    assert reg.count() == 0
+    assert reg.path == tmp_path / ".jearless" / "tasks.yml"
+
+
+def test_load_all_reads_archives_in_both_homes(tmp_path: Path):
+    (tmp_path / "archive_v1.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: root archive\n", encoding="utf-8"
+    )
+    (tmp_path / ".jearless").mkdir()
+    (tmp_path / ".jearless" / "archive_v2.yml").write_text(
+        "tasks:\n  p:\n    - id: 2\n      summary: home archive\n", encoding="utf-8"
+    )
+    reg = registry.load_all(tmp_path)
+    assert reg.count() == 2  # both homes feed the union
+
+
 def test_depends_on_bare_and_cross_project(tmp_path: Path):
     (tmp_path / "tasks.yml").write_text(
         "tasks:\n"

@@ -24,9 +24,11 @@ _HEADER = (
 
 
 def run(cwd: Path, tag: str) -> int:
-    archive_path = cwd / f"{ARCHIVE_PREFIX}{tag}.yml"
-    if archive_path.exists():
-        raise JearlessError(f"{archive_path.name} already exists — an archive file is frozen")
+    # an archive file is frozen — refused if it exists in either home
+    legacy_path = cwd / f"{ARCHIVE_PREFIX}{tag}.yml"
+    home_path = cwd / registry.HOMEDIR / f"{ARCHIVE_PREFIX}{tag}.yml"
+    if home_path.exists() or legacy_path.exists():
+        raise JearlessError(f"{home_path.name} already exists — an archive file is frozen")
     try:
         gitwrap.run(["rev-parse", "--verify", "--quiet", f"refs/tags/{tag}"], cwd)
     except gitwrap.GitError as exc:
@@ -40,7 +42,10 @@ def run(cwd: Path, tag: str) -> int:
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.width = 100000
 
-    reg_path = cwd / registry.REGISTRY_NAME
+    reg_path = registry.load(cwd).path
+    if reg_path is None or not reg_path.exists():
+        print(f"nothing done as of {tag} — the registry is untouched")
+        return 0
     data = yaml.load(reg_path)
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), dict):
         raise JearlessError(f"{registry.REGISTRY_NAME}: expected the 'tasks:' mapping")
@@ -59,12 +64,13 @@ def run(cwd: Path, tag: str) -> int:
         return 0
 
     yaml.dump(data, reg_path)
-    with archive_path.open("w", encoding="utf-8") as fh:
+    home_path.parent.mkdir(parents=True, exist_ok=True)
+    with home_path.open("w", encoding="utf-8") as fh:
         fh.write(_HEADER.format(tag=tag))
         yaml.dump({"tasks": moved}, fh)
 
     total = sum(len(entries) for entries in moved.values())
-    print(f"archived {total} task(s) done as of {tag} -> {archive_path.name}:")
+    print(f"archived {total} task(s) done as of {tag} -> {home_path.name}:")
     for project, entries in sorted(moved.items()):
         print(f"  {project}: " + ", ".join(str(entry["id"]) for entry in entries))
     print("commit both files to main — the union (registry + archives) keeps every identity")

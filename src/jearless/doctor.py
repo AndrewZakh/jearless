@@ -12,7 +12,7 @@ from pathlib import Path
 
 from jearless import config, gitwrap, registry
 from jearless.gitwrap import GitError
-from jearless.registry import REGISTRY_NAME, RegistryError
+from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
 
 
 def _check_registry(cwd: Path, findings: list[str]) -> None:
@@ -46,8 +46,15 @@ def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: 
 # normally ride branches via the hook; a direct one is human bookkeeping.
 # Markdown is documentation bookkeeping too — the sprint dashboard lives in
 # .md chunks (task tooling/13). Accepted price: a docs-only squash is invisible.
-_SANCTIONED_EXACT = frozenset({REGISTRY_NAME, "CHANGELOG.md", "env.yml"})
-_SANCTIONED_PREFIXES = ("archive_", "snapshots/")
+# The registry and archives are sanctioned in BOTH homes (task tooling/15).
+_H = f"{HOMEDIR}/"
+_SANCTIONED_EXACT = frozenset(
+    {REGISTRY_NAME, f"{_H}{REGISTRY_NAME}", "CHANGELOG.md", "env.yml"}
+)
+_SANCTIONED_PREFIXES = (
+    "archive_", f"{_H}archive_", "snapshots/", f"{_H}snapshots/",
+    f"{_H}reports/", f"{_H}plans/",
+)
 
 
 def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:

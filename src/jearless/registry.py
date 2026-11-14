@@ -1,6 +1,7 @@
 """The eternal task registry tasks.yml: frozen facts only, no live state (README)."""
 
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,12 +11,17 @@ from ruamel.yaml.error import YAMLError
 from jearless.errors import JearlessError
 
 REGISTRY_NAME = "tasks.yml"
+HOMEDIR = ".jearless"
 
 # Live-state fields are forbidden in the registry: git knows the state (README).
 FORBIDDEN_FIELDS = {"status"}
 
 # A dependency link is a frozen authorial fact (the story_points rule, task tooling/12).
 _DEP_CROSS_RE = re.compile(r"^([a-z0-9_]+)/(\d+)$")
+
+# The one-line nudge prints once per registry path per process when the legacy
+# root home is in use — one hint per command run, no spam across many loads.
+_root_nudged: set[str] = set()
 
 
 class RegistryError(JearlessError):
@@ -35,6 +41,8 @@ class Task:
 @dataclass
 class Registry:
     tasks: dict[str, list[Task]] = field(default_factory=dict)
+    path: Path | None = None  # the resolved registry file (home, legacy root, or birth)
+    nudge: bool = False  # True when the legacy root home is in use
 
     def all(self) -> list[Task]:
         return [t for tasks in self.tasks.values() for t in tasks]
@@ -145,13 +153,43 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
 
 
 def load(cwd: Path) -> Registry:
-    return load_path(cwd / REGISTRY_NAME)
+    """One canonical registry (task tooling/15): `.jearless/tasks.yml`, else the
+    legacy root file, else the `.jearless/` birth path (add creates it there).
+
+    Both existing is an emergency, not a choice — two live registries are the
+    drift disease, so the tool refuses instead of silently picking one.
+    """
+    home = cwd / HOMEDIR
+    home_reg, root_reg = home / REGISTRY_NAME, cwd / REGISTRY_NAME
+    if home_reg.exists() and root_reg.exists():
+        raise RegistryError(
+            f"two live registries: {home_reg} and {root_reg} — pick one;"
+            " git mv keeps the history"
+        )
+    if home_reg.exists():
+        reg = load_path(home_reg)
+        reg.path, reg.nudge = home_reg, False
+        return reg
+    if root_reg.exists():
+        reg = load_path(root_reg)
+        reg.path, reg.nudge = root_reg, True
+        if str(root_reg) not in _root_nudged:
+            # a warning, not output: it must never pollute a rendered chart
+            print(f"jear: the registry lives at the root — the canonical home is {home_reg}",
+                  file=sys.stderr)
+            _root_nudged.add(str(root_reg))
+        return reg
+    return Registry(path=home_reg)  # birth: `add` creates the file here
 
 
 def load_all(cwd: Path) -> Registry:
-    """The registry plus every archive: the identity source for the changelog and analytics."""
+    """The registry plus every archive: the identity source for the changelog and analytics.
+
+    Archives are read from BOTH homes — frozen files stay where they were born.
+    """
     combined = load(cwd)
-    for path in sorted(cwd.glob("archive_*.yml")):
+    home = cwd / HOMEDIR
+    for path in sorted(set(cwd.glob("archive_*.yml")) | set(home.glob("archive_*.yml"))):
         for project, tasks in load_path(path).tasks.items():
             combined.tasks.setdefault(project, []).extend(tasks)
     return combined
