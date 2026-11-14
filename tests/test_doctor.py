@@ -97,6 +97,13 @@ def test_link_cycle_is_a_finding(repo, capsys):
     assert "links:" in out and "cycle" in out
 
 
+def test_two_live_registries_is_a_finding(repo, capsys):
+    (repo / ".jearless").mkdir()
+    (repo / ".jearless" / "tasks.yml").write_text(REGISTRY, encoding="utf-8")
+    assert doctor_mod.run(repo) == 1
+    assert "two live registries" in capsys.readouterr().out
+
+
 # --- *.md = documentation bookkeeping (task tooling/13) ---
 
 

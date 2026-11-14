@@ -94,7 +94,8 @@ def add(
 
     cfg = config.load(cwd)
     _guard(cwd, cfg, summary, remote, yes)
-    candidates = [registry.load(cwd).max_id(project), _max_from_archives(cwd, project)]
+    reg = registry.load(cwd)
+    candidates = [reg.max_id(project), _max_from_archives(cwd, project)]
     from_branches = _max_from_branches(cwd, cfg, project, remote)
     if from_branches is not None:
         candidates.append(from_branches)
@@ -118,7 +119,8 @@ def add(
                     f"--depends {dep[0]}/{dep[1]}: no such task in the registry or archives"
                 )
 
-    path = cwd / REGISTRY_NAME
+    path = reg.path  # the resolved home (or the .jearless birth path)
+    path.parent.mkdir(parents=True, exist_ok=True)  # the .jearless birth
     yaml = YAML(typ="rt")  # round-trip: comments survive the append
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.width = 100000  # never wrap a long summary

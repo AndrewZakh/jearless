@@ -37,7 +37,9 @@ def test_append_new_project_starts_from_one(tmp_path: Path):
 
 def test_registry_birth_from_template(tmp_path: Path):
     assert add_mod.add(tmp_path, "tooling", "the very first task") == 1
-    text = (tmp_path / "tasks.yml").read_text(encoding="utf-8")
+    home_reg = tmp_path / ".jearless" / "tasks.yml"
+    assert home_reg.exists()  # newborn registries live in the .jearless home
+    text = home_reg.read_text(encoding="utf-8")
     assert text.startswith("# The eternal jearless task registry")
     assert "tasks:" in text
 

@@ -46,8 +46,8 @@ def test_archive_moves_done_as_of_tag(repo, capsys):
     assert archive_mod.run(repo, "v0.1.0") == 0
     out = capsys.readouterr().out
     assert "archived 2 task(s)" in out and "p: 1, 2" in out
-    # the archive file is frozen history with the moved entries intact
-    text = (repo / "archive_v0.1.0.yml").read_text(encoding="utf-8")
+    # the archive file is frozen history with the moved entries intact, in the home
+    text = (repo / ".jearless" / "archive_v0.1.0.yml").read_text(encoding="utf-8")
     assert "done as of v0.1.0" in text
     assert "first task" in text and "second task" in text and "depends_on" in text
     # the registry keeps the rest; identity is the union
@@ -56,6 +56,14 @@ def test_archive_moves_done_as_of_tag(repo, capsys):
     assert registry.load_all(repo).count() == 3  # p/2's link resolves across the union
     # the remaining file stays valid YAML with its structure
     assert registry.load(repo).max_id("p") == 3
+
+
+def test_root_archives_still_count(repo):
+    """Frozen archives in the legacy root home stay in the identity union."""
+    (repo / "archive_v0.5.0.yml").write_text(
+        "tasks:\n  p:\n    - id: 9\n      summary: old archive\n", encoding="utf-8"
+    )
+    assert registry.load_all(repo).count() == 4  # 3 registry tasks + 1 root archive
 
 
 def test_second_archive_same_tag_rejected(repo):
