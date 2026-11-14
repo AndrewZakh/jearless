@@ -107,3 +107,22 @@ tasks:
         doctor reports broken links as findings. add gains --depends
         (repeatable); sprint annotates "after p/N".
       story_points: 2
+    - id: 13
+      summary: 'sprint — markdown dashboard: --write with default path'
+      description: |
+        The resurrected sprint.md, resolved (it died as a hand-maintained
+        cache; it returns as a generated report). Bare sprint stays a PURE
+        view — peeking never writes. --write [PATH] targets ./sprint.md by
+        default; three cases: file absent — create whole-file with
+        jear:sprint markers inside; markers present — replace the chunk only,
+        human text around is untouchable; markers absent — refuse with a
+        paste-ready snippet (a human file can never be overwritten).
+        The chunk carries a stamp: generated-at · git@sha — staleness is
+        visible (sha mismatch = the report is stale). Write only on content
+        change: a no-op refresh leaves the tree clean. The human commits the
+        refresh (nothing automatic writes to main); doctor sanctions
+        *.md-only commits as documentation bookkeeping — the accepted price
+        (a docs-only squash is invisible) is recorded. Sections with counts,
+        points, after-links, branches — the same canonical join, second
+        renderer (the changelog/timeline render/run pattern).
+      story_points: 2
