@@ -41,7 +41,7 @@ everything alive. See [The idea](#the-idea) for the full model.
 
 Task tracking and a changelog on bare git. No trackers, no infrastructure.
 
-1. `tasks.yml` — the **eternal task registry**: subproject, id, summary, description, story_points. Tasks are added and never deleted; the file only grows. No live-state fields.
+1. `tasks.yml` — the **eternal task registry**: subproject, id, summary, description, story_points. Tasks are added and never deleted; the file only grows. No live-state fields. It lives under `.jearless/` with the other jearless artifacts (archives, plans, reports); the root path is the legacy fallback, and both existing at once is refused — two live registries are the drift disease.
 2. `jear take door_design 16` — zero commits, zero YAML edits: verify the branch is absent on origin, create `feature/door_design/16-slug`, push. **Taking a task = pushing the branch.**
 3. Merging is a true merge (`--no-ff`): the branch name lands in history through the merge commit. No squash, no rebase merges.
 4. The changelog is not stored — it is generated at release time: merge commits between tags → the regex from the config → the line template. The line is the summary from the registry or the slug from the branch name.
