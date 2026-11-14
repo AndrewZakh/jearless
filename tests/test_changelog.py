@@ -81,3 +81,47 @@ def test_archives_extend_identity(history, capsys):
     _merge_branch(history, "feature/p/77-old-thing", "Merge branch 'feature/p/77-old-thing'")
     changelog_mod.run(history)
     assert "- p-77: archived task" in capsys.readouterr().out
+
+
+# --- double-merge resilience (task tooling/11): merge → restore → merge again ---
+
+
+def _remerge_branch(clone, branch: str):
+    """A second round on the same task branch: extra commit, merged again."""
+    gitwrap.run(["checkout", "-q", branch], clone)
+    (clone / f"{branch.replace('/', '_')}_more.txt").write_text("second round", encoding="utf-8")
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "second round"], clone)
+    gitwrap.run(["push", "-q", "origin", branch], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", f"Merge branch '{branch}'", branch], clone)
+    gitwrap.run(["push", "-q", "origin", "main"], clone)
+
+
+def test_double_merge_single_entry(history, capsys):
+    clone = history
+    _merge_branch(clone, "feature/p/1-first", "Merge branch 'feature/p/1-first'")
+    _remerge_branch(clone, "feature/p/1-first")
+    assert changelog_mod.run(clone) == 0
+    out = capsys.readouterr().out
+    assert out.count("- p-1: first task") == 1  # collapsed, not duplicated
+    assert "1 re-merge(s) collapsed" in out  # collapsed aloud
+
+
+def test_first_merge_predates_range(history, capsys):
+    clone = history
+    _merge_branch(clone, "feature/p/1-first", "Merge branch 'feature/p/1-first'")
+    gitwrap.run(["tag", "v0.1.0"], clone)
+    _remerge_branch(clone, "feature/p/1-first")
+    capsys.readouterr()
+    changelog_mod.run(clone, from_tag="v0.1.0")
+    out = capsys.readouterr().out
+    assert "- p-1" not in out  # shipped in v0.1.0; the re-merge is not a new entry
+    assert "1 re-merge(s) collapsed" in out
+
+
+def test_single_merge_has_no_remerge_footer(history, capsys):
+    _merge_branch(history, "feature/p/1-first", "Merge branch 'feature/p/1-first'")
+    changelog_mod.run(history)
+    out = capsys.readouterr().out
+    assert "- p-1: first task" in out and "re-merge" not in out

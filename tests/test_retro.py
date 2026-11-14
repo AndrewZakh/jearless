@@ -78,3 +78,26 @@ def test_retro_sub_day_earliness_is_not_a_day(repo, capsys):
 def test_retro_missing_plan(repo):
     with pytest.raises(Exception, match="cannot read the plan"):
         retro_mod.run(repo, repo / "no-such-plan.md")
+
+
+def test_double_merge_joins_first_arrival(repo, capsys):
+    """Task tooling/11: the join uses the first arrival, not the newest re-merge."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
+    gitwrap.run(["checkout", "-q", "feature/p/1-first"], repo)
+    (repo / "feature_p_1-first_more.txt").write_text("second round", encoding="utf-8")
+    gitwrap.run(["add", "."], repo)
+    gitwrap.run(["commit", "-q", "-m", "second round"], repo)
+    gitwrap.run(["push", "-q", "origin", "feature/p/1-first"], repo)
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-first'", "feature/p/1-first"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-05T12:00:00"},
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
+    assert retro_mod.run(repo, repo / "plan.md") == 0
+    out = capsys.readouterr().out
+    assert out.count("p_1:") == 1
+    # the first arrival ended 11-02 (on time); the 11-05 re-merge is discarded
+    assert "p_1: planned 11-01→11-02, actual 11-01→11-02, on time" in out
