@@ -42,8 +42,8 @@ def out(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     return run(args, cwd, env).stdout.strip()
 
 
-def lines(args: list[str], cwd: Path) -> list[str]:
-    return [ln for ln in run(args, cwd).stdout.splitlines() if ln.strip()]
+def lines(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> list[str]:
+    return [ln for ln in run(args, cwd, env).stdout.splitlines() if ln.strip()]
 
 
 def is_repo(cwd: Path) -> bool:
