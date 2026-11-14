@@ -18,6 +18,24 @@ from jearless import config, gitwrap, registry, state
 _DATE = "%Y-%m-%dT%H:%M:%S"
 _UTC = {"TZ": "UTC"}  # --date=format-local renders in the process local zone
 
+# GitHub renders mermaid on the page's own background (dark mode default for
+# many): the section stripes turn gray-brown and swallow the bars. We do not
+# force a theme (that would break the other mode) — we paint with the forge's
+# own CSS variables, which cascade into the inline SVG, and keep literal
+# fallbacks for plain renderers. Section stripes go transparent, bars take
+# the accent color, labels take the foreground color.
+_GH_THEME = (
+    '%%{init: {"themeCSS": "'
+    ".section0,.section1,.section2,.section3{fill:transparent} "
+    ".task,.rect{fill:var(--color-accent-emphasis,#0969da);"
+    "stroke:var(--color-accent-emphasis,#0969da)} "
+    ".taskText,.taskTextOutsideLeft,.taskTextOutsideRight"
+    "{fill:var(--color-fg-default,#1f2328)} "
+    ".grid .tick line{stroke:var(--color-border-default,#d0d7de)} "
+    '.grid path{stroke:var(--color-border-default,#d0d7de)}'
+    '"}}%%'
+)
+
 
 def _utc_now() -> str:
     return datetime.now(UTC).strftime(_DATE)
@@ -120,6 +138,7 @@ def render(
         bars = live_bars(cwd, cfg, reg, remote)
         title = title or "jearless — live"
     lines = [
+        _GH_THEME,
         "gantt",
         f"    title {title}",
         # mermaid's own tokens, not strftime patterns — %Y would not render

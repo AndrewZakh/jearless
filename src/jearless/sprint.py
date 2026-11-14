@@ -98,9 +98,15 @@ def _write_dashboard(path: Path, block: str) -> str:
     end = text.index(CHUNK_END)
     if end < begin:
         raise _refuse(path)
-    new = text[: begin + len(CHUNK_BEGIN)] + "\n" + block + "\n" + text[end:]
-    if new == text:
+    old_block = text[begin + len(CHUNK_BEGIN) : end].strip("\n")
+    # the stamp carries the minute — compare the board BODY, not the metadata:
+    # a no-op refresh leaves the tree clean even across a minute boundary,
+    # and the stamp then means "generated when the board last changed"
+    old_body = "\n".join(old_block.splitlines()[2:])
+    new_body = "\n".join(block.splitlines()[2:])
+    if old_body == new_body:
         return f"{path.name}: up to date — the tree stays clean"
+    new = text[: begin + len(CHUNK_BEGIN)] + "\n" + block + "\n" + text[end:]
     path.write_text(new, encoding="utf-8")
     return f"{path.name}: dashboard chunk refreshed — commit it to publish"
 

@@ -43,9 +43,12 @@ def _merge_with_dates(clone, branch: str, author: str, committer: str):
 def test_empty_repo_timeline_is_valid_gantt(repo, capsys):
     assert timeline_mod.run(repo, snapshot="origin/main") == 0
     out = capsys.readouterr().out
-    assert out.startswith("gantt") and "section" not in out
+    # the forge-contrast init directive precedes the diagram (mermaid syntax)
+    assert out.startswith("%%{init:") and "\ngantt\n" in out
+    assert "\n    section " not in out  # no bars — no section headers
     # mermaid tokens, not strftime patterns — %Y in dateFormat would not render
     assert "dateFormat YYYY-MM-DDTHH:mm:ss" in out
+    assert "--color-accent-emphasis" in out  # the forge-variable styling
 
 
 def test_snapshot_carries_author_and_committer_dates(repo, capsys):
