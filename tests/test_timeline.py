@@ -48,7 +48,7 @@ def test_empty_repo_timeline_is_valid_gantt(repo, capsys):
     assert "\n    section " not in out  # no bars — no section headers
     # mermaid tokens, not strftime patterns — %Y in dateFormat would not render
     assert "dateFormat YYYY-MM-DDTHH:mm:ss" in out
-    assert "--color-accent-emphasis" in out  # the forge-variable styling
+    assert "#0d1117" in out and "#58a6ff" in out  # the literal dark-card palette
 
 
 def test_snapshot_carries_author_and_committer_dates(repo, capsys):
@@ -94,8 +94,21 @@ def test_double_merge_one_bar_first_arrival(repo, capsys):
     assert timeline_mod.run(repo, snapshot="origin/main") == 0
     out = capsys.readouterr().out
     assert out.count("p_1,") == 1  # one bar — the duplicate mermaid id would break the render
-    assert "p_1, 2026-11-01T10:00:00, 2026-11-02T10:00:00" in out  # the first arrival
+    # the first arrival's START is true; the sliver END may be floored for visibility
+    assert "p_1, 2026-11-01T10:00:00," in out
     assert "2026-11-05" not in out  # the re-merge is discarded
+    assert "%% visibility floor" in out  # the floor is disclosed on the chart
+
+
+def test_floor_stretches_slivers_on_a_long_axis(repo, capsys):
+    """Second-scale bars on a days-scale axis are sub-pixel: the render floors them."""
+    _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-01T10:00:06")
+    _merge_with_dates(repo, "feature/p/2-second", "2026-11-09T10:00:00", "2026-11-09T10:00:06")
+    assert timeline_mod.run(repo, snapshot="origin/main") == 0
+    out = capsys.readouterr().out
+    assert "2026-11-01T10:00:06" not in out  # the raw 6-second end is gone
+    assert "2026-11-09T10:00:06" not in out
+    assert "%% visibility floor" in out
 
 
 def test_live_open_bar_and_zero_commit_branch_skipped(repo, capsys):
