@@ -57,7 +57,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("project")
     p.add_argument("id", type=int)
 
-    sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
+    p = sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
+    p.add_argument(
+        "--write",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="PATH",
+        help="refresh the markdown dashboard (default ./sprint.md); bare sprint only prints",
+    )
 
     p = sub.add_parser(
         "changelog", help="changelog from merge commits (Phase 2); dry-run is the only mode"
@@ -102,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
             print(take_mod.take(cwd, args.project, args.id))
             return 0
         if args.command == "sprint":
-            return sprint_mod.run(cwd)
+            return sprint_mod.run(cwd, write=args.write)
         if args.command == "changelog":
             return changelog_mod.run(cwd, from_tag=args.from_tag, to_tag=args.to_tag)
         if args.command == "doctor":

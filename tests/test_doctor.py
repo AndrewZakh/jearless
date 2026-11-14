@@ -95,3 +95,23 @@ def test_link_cycle_is_a_finding(repo, capsys):
     assert doctor_mod.run(repo) == 1
     out = capsys.readouterr().out  # one drain: a second readouterr() returns empty
     assert "links:" in out and "cycle" in out
+
+
+# --- *.md = documentation bookkeeping (task tooling/13) ---
+
+
+def test_md_only_commit_is_sanctioned(repo, capsys):
+    (repo / "NOTES.md").write_text("notes\n", encoding="utf-8")
+    gitwrap.run(["add", "NOTES.md"], repo)
+    gitwrap.run(["commit", "-q", "-m", "docs: notes"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    assert doctor_mod.run(repo) == 0  # documentation bookkeeping
+
+
+def test_md_plus_code_commit_is_flagged(repo, capsys):
+    (repo / "NOTES.md").write_text("notes\n", encoding="utf-8")
+    (repo / "code.py").write_text("x = 1\n", encoding="utf-8")
+    gitwrap.run(["add", "."], repo)
+    gitwrap.run(["commit", "-q", "-m", "docs and code mixed"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    assert doctor_mod.run(repo) == 1  # code inside: still a hole

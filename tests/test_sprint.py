@@ -1,6 +1,6 @@
 import pytest
 
-from jearless import gitwrap
+from jearless import cli, gitwrap
 from jearless import sprint as sprint_mod
 from jearless import state as state_mod
 from jearless import take as take_mod
@@ -83,3 +83,58 @@ def test_sprint_requires_a_remote(empty_repo, monkeypatch, capsys):
     monkeypatch.chdir(empty_repo)
     with pytest.raises(Exception, match="cannot fetch"):
         sprint_mod.run(empty_repo)
+
+
+# --- the markdown dashboard (task tooling/13) ---
+
+
+def test_bare_sprint_stays_pure_print(board):
+    assert sprint_mod.run(board) == 0
+    assert not (board / "sprint.md").exists()  # peeking never writes
+
+
+def test_write_creates_dashboard_with_markers_and_stamp(board):
+    assert sprint_mod.run(board, write="") == 0  # empty string = the default path
+    text = (board / "sprint.md").read_text(encoding="utf-8")
+    assert text.startswith("# Sprint")
+    assert sprint_mod.CHUNK_BEGIN in text and sprint_mod.CHUNK_END in text
+    assert "_generated" in text and "git@" in text
+    assert "### available (3)" in text and "- **p/1** — first task" in text
+    assert "after p/1" in text  # the depends_on annotation renders too
+
+
+def test_write_replaces_chunk_preserving_human_text(board):
+    sprint_mod.run(board, write="")
+    (board / "sprint.md").open("a", encoding="utf-8").write("\n## My notes\nhuman text\n")
+    take_mod.take(board, "p", 2)  # the state changes: p/2 goes in_progress
+    assert sprint_mod.run(board, write="") == 0
+    text = (board / "sprint.md").read_text(encoding="utf-8")
+    assert "human text" in text  # untouched
+    assert "### in_progress (1)" in text and "`feature/p/2-second-task`" in text
+
+
+def test_write_noop_leaves_tree_clean(board):
+    sprint_mod.run(board, write="")
+    before = (board / "sprint.md").read_bytes()
+    assert sprint_mod.run(board, write="") == 0
+    assert (board / "sprint.md").read_bytes() == before  # byte-identical
+
+
+def test_write_refuses_a_human_file(board):
+    (board / "NOTES.md").write_text("# my notes\nno markers here\n", encoding="utf-8")
+    with pytest.raises(Exception, match="never overwritten") as exc:
+        sprint_mod.run(board, write="NOTES.md")
+    assert (board / "NOTES.md").read_text(encoding="utf-8") == "# my notes\nno markers here\n"
+    assert "jear:sprint:begin" in str(exc.value)  # the paste-ready snippet rides the error
+
+
+def test_write_explicit_path(board):
+    assert sprint_mod.run(board, write="dash.md") == 0
+    assert (board / "dash.md").exists()
+    assert not (board / "sprint.md").exists()  # the default path untouched
+
+
+def test_sprint_write_cli_wiring(board, monkeypatch):
+    monkeypatch.chdir(board)
+    assert cli.main(["sprint", "--write", "via-cli.md"]) == 0
+    assert (board / "via-cli.md").exists()
