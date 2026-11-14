@@ -6,6 +6,7 @@ from jearless import __version__, cli
 
 ALL_COMMANDS = [
     "add", "take", "sprint", "changelog", "doctor", "graph", "timeline", "retro", "archive",
+    "release",
 ]
 
 
@@ -27,12 +28,6 @@ def test_subcommand_help(command):
     with pytest.raises(SystemExit) as exc:
         cli.main([command, "--help"])
     assert exc.value.code == 0
-
-
-@pytest.mark.parametrize("argv", [["archive"]])
-def test_stubs_exit_cleanly(argv, capsys):
-    assert cli.main(argv) == 0
-    assert "not implemented" in capsys.readouterr().out
 
 
 def test_sprint_without_remote_fails_cleanly(empty_repo: Path, monkeypatch, capsys):
