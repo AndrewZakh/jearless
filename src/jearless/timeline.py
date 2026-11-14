@@ -10,7 +10,8 @@ frozen by a tag and becomes a release artifact (task tooling/9). Bar ids are
 
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from dataclasses import replace as dataclass_replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from jearless import config, gitwrap, registry, state
@@ -18,23 +19,26 @@ from jearless import config, gitwrap, registry, state
 _DATE = "%Y-%m-%dT%H:%M:%S"
 _UTC = {"TZ": "UTC"}  # --date=format-local renders in the process local zone
 
-# GitHub renders mermaid on the page's own background (dark mode default for
-# many): the section stripes turn gray-brown and swallow the bars. We do not
-# force a theme (that would break the other mode) — we paint with the forge's
-# own CSS variables, which cascade into the inline SVG, and keep literal
-# fallbacks for plain renderers. Section stripes go transparent, bars take
-# the accent color, labels take the foreground color.
-_GH_THEME = (
+# GitHub renders mermaid in a sandbox where the page's CSS variables do not
+# cascade (the var() attempt painted the text near-black on a dark canvas),
+# and the default theme's section stripes swallow the bars. So we own the
+# canvas: a literal dark card (GitHub's dark colors) — identical in both
+# modes, readable everywhere, like a dark code block.
+_CHART_THEME = (
     '%%{init: {"themeCSS": "'
+    "svg{background-color:#0d1117} "
+    "text{fill:#e6edf3} "
     ".section0,.section1,.section2,.section3{fill:transparent} "
-    ".task,.rect{fill:var(--color-accent-emphasis,#0969da);"
-    "stroke:var(--color-accent-emphasis,#0969da)} "
-    ".taskText,.taskTextOutsideLeft,.taskTextOutsideRight"
-    "{fill:var(--color-fg-default,#1f2328)} "
-    ".grid .tick line{stroke:var(--color-border-default,#d0d7de)} "
-    '.grid path{stroke:var(--color-border-default,#d0d7de)}'
+    ".task,.rect{fill:#58a6ff;stroke:#1f6feb} "
+    ".grid .tick line{stroke:#30363d} "
+    '.grid path{stroke:#30363d}'
     '"}}%%'
 )
+
+# Second-scale bars on a days-scale axis are sub-pixel — no color saves them.
+# The render floors every bar to 3% of the axis span (disclosed in the file;
+# exact times live in git). Rows are per-task, so floored bars never collide.
+_FLOOR_FRACTION = 0.03
 
 
 def _utc_now() -> str:
@@ -125,6 +129,40 @@ def _sanitize(label: str) -> str:
     return re.sub(r"[:,\n]", " ", label).strip()
 
 
+def _floor_slivers(bars: list[Bar]) -> tuple[list[Bar], str | None]:
+    """Stretch sub-pixel bars to 3% of the axis span; longer bars are untouched.
+
+    The floor distorts only the rendered END of a sliver — the start stays
+    true, and the disclosure rides the chart as a mermaid comment.
+    """
+    if not bars:
+        return bars, None
+    span = max(datetime.fromisoformat(b.end) for b in bars) - min(
+        datetime.fromisoformat(b.start) for b in bars
+    )
+    floor = timedelta(seconds=span.total_seconds() * _FLOOR_FRACTION)
+    if floor <= timedelta(0):
+        return bars, None
+    out: list[Bar] = []
+    floored = 0
+    for bar in bars:
+        duration = datetime.fromisoformat(bar.end) - datetime.fromisoformat(bar.start)
+        if duration >= floor:
+            out.append(bar)
+            continue
+        floored += 1
+        out.append(
+            dataclass_replace(
+                bar, end=(datetime.fromisoformat(bar.start) + floor).strftime(_DATE)
+            )
+        )
+    note = (
+        f"%% visibility floor: {floor} per bar ({floored} bar(s) stretched) —"
+        " exact times live in git"
+    )
+    return out, note
+
+
 def render(
     cwd: Path, snapshot: str | None = None, remote: str = "origin", title: str | None = None
 ) -> str:
@@ -137,14 +175,17 @@ def render(
     else:
         bars = live_bars(cwd, cfg, reg, remote)
         title = title or "jearless — live"
+    bars, floor_note = _floor_slivers(bars)
     lines = [
-        _GH_THEME,
+        _CHART_THEME,
         "gantt",
         f"    title {title}",
         # mermaid's own tokens, not strftime patterns — %Y would not render
         "    dateFormat YYYY-MM-DDTHH:mm:ss",
         "    axisFormat %d.%m %H:%M",
     ]
+    if floor_note:
+        lines.append(floor_note)
     for project in sorted({b.project for b in bars}):
         lines.append(f"    section {project}")
         for bar in sorted(
