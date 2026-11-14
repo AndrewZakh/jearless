@@ -50,9 +50,11 @@ def test_first_release(repo, capsys):
     assert "refs/tags/v0.1.0" in gitwrap.out(["ls-remote", "--tags", "origin"], repo)
     text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
     assert "## v0.1.0 (" in text and "- p-1: first task" in text
-    snap = (repo / "snapshots" / "timeline-v0.1.0.mmd").read_text(encoding="utf-8")
+    snap = (repo / ".jearless" / "snapshots" / "timeline-v0.1.0.mmd").read_text(encoding="utf-8")
     assert snap.startswith("%%{init:") and "\ngantt\n" in snap
     assert "p_1, 2026-11-01T10:00:00" in snap
+    report = (repo / ".jearless" / "reports" / "report-v0.1.0.md").read_text(encoding="utf-8")
+    assert report.startswith("# Report v0.1.0") and "## Velocity" in report
     assert gitwrap.out(["status", "--porcelain"], repo) == ""
     # the release artifacts are sanctioned: doctor stays silent about them
     assert doctor_mod.run(repo) == 0

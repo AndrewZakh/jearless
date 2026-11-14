@@ -16,6 +16,7 @@ from jearless import doctor as doctor_mod
 from jearless import graph as graph_mod
 from jearless import plan as plan_mod
 from jearless import release as release_mod
+from jearless import report as report_mod
 from jearless import retro as retro_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
@@ -99,6 +100,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("file", metavar="FILE")
     p.add_argument("--gantt", action="store_true", help="render the derived gantt-of-the-plan")
 
+    p = sub.add_parser("report", help="the release-time PM snapshot (task tooling/17)")
+    p.add_argument("tag", metavar="TAG")
+
     p = sub.add_parser("archive", help="move done-as-of-tag tasks into archive_<tag>.yml")
     p.add_argument("tag", metavar="TAG")
 
@@ -134,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
             return archive_mod.run(cwd, args.tag)
         if args.command == "plan":
             return plan_mod.run(cwd, Path(args.file), gantt=args.gantt)
+        if args.command == "report":
+            return report_mod.run(cwd, args.tag)
         print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
         return 0
     except JearlessError as exc:
