@@ -12,6 +12,7 @@ from jearless import __version__
 from jearless import add as add_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
+from jearless import graph as graph_mod
 from jearless import release as release_mod
 from jearless import retro as retro_mod
 from jearless import sprint as sprint_mod
@@ -44,6 +45,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("summary")
     p.add_argument("--points", type=int, default=None)
     p.add_argument("--yes", action="store_true", help="skip the duplicate guard")
+    p.add_argument(
+        "--depends",
+        action="append",
+        default=None,
+        metavar="TASK",
+        help="link to an existing task: number or project/number (repeatable)",
+    )
 
     p = sub.add_parser("take", help="take a task: branch + push (Phase 1)")
     p.add_argument("project")
@@ -59,6 +67,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="accepted for symmetry; always dry")
 
     sub.add_parser("doctor", help="diagnostics: unattributed commits etc. (Phase 2)")
+
+    sub.add_parser("graph", help="mermaid flowchart of the registry's task links")
 
     p = sub.add_parser("timeline", help="actual timeline, mermaid (Phase 3)")
     group = p.add_mutually_exclusive_group()
@@ -83,7 +93,10 @@ def main(argv: list[str] | None = None) -> int:
     cwd = Path.cwd()
     try:
         if args.command == "add":
-            add_mod.add(cwd, args.project, args.summary, args.points, yes=args.yes)
+            add_mod.add(cwd, args.project, args.summary, args.points, yes=args.yes, depends=args.depends)
+            return 0
+        if args.command == "graph":
+            print(graph_mod.render(cwd), end="")
             return 0
         if args.command == "take":
             print(take_mod.take(cwd, args.project, args.id))

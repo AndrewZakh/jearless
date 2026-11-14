@@ -12,6 +12,7 @@ tasks:
       summary: first task
     - id: 2
       summary: second task
+      depends_on: 1
     - id: 3
       summary: third task
 """
@@ -59,6 +60,7 @@ def test_sprint_three_states(board, capsys):
     assert sprint_mod.run(board) == 0
     out = capsys.readouterr().out
     assert "in_progress (1):" in out and "p/2" in out
+    assert "after p/1" in out  # the dependency annotation (task tooling/12)
     assert "done (1):" in out and "p/3" in out
     assert "available (1):" in out and "p/1" in out
     assert "feature/p/77-ghost" in out  # the visible orphan

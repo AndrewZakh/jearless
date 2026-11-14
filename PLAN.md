@@ -25,6 +25,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
 | `archive <tag>` | move done tasks into `archive_<tag>.yml` — only on the ergonomics trigger | 4 |
 | `release [--tag TAG]` | tag + changelog section + timeline snapshot in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them | — |
+| `graph` | mermaid flowchart of the registry's `depends_on` links — the plan-side dependency view (gantt cannot draw arrows); refuses unknown targets and cycles, doctor reports them as findings | — |
 
 ## Phases and Definitions of Done
 
