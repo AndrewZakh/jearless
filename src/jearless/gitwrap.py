@@ -38,8 +38,8 @@ def run(
     return proc
 
 
-def out(args: list[str], cwd: Path) -> str:
-    return run(args, cwd).stdout.strip()
+def out(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
+    return run(args, cwd, env).stdout.strip()
 
 
 def lines(args: list[str], cwd: Path) -> list[str]:

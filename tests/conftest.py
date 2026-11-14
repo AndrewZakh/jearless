@@ -1,8 +1,16 @@
+import time
 from pathlib import Path
 
 import pytest
 
 from jearless import gitwrap
+
+
+@pytest.fixture(autouse=True)
+def _utc_clock(monkeypatch):
+    """One clock for every test: naive git dates are recorded as UTC."""
+    monkeypatch.setenv("TZ", "UTC")
+    time.tzset()
 
 
 @pytest.fixture

@@ -1,19 +1,26 @@
 """timeline: the actual, derived from git (README) — start = author date of the
 branch's first own commit, end = committer date of the merge commit.
 
-Live is printed on demand and never committed; the snapshot is frozen by a tag
-and becomes a release artifact (the release step's business, task tooling/9).
-Bar ids are <project>_<num> — the join key for retro (README).
+All rendered times are UTC — one clock for the whole chart (task tooling/14's
+bot catch: a local author date against a UTC "now" made an open bar run
+backwards). Live is printed on demand and never committed; the snapshot is
+frozen by a tag and becomes a release artifact (task tooling/9). Bar ids are
+<project>_<num> — the join key for retro (README).
 """
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from jearless import config, gitwrap, registry, state
 
 _DATE = "%Y-%m-%dT%H:%M:%S"
+_UTC = {"TZ": "UTC"}  # --date=format-local renders in the process local zone
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).strftime(_DATE)
 
 
 @dataclass(frozen=True)
@@ -26,7 +33,9 @@ class Bar:
 
 
 def _author_date(cwd: Path, sha: str) -> str:
-    return gitwrap.out(["log", "-1", "--format=%ad", f"--date=format:{_DATE}", sha], cwd)
+    return gitwrap.out(
+        ["log", "-1", "--format=%ad", f"--date=format-local:{_DATE}", sha], cwd, env=_UTC
+    )
 
 
 def _label(reg: registry.Registry, m: re.Match) -> str:
@@ -55,7 +64,9 @@ def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) 
     earliest merge owns the bar and the newer one is discarded.
     """
     log = gitwrap.out(
-        ["log", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format:{_DATE}"], cwd
+        ["log", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
+        cwd,
+        env=_UTC,
     )
     bars: dict[tuple[str, int], Bar] = {}
     for line in reversed([ln for ln in log.splitlines() if ln.strip()]):  # oldest first
@@ -77,7 +88,7 @@ def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str
     """Done tasks plus in-progress branches, the latter ending 'now'."""
     done = merge_bars(cwd, cfg, reg, f"{remote}/main")
     done_keys = {(b.project, b.num) for b in done}
-    now = datetime.now().strftime(_DATE)
+    now = _utc_now()
     bars = list(done)
     for name, sha in gitwrap.remote_heads(cwd, remote).items():
         m = cfg.match_branch(name)

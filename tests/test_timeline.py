@@ -59,6 +59,19 @@ def test_snapshot_carries_author_and_committer_dates(repo, capsys):
     assert "p_1, 2026-11-01T10:00:00, 2026-11-03T18:00:00" in out
 
 
+def test_times_render_in_utc_regardless_of_recorded_offset(repo, capsys):
+    """Task tooling/14's bot catch: a commit recorded in +03 must render in UTC.
+
+    Mixed timezones made an open bar run backwards (local author date vs UTC
+    "now" on the runner) — all rendered times are UTC, one clock for the chart.
+    """
+    _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00+03:00", "2026-11-02T10:00:00+03:00")
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    assert timeline_mod.run(repo, snapshot="v0.1.0") == 0
+    out = capsys.readouterr().out
+    assert "p_1, 2026-11-01T07:00:00, 2026-11-02T07:00:00" in out
+
+
 def test_double_merge_one_bar_first_arrival(repo, capsys):
     """Task tooling/11: two merges naming one branch — ONE bar, the first arrival."""
     _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
