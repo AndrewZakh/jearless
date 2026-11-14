@@ -1,0 +1,8 @@
+plan:
+  goal: the PM phase — plans, reports, RAG, typed take
+  tasks:
+    - task: tooling/17
+      planned: {start: 2026-11-17, end: 2026-11-19}
+    - task: tooling/18
+      planned: {start: 2026-11-19, end: 2026-11-21}
+    - task: tooling/19
