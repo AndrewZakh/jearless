@@ -11,6 +11,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 - **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
 - **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
 - **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping.
+- **The MR dashboard is a forge comment, not a tree file** (task tooling/14): a `pull_request` Action installs the PR's own jearless, renders the live timeline (mermaid renders right in GitHub comments) plus the board, and maintains one sticky comment per MR. No ref moves — the charter invariant is untouched; sprint.md stays human-run.
 
 ## The CLI surface (mapped to the README)
 
