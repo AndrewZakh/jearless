@@ -11,6 +11,8 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 - **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
 - **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
 - **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping.
+- **Artifacts live under `.jearless/`** (task tooling/15): the registry, archives, plans, reports; the public face stays at the root (README, CHANGELOG.md, sprint.md). Resolution order `.jearless/` → root → birth in `.jearless/`; both existing = refuse — two live registries are the drift disease.
+- **Planning follows the README manifest** (tooling 15–19): the plan file is the only authored artifact about the future; priority, blocked_by and parent are deliberate refusals with recorded reasons; kind is declared at take, membership is derived from the plan.
 - **The MR dashboard is a forge comment, not a tree file** (task tooling/14): a `pull_request` Action installs the PR's own jearless, renders the live timeline (mermaid renders right in GitHub comments) plus the board, and maintains one sticky comment per MR. No ref moves — the charter invariant is untouched; sprint.md stays human-run.
 
 ## The CLI surface (mapped to the README)
@@ -18,13 +20,15 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | Command | Mechanics | Phase |
 |---|---|---|
 | `add <project> "summary" [--points N] [--yes]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches; the duplicate guard warns on keyword overlap and asks `y/N` (non-TTY declines, `--yes` skips) | 1 |
-| `take <project> <id>` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `feature/<project>/<id>-<slug>`; push. The server arbitrates the race | 1 |
+| `take <project> <id> [--type fix\|chore\|feature]` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `<type>/<project>/<id>-<slug>` (default feature — the declared kind); push. The server arbitrates the race | 1 |
 | `sprint [--write [PATH]]` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done. Bare = pure print. `--write` refreshes a markdown dashboard (default `./sprint.md`): create-with-markers / replace-chunk / refuse a human file; a generated-at · git@sha stamp makes staleness visible; *.md-only commits are sanctioned as docs bookkeeping | 1 |
 | `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |
 | `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
 | `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
 | `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); available/in_progress always live in tasks.yml, identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen | 4 |
+| `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity (union points, first-arrival), scope creep (plan-birth derivation), cycle time (median + p85, client-clock disclaimer), rework rate (prefixes), attribution (derived) | — |
+| `sprint --rag <plan>` | red-yellow-green over plan × state × depends_on, on demand, never stored; aging N in `[rag]` | — |
 | `release [--tag TAG]` | tag + changelog section + timeline snapshot in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them | — |
 | `graph` | mermaid flowchart of the registry's `depends_on` links — the plan-side dependency view (gantt cannot draw arrows); refuses unknown targets and cycles, doctor reports them as findings | — |
 

@@ -72,3 +72,84 @@ tasks:
         fetch-depth 0 so the join reads the full merge history. Bare sprint
         stays a pure view; this is presentation, not state.
       story_points: 2
+    - id: 15
+      summary: housekeeping — all artifacts under .jearless/ (registry move, resolution order)
+      description: |
+        Everything jearless writes lives under .jearless/ in the repo root;
+        the public face stays out (README and CHANGELOG.md at the root — the
+        pyproject Changelog URL is pinned to it; sprint.md --write default
+        stays visible). Registry resolution order: .jearless/tasks.yml →
+        root tasks.yml → birth in .jearless/. BOTH existing = refuse loudly —
+        two live registries are the drift disease, not a migration. Old
+        installs keep living at the root with a one-line nudge; migration is
+        manual git mv (history preserved, human commit). Archives: read the
+        glob over BOTH places (frozen files stay where they were born), write
+        new ones into .jearless/. git log -p for scope creep will need
+        --follow across the rename. Price accepted: the registry leaves the
+        repo front page — the dashboard remains the human face.
+      story_points: 2
+    - id: 16
+      summary: 'planning — the sprint plan contract: plan/sprint_N.yml'
+      depends_on:
+        - 15
+      description: |
+        The authored commitment: ids (+ optional per-task planned dates), in
+        .jearless/plans/. The file's git birth IS the sprint start — nothing
+        stores a date. Numbering = max over plan files + 1, eternal. Hand-
+        authored; validated at report/rag time like check_links (unknown ids
+        refuse loud). The gantt-of-the-plan is DERIVED from this file — one
+        authored plan, no drift with a hand-drawn md gantt (the unification
+        decision). Burndown = join of the plan with first-arrival merges
+        inside the window. The order of ids may encode execution order —
+        this is the sprint priority (see the README manifest).
+      story_points: 2
+    - id: 17
+      summary: report — the release-time PM snapshot (velocity, cycle time, rework)
+      depends_on:
+        - 15
+        - 16
+      description: |
+        jear report <tag> — the changelog pattern for PM numbers: generated
+        at the tag boundary, committed next to it
+        (.jearless/reports/report-<tag>.md), into the release step.
+        Velocity: points done between tags per subproject — union points via
+        load_all (archives!), first-arrival range logic reused. Scope creep:
+        tasks born after the plan's git birth (git log --follow). Cycle time:
+        median + p85, no mean — start = the branch's first own commit author
+        date, end = merge committer date, with the client-clock disclaimer.
+        Rework rate: fix-prefix merges / all merges — counts ad-hoc fixes a
+        parent field never sees. Attribution: most commits on the branch,
+        fallback first-commit committer — derived, nothing stored; reports
+        are public, names already are. Label velocity between tags as
+        RELEASE velocity; sprint burndown is the plan join — different
+        questions.
+      story_points: 3
+    - id: 18
+      summary: RAG — the red-yellow-green view over plan x state, on demand
+      depends_on:
+        - 16
+      description: |
+        A derived view over plan x state x depends_on — computed on demand,
+        never stored, the one canonical join. Red: a planned task whose
+        depends_on target is not done (the existing graph — no blocked_by
+        field, rejected as a duplicate carrier). Yellow, two kinds of aging:
+        taken-never-started (branch exists, no own commits, branch age > N)
+        and stalled (last own commit older than N) — N in [rag] of
+        .jearless.toml. Green: in progress, alive. Requires an explicit plan
+        argument — which plan is current is never guessed; without a plan
+        the RAG does not appear.
+      story_points: 2
+    - id: 19
+      summary: 'take — typed branches: --type fix|chore|feature (default feature)'
+      description: |
+        take hardcodes feature/ — a registry-recorded bug lands in "Added"
+        and escapes the defect ratio. Fix: --type fix|chore|feature (default
+        feature) -> the branch prefix. The registry stays typeless: the
+        type's only carrier is the branch prefix (one carrier per fact). The
+        auto-hotfix hypothesis (unplanned tasks automatically become
+        hotfix/) was REJECTED: membership and kind are orthogonal axes; the
+        inference bakes a time-of-take judgment into an immutable branch
+        name and erases the "production on fire vs calm scope addition"
+        distinction. A forgotten type is correctable pre-merge (git branch
+        -m) and never after.
+      story_points: 1

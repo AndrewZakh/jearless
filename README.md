@@ -57,6 +57,18 @@ Task tracking and a changelog on bare git. No trackers, no infrastructure.
 
 The sprint and all analytics are joins on the key (subproject, number), computed on demand. The race for a task is arbitrated by git itself: a second push of a branch with the same name is rejected as non-fast-forward — "taken" arrives from the server.
 
+## The planning manifest
+
+How work is planned, measured and — deliberately — not measured. Every refusal below is a feature: each one removes a place where two sources of truth could drift apart.
+
+- **The plan is the only authored artifact about the future.** `plan/sprint_N.yml` is committed at sprint start; the file's git birth **is** the sprint start — nothing stores a date. Its membership is the commitment; the order of ids is the sprint priority. The gantt-of-the-plan is derived from this file, never hand-drawn: one authored plan, no drift between plan artifacts.
+- **Priority is deliberately absent — and that is a feature.** The plan's membership and order already answer "what matters now". A global priority field in the registry has no consumer today — no report, no view, no gate reads it — and an unread field rots. Adding it later is free: the registry is additive, the loader validates, nothing migrates. The field waits for its trigger: the team catching itself re-reading the whole backlog during planning to pick the next sprint. Until that pain exists, a decision made in a conversation beats a rotting column.
+- **One carrier per fact.** `blocked_by` was rejected as a duplicate of `depends_on` — the same relation must not live in two places. The red RAG state reads the existing graph.
+- **The rework rate is free; attribution is deferred.** The share of fix merges comes from the branch prefixes and counts ad-hoc fixes that a parent field would never see. `parent` buys only per-feature attribution ("which feature is falling apart") — deferred to the same trigger tier as priority.
+- **Kind is declared, membership is derived.** The branch prefix is the human's declaration at take time (`--type`); unplanned-ness is derived from the plan's birth versus the task's creation. The auto-hotfix hypothesis (unplanned tasks automatically become `hotfix/`) was rejected: membership and kind are orthogonal axes, and the inference bakes a time-of-take judgment into an immutable branch name — erasing the difference between "production is on fire" and "calmly added scope", which is exactly what a report must keep separate.
+- **The report answers facts, not reasons.** A displaced task shows as "not merged"; why it was displaced is the retrospective's human job. Git knows facts; people know reasons.
+- **Hours and money are honestly unanswered.** Commit dates are client clocks, and a system built on client clocks must not pretend to measure hours. Saying "no" here is the source of trust in every number the system does show.
+
 ## Timeline and plan-versus-actual
 
 - **The actual timeline** is a derived view: start = author date of the branch's first commit, end = committer date of the merge commit. The live variant is a command run on demand (fetch --prune, open branches end "now") and is **never committed**. The release snapshot is frozen by the tag and committed next to the changelog.
