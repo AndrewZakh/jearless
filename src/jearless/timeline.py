@@ -68,6 +68,15 @@ def _label(reg: registry.Registry, m: re.Match) -> str:
     return (m.group("slug") or "task").replace("-", " ")
 
 
+def own_commits(cwd: Path, merge_sha: str) -> list[str]:
+    """The branch's own commits (oldest first): reachable from the merge's second
+    parent but not its first — the whole task in one list (report attribution)."""
+    revs = gitwrap.out(
+        ["rev-list", "--reverse", f"{merge_sha}^2", "--not", f"{merge_sha}^1"], cwd
+    )
+    return revs.splitlines()
+
+
 def _first_own_commit(cwd: Path, sha: str, excluded: str) -> str | None:
     """The oldest commit reachable from the branch tip but not from main.
 

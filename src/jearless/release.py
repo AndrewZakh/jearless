@@ -10,10 +10,13 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from jearless import changelog, gitwrap, timeline
+from jearless import report as report_mod
 from jearless.errors import JearlessError
+from jearless.registry import HOMEDIR
 
 CHANGELOG_NAME = "CHANGELOG.md"
-SNAPSHOTS_DIR = "snapshots"
+SNAPSHOTS_DIR = f"{HOMEDIR}/snapshots"
+REPORTS_DIR = f"{HOMEDIR}/reports"
 
 
 def _flow_version(cwd: Path) -> str:
@@ -69,15 +72,24 @@ def run(cwd: Path, tag: str | None = None, remote: str = "origin") -> int:
         cwd / CHANGELOG_NAME, changelog.render(cwd, from_tag=from_tag, to_tag="HEAD", header=tag)
     )
     snapshots = cwd / SNAPSHOTS_DIR
-    snapshots.mkdir(exist_ok=True)
+    snapshots.mkdir(parents=True, exist_ok=True)
     (snapshots / f"timeline-{tag}.mmd").write_text(
         timeline.render(cwd, snapshot="HEAD", title=f"jearless — snapshot {tag}"),
         encoding="utf-8",
     )
-    gitwrap.run(["add", CHANGELOG_NAME, SNAPSHOTS_DIR], cwd)
-    gitwrap.run(["commit", "-q", "-m", f"release {tag}: changelog and timeline snapshot"], cwd)
+    report_text = report_mod.render(cwd, tag, from_tag, to_ref="HEAD")  # the tag lands on this commit
+    reports = cwd / REPORTS_DIR
+    reports.mkdir(parents=True, exist_ok=True)
+    (reports / f"report-{tag}.md").write_text(report_text, encoding="utf-8")
+    gitwrap.run(["add", CHANGELOG_NAME, SNAPSHOTS_DIR, REPORTS_DIR], cwd)
+    gitwrap.run(
+        ["commit", "-q", "-m", f"release {tag}: changelog, timeline snapshot, PM report"], cwd
+    )
     gitwrap.run(["tag", "-a", tag, "-m", f"Release {tag}"], cwd)
     gitwrap.run(["push", "-q", remote, "main"], cwd)
     gitwrap.run(["push", "-q", remote, tag], cwd)
-    print(f"released {tag}: CHANGELOG.md section + {SNAPSHOTS_DIR}/timeline-{tag}.mmd, tag pushed")
+    print(
+        f"released {tag}: CHANGELOG.md section + {SNAPSHOTS_DIR}/timeline-{tag}.mmd"
+        f" + {REPORTS_DIR}/report-{tag}.md, tag pushed"
+    )
     return 0

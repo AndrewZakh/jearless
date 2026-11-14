@@ -59,6 +59,20 @@ def next_plan_number(cwd: Path) -> int:
     return best + 1
 
 
+def latest_plan(cwd: Path) -> Path | None:
+    """The current plan is never guessed by commands — but report's scope creep
+    needs one, and there the highest number is the honest pick."""
+    plans = plans_dir(cwd)
+    if not plans.exists():
+        return None
+    numbered = []
+    for path in plans.iterdir():
+        m = PLAN_FILE_RE.match(path.name)
+        if m:
+            numbered.append((int(m.group(1)), path))
+    return max(numbered)[1] if numbered else None
+
+
 def _as_date(value: object, where: str) -> date:
     try:
         if isinstance(value, date):
@@ -120,12 +134,14 @@ def load_plan(path: Path, reg: registry.Registry) -> Plan:
 def birth_date(cwd: Path, path: Path) -> str | None:
     """The file's git birth IS the sprint start — nothing stores a date.
 
-    An uncommitted plan is unborn: commit it to start the sprint.
+    Full timestamp precision: report's scope creep compares this against
+    per-task birth times, and same-day granularity would lie. An uncommitted
+    plan is unborn: commit it to start the sprint.
     """
     try:
         lines = gitwrap.lines(
-            ["log", "--follow", "--diff-filter=A", "--format=%ad",
-             "--date=format-local:%Y-%m-%d", "--", str(path)],
+            ["log", "--follow", "--diff-filter=A", "--format=%cd",
+             "--date=format-local:%Y-%m-%dT%H:%M:%S", "--", str(path)],
             cwd,
             env={"TZ": "UTC"},
         )

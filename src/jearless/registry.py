@@ -203,16 +203,32 @@ def load_path(path: Path) -> Registry:
         data = yaml.load(path)
     except YAMLError as exc:
         raise RegistryError(f"{path.name}: {exc}") from exc
+    return from_data(data, path.name)
+
+
+def from_data(data: object, source: str) -> Registry:
+    """Parse already-loaded yaml data into a Registry (used by load_path and
+    by report's historical snapshot walk, which reads text out of git)."""
     if data is None:
         return Registry()  # an empty file is also a valid empty state
     if not isinstance(data, dict) or not isinstance(data.get("tasks", {}), dict):
-        raise RegistryError(f"{path.name}: expected the structure 'tasks: <project>: [entries]'")
+        raise RegistryError(f"{source}: expected the structure 'tasks: <project>: [entries]'")
     registry = Registry()
     for project, entries in data.get("tasks", {}).items():
         if not isinstance(entries, list):
-            raise RegistryError(f"{path.name}: project '{project}' — a list of tasks expected")
+            raise RegistryError(f"{source}: project '{project}' — a list of tasks expected")
         registry.tasks[str(project)] = [
-            _task_from_entry(str(project), entry, f"{path.name}: {project}[{i}]")
+            _task_from_entry(str(project), entry, f"{source}: {project}[{i}]")
             for i, entry in enumerate(entries)
         ]
     return registry
+
+
+def from_text(text: str, source: str = "<text>") -> Registry:
+    """Parse registry yaml text (report's historical snapshot walk)."""
+    yaml = YAML(typ="rt")
+    try:
+        data = yaml.load(text)
+    except YAMLError as exc:
+        raise RegistryError(f"{source}: {exc}") from exc
+    return from_data(data, source)
