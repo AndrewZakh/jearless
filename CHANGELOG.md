@@ -1,4 +1,13 @@
 # Changelog
+## v0.16.7 (2026-11-14)
+### Added
+- tooling-8: archive — moving done tasks out
+- tooling-11: double-merge resilience — the same branch merged twice after a restore
+- tooling-12: graph — the dependency view: task links and a mermaid flowchart
+- tooling-13: sprint — markdown dashboard: --write with default path
+- tooling-14: sprint dashboard on every MR — a GitHub Action posting a sticky PR comment
+# 6 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.10.4 (2026-11-07)
 ### Added
 - tooling-10: add — duplicate guard: keyword-overlap warning and confirmation
