@@ -51,7 +51,8 @@ def test_first_release(repo, capsys):
     text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
     assert "## v0.1.0 (" in text and "- p-1: first task" in text
     snap = (repo / "snapshots" / "timeline-v0.1.0.mmd").read_text(encoding="utf-8")
-    assert snap.startswith("gantt") and "p_1, 2026-11-01T10:00:00" in snap
+    assert snap.startswith("%%{init:") and "\ngantt\n" in snap
+    assert "p_1, 2026-11-01T10:00:00" in snap
     assert gitwrap.out(["status", "--porcelain"], repo) == ""
     # the release artifacts are sanctioned: doctor stays silent about them
     assert doctor_mod.run(repo) == 0
