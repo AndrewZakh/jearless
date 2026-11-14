@@ -48,21 +48,29 @@ def _first_own_commit(cwd: Path, sha: str, excluded: str) -> str | None:
 
 
 def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) -> list[Bar]:
-    """Done tasks: one bar per task merge in the ref's history."""
-    bars: list[Bar] = []
+    """Done tasks: ONE bar per task — the first arrival (task tooling/11).
+
+    The same branch can be merged twice (divergence, restore): the re-merge
+    is an artifact — a task ships in the version of its first merge — so the
+    earliest merge owns the bar and the newer one is discarded.
+    """
     log = gitwrap.out(
         ["log", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format:{_DATE}"], cwd
     )
-    for line in log.splitlines():
+    bars: dict[tuple[str, int], Bar] = {}
+    for line in reversed([ln for ln in log.splitlines() if ln.strip()]):  # oldest first
         sha, subject, cdate = line.split("\x1f", 2)
         branch = state.branch_from_merge_subject(subject)
         m = cfg.match_branch(branch) if branch else None
         if not m:
             continue
+        key = (m.group("project"), int(m.group("num")))
+        if key in bars:
+            continue  # a re-merge: the first arrival already owns the bar
         first = _first_own_commit(cwd, f"{sha}^2", f"{sha}^1")
         start = _author_date(cwd, first) if first else cdate  # zero-commit branch: the merge is the task
-        bars.append(Bar(m.group("project"), int(m.group("num")), _label(reg, m), start, cdate))
-    return bars
+        bars[key] = Bar(m.group("project"), int(m.group("num")), _label(reg, m), start, cdate)
+    return list(bars.values())
 
 
 def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str = "origin") -> list[Bar]:

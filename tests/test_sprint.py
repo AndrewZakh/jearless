@@ -85,6 +85,25 @@ def test_sprint_requires_a_remote(empty_repo, monkeypatch, capsys):
         sprint_mod.run(empty_repo)
 
 
+def test_double_merge_done_is_set_semantics(board, capsys):
+    """Task tooling/11: sprint is expected safe — done is a set, a re-merge adds nothing."""
+    _merge_task(board, 1, "first-task")
+    gitwrap.run(["checkout", "-q", "feature/p/1-first-task"], board)
+    (board / "extra.txt").write_text("second round", encoding="utf-8")
+    gitwrap.run(["add", "extra.txt"], board)
+    gitwrap.run(["commit", "-q", "-m", "second round"], board)
+    gitwrap.run(["push", "-q", "origin", "feature/p/1-first-task"], board)
+    gitwrap.run(["checkout", "-q", "main"], board)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-first-task'",
+         "feature/p/1-first-task"],
+        board,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], board)
+    assert sprint_mod.run(board) == 0
+    assert "done (1):" in capsys.readouterr().out  # not (2)
+
+
 # --- the markdown dashboard (task tooling/13) ---
 
 

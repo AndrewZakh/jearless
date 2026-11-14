@@ -59,6 +59,29 @@ def test_snapshot_carries_author_and_committer_dates(repo, capsys):
     assert "p_1, 2026-11-01T10:00:00, 2026-11-03T18:00:00" in out
 
 
+def test_double_merge_one_bar_first_arrival(repo, capsys):
+    """Task tooling/11: two merges naming one branch — ONE bar, the first arrival."""
+    _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    # a second round on the same branch, merged again
+    gitwrap.run(["checkout", "-q", "feature/p/1-first"], repo)
+    (repo / "work.txt").write_text("second round", encoding="utf-8")
+    gitwrap.run(["add", "work.txt"], repo)
+    gitwrap.run(["commit", "-q", "-m", "second round"], repo)
+    gitwrap.run(["push", "-q", "origin", "feature/p/1-first"], repo)
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-first'", "feature/p/1-first"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-05T10:00:00"},
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    assert timeline_mod.run(repo, snapshot="origin/main") == 0
+    out = capsys.readouterr().out
+    assert out.count("p_1,") == 1  # one bar — the duplicate mermaid id would break the render
+    assert "p_1, 2026-11-01T10:00:00, 2026-11-02T10:00:00" in out  # the first arrival
+    assert "2026-11-05" not in out  # the re-merge is discarded
+
+
 def test_live_open_bar_and_zero_commit_branch_skipped(repo, capsys):
     _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
     take_mod.take(repo, "p", 2)  # zero commits: claimed, no work started — no bar
