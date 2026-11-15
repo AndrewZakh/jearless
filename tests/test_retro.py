@@ -2,6 +2,7 @@ import pytest
 
 from jearless import gitwrap
 from jearless import retro as retro_mod
+from jearless.errors import JearlessError
 
 REGISTRY = """\
 tasks:
@@ -10,16 +11,17 @@ tasks:
       summary: first task
     - id: 2
       summary: second task
+    - id: 3
+      summary: third task
 """
 
 PLAN = """\
-gantt
-    title the contract
-    dateFormat YYYY-MM-DDTHH:mm:ss
-    axisFormat %d.%m
-    section p
-    first :p_1, 2026-11-01T09:00:00, 2026-11-02T09:00:00
-    someday :p_9, 2026-11-10T09:00:00, 2026-11-11T09:00:00
+plan:
+  goal: the contract
+  tasks:
+    - task: p/1
+      planned: {start: 2026-11-01, end: 2026-11-02}
+    - task: p/3
 """
 
 
@@ -48,56 +50,64 @@ def _merge_branch(clone, branch: str, author: str, committer: str):
     gitwrap.run(["push", "-q", "origin", "main"], clone)
 
 
-def test_retro_join_shift_and_orphans(repo, capsys):
+def test_retro_join_shift_plan_only(repo, capsys):
     _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-03T18:00:00")
     _merge_branch(repo, "feature/p/2-second", "2026-11-04T10:00:00", "2026-11-04T12:00:00")
-    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
-    assert retro_mod.run(repo, repo / "plan.md") == 0
+    (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
     out = capsys.readouterr().out
-    assert "retro: plan.md vs actual (1 joined)" in out
-    assert "p_1: planned 11-01→11-02, actual 11-01→11-03, end +1d" in out
-    assert "plan-only: p_9" in out
-    assert "actual-only: p_2 — the work nobody planned" in out
+    assert "retro: sprint_1.yml vs actual (1 joined)" in out
+    # the planned window drifted: actual end is a day late
+    assert "p/1: planned 11-01→11-02, actual 11-01→11-03, end +1d" in out
+    assert "plan-only: p/3 — not done yet (or never taken)" in out
+    assert "actual-only: p/2 — the work nobody planned" in out
+
+
+def test_undated_entry_joins_without_window(repo, capsys):
+    """An undated planned entry joins by membership — merged, but no window to judge."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
+    (repo / "sprint_1.yml").write_text(
+        "plan:\n  goal: x\n  tasks:\n    - task: p/1\n", encoding="utf-8"
+    )
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
+    assert "p/1: merged 11-02 — no planned window" in capsys.readouterr().out
 
 
 def test_retro_on_time(repo, capsys):
     _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
-    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
-    retro_mod.run(repo, repo / "plan.md")
-    assert "p_1: planned 11-01→11-02, actual 11-01→11-02, on time" in capsys.readouterr().out
+    (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    retro_mod.run(repo, repo / "sprint_1.yml")
+    assert "p/1: planned 11-01→11-02, actual 11-01→11-02, on time" in capsys.readouterr().out
 
 
-def test_retro_sub_day_earliness_is_not_a_day(repo, capsys):
-    """Finishing 20 minutes early is 'on time', not 'a day early' (timedelta floor trap)."""
-    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T08:40:00")
-    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
-    retro_mod.run(repo, repo / "plan.md")
-    assert "actual 11-01→11-02, on time" in capsys.readouterr().out
-
-
-def test_retro_missing_plan(repo):
-    with pytest.raises(Exception, match="cannot read the plan"):
-        retro_mod.run(repo, repo / "no-such-plan.md")
-
-
-def test_double_merge_joins_first_arrival(repo, capsys):
-    """Task tooling/11: the join uses the first arrival, not the newest re-merge."""
-    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
-    gitwrap.run(["checkout", "-q", "feature/p/1-first"], repo)
-    (repo / "feature_p_1-first_more.txt").write_text("second round", encoding="utf-8")
-    gitwrap.run(["add", "."], repo)
-    gitwrap.run(["commit", "-q", "-m", "second round"], repo)
-    gitwrap.run(["push", "-q", "origin", "feature/p/1-first"], repo)
-    gitwrap.run(["checkout", "-q", "main"], repo)
-    gitwrap.run(
-        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-first'", "feature/p/1-first"],
-        repo,
-        env={"GIT_COMMITTER_DATE": "2026-11-05T12:00:00"},
+def test_retro_plan_order_is_the_output_order(repo, capsys):
+    """Rows follow the plan's own order — top-down is the sprint priority."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    _merge_branch(repo, "feature/p/2-second", "2026-11-04T10:00:00", "2026-11-05T10:00:00")
+    (repo / "sprint_1.yml").write_text(
+        "plan:\n  goal: x\n  tasks:\n    - task: p/2\n    - task: p/1\n", encoding="utf-8"
     )
-    gitwrap.run(["push", "-q", "origin", "main"], repo)
-    (repo / "plan.md").write_text(PLAN, encoding="utf-8")
-    assert retro_mod.run(repo, repo / "plan.md") == 0
+    retro_mod.run(repo, repo / "sprint_1.yml")
     out = capsys.readouterr().out
-    assert out.count("p_1:") == 1
-    # the first arrival ended 11-02 (on time); the 11-05 re-merge is discarded
-    assert "p_1: planned 11-01→11-02, actual 11-01→11-02, on time" in out
+    assert out.index("p/2") < out.index("p/1")
+
+
+def test_missing_plan_file_refused(repo):
+    with pytest.raises(JearlessError, match="no such plan file"):
+        retro_mod.run(repo, repo / "no-such-plan.yml")
+
+
+def test_malformed_plan_refused(repo):
+    (repo / "sprint_1.yml").write_text("tasks:\n  p: [unclosed\n", encoding="utf-8")
+    with pytest.raises(JearlessError):
+        retro_mod.run(repo, repo / "sprint_1.yml")
+
+
+def test_planned_entry_without_dates_field_is_undated(repo, capsys):
+    """The dates are optional per entry: absent 'planned' = membership only."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
+    (repo / "sprint_1.yml").write_text(
+        "plan:\n  goal: x\n  tasks:\n    - task: p/1\n      planned:\n", encoding="utf-8"
+    )
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
+    assert "no planned window" in capsys.readouterr().out
