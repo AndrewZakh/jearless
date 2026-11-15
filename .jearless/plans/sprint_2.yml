@@ -1,0 +1,11 @@
+plan:
+  goal: close the retrospective debts — retro unification, race, identity, release checklist
+  tasks:
+    - task: tooling/20
+      planned: {start: 2026-11-15, end: 2026-11-17}
+    - task: tooling/21
+      planned: {start: 2026-11-17, end: 2026-11-18}
+    - task: tooling/22
+      planned: {start: 2026-11-18, end: 2026-11-19}
+    - task: tooling/23
+      planned: {start: 2026-11-19, end: 2026-11-20}
