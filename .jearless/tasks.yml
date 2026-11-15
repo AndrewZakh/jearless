@@ -153,3 +153,47 @@ tasks:
         distinction. A forgotten type is correctable pre-merge (git branch
         -m) and never after.
       story_points: 1
+    - id: 20
+      summary: retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail)
+      description: |
+        The unification decision (tooling/16) made plan/sprint_N.yml the one
+        authored plan — but retro still parses an authored plan.md gantt
+        (_PLAN_LINE): two plan formats live in the codebase, the drift we
+        promised to kill. Migrate retro to load_plan: join dated planned
+        windows with first-arrival merges (bar ids already share the
+        project_num key space); undated entries are plan-only, no window to
+        compare. The md-gantt parsing retires with a golden test proving the
+        join against a committed sprint plan.
+      story_points: 2
+    - id: 21
+      summary: registry race — test two concurrent adds and document the resolution flow
+      description: |
+        Branch occupancy is server-arbitrated (push = non-fast-forward), but
+        registry EDITS are not: two concurrent `jear add` commits to main
+        race on push — the second is rejected, the pull surfaces a tasks.yml
+        conflict, and the resolution is a hand merge (no rebase — the
+        charter). Deliverable: a factory test proving the conflict surfaces
+        and the pull/resolve/push flow closes it, plus the documented
+        resolution flow in the README. Frequency is low; the cost of an
+        undocumented conflict is not.
+      story_points: 1
+    - id: 22
+      summary: mailmap — normalize author identity for attribution (%aN)
+      description: |
+        Attribution (report) reads %an — raw author names — and the history
+        carries two identities (AndrewZakh, Andrei Zakhrebetkov) from a
+        mid-project git config change: the report sees two people where
+        there is one. Fix: a .mailmap mapping both to one canonical name,
+        and the report switches %an -> %aN (the mailmap-aware token; plain
+        %an ignores the mailmap). Verify via the live report on v0.16.7.
+      story_points: 1
+    - id: 23
+      summary: release checklist — publish to PyPI after jear release
+      description: |
+        The canonical release flow is human-run (the charter): jear release
+        -> uv build -> uv publish (TestPyPI rehearsal when metadata changes).
+        It was forgotten once — PyPI drifted 0.16.7 -> v0.20.7 while the repo
+        moved on. Deliverable: `jear release` prints the publish hint at the
+        end ("now: uv build && uv publish"), and the README gains the release
+        checklist. No CI publishing — nothing automatic touches the forge.
+      story_points: 1
