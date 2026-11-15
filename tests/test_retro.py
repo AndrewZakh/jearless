@@ -54,13 +54,36 @@ def test_retro_join_shift_plan_only(repo, capsys):
     _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-03T18:00:00")
     _merge_branch(repo, "feature/p/2-second", "2026-11-04T10:00:00", "2026-11-04T12:00:00")
     (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    gitwrap.run(["add", "sprint_1.yml"], repo)
+    gitwrap.run(["commit", "-q", "-m", "the contract"], repo)  # born: the window opens
     assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
     out = capsys.readouterr().out
     assert "retro: sprint_1.yml vs actual (1 joined)" in out
     # the planned window drifted: actual end is a day late
     assert "p/1: planned 11-01→11-02, actual 11-01→11-03, end +1d" in out
     assert "plan-only: p/3 — not done yet (or never taken)" in out
-    assert "actual-only: p/2 — the work nobody planned" in out
+    # p/2 merged BEFORE the plan's birth: pre-plan history, not a hole
+    assert "actual-only: none — the scope held inside the plan's lifetime" in out
+
+
+def test_retro_actual_only_inside_the_window(repo, capsys):
+    """Unplanned work merged after the plan's birth is the visible hole;
+    pre-plan merges are history."""
+    _merge_branch(repo, "feature/p/2-second", "2026-11-04T10:00:00", "2026-11-04T12:00:00")
+    (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    gitwrap.run(["add", "sprint_1.yml"], repo)
+    gitwrap.run(["commit", "-q", "-m", "the contract"], repo,
+                env={"GIT_COMMITTER_DATE": "2026-11-05T09:00:00"})
+    # an unplanned task, added and merged after the plan's birth
+    text = (repo / "tasks.yml").read_text(encoding="utf-8") + "    - id: 4\n      summary: surprise\n"
+    (repo / "tasks.yml").write_text(text, encoding="utf-8")
+    gitwrap.run(["add", "tasks.yml"], repo)
+    gitwrap.run(["commit", "-q", "-m", "surprise task"], repo)
+    _merge_branch(repo, "feature/p/4-surprise", "2026-11-06T10:00:00", "2026-11-06T11:00:00")
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
+    out = capsys.readouterr().out
+    assert "actual-only: p/4 — the work nobody planned" in out
+    assert "actual-only: p/2" not in out  # pre-plan history is not a hole
 
 
 def test_undated_entry_joins_without_window(repo, capsys):

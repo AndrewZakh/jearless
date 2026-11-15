@@ -18,6 +18,7 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
     bars = timeline.merge_bars(cwd, config.load(cwd), reg, ref)
     actual = {(b.project, b.num): b for b in bars}
     planned = {entry.task: entry for entry in plan_obj.entries}
+    birth = plan.birth_date(cwd, plan_path)  # full timestamp; None = unborn
 
     joined = [entry for entry in plan_obj.entries if entry.task in actual]
     print(f"retro: {plan_path.name} vs actual ({len(joined)} joined)")
@@ -39,6 +40,19 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
     for entry in plan_obj.entries:
         if entry.task not in actual:
             print(f"  plan-only: {entry.task[0]}/{entry.task[1]} — not done yet (or never taken)")
-    for key in sorted(set(actual) - set(planned)):
-        print(f"  actual-only: {key[0]}/{key[1]} — the work nobody planned")
+    # actual-only = unplanned work INSIDE the plan's lifetime: merges after the
+    # plan's birth. Merges before it are pre-plan history, not a hole.
+    if birth:
+        birth_day = datetime.fromisoformat(birth).date()
+        in_window = [
+            key
+            for key in sorted(set(actual) - set(planned))
+            if datetime.fromisoformat(actual[key].end).date() >= birth_day
+        ]
+        for key in in_window:
+            print(f"  actual-only: {key[0]}/{key[1]} — the work nobody planned")
+        if not in_window:
+            print("  actual-only: none — the scope held inside the plan's lifetime")
+    else:
+        print("  actual-only: skipped — the plan is unborn, there is no window yet")
     return 0
