@@ -59,6 +59,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("take", help="take a task: branch + push (Phase 1)")
     p.add_argument("project")
     p.add_argument("id", type=int)
+    p.add_argument(
+        "--type",
+        dest="kind",
+        choices=["feature", "fix", "chore"],
+        default="feature",
+        help="the declared kind of work — the branch prefix (default feature)",
+    )
 
     p = sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
     p.add_argument(
@@ -126,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             print(graph_mod.render(cwd), end="")
             return 0
         if args.command == "take":
-            print(take_mod.take(cwd, args.project, args.id))
+            print(take_mod.take(cwd, args.project, args.id, kind=args.kind))
             return 0
         if args.command == "sprint":
             return sprint_mod.run(cwd, write=args.write, rag=args.rag)

@@ -1,9 +1,18 @@
-"""take: claim a task with a single push (README: the push is the occupancy signal)."""
+"""take: claim a task with a single push (README: the push is the occupancy signal).
+
+--type declares the KIND of work (task tooling/19): the branch prefix is the
+type's only carrier — the registry stays typeless (one carrier per fact).
+Membership is never inferred here: whether the task is in a sprint plan is
+derived by the report, not baked into an immutable name (the auto-hotfix
+hypothesis, rejected).
+"""
 
 from pathlib import Path
 
 from jearless import config, gitwrap, registry, slug
 from jearless.errors import JearlessError
+
+KINDS = ("feature", "fix", "chore")
 
 
 def _find_task(reg: registry.Registry, project: str, num: int) -> registry.Task:
@@ -21,12 +30,15 @@ def _taken_branch(heads: dict[str, str], cfg: config.Config, project: str, num: 
     return None
 
 
-def take(cwd: Path, project: str, num: int, remote: str = "origin") -> str:
-    """Create feature/<project>/<id>-<slug> at the origin/main tip and push it.
+def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = "feature") -> str:
+    """Create <kind>/<project>/<id>-<slug> at the origin/main tip and push it.
 
     Zero commits, zero YAML edits (README). The ls-remote check is advisory;
-    the push itself is the arbiter of the race.
+    the push itself is the arbiter of the race. Kind is the declared work kind
+    (feature/fix/chore) — occupancy ignores it: one task, one live branch.
     """
+    if kind not in KINDS:
+        raise JearlessError(f"kind must be one of: {', '.join(KINDS)} (got '{kind}')")
     cfg = config.load(cwd)
     task = _find_task(registry.load(cwd), project, num)
     if not gitwrap.is_repo(cwd):
@@ -50,7 +62,7 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin") -> str:
     except gitwrap.GitError as exc:
         raise JearlessError(f"no {base}: take branches off the main tip ({exc})") from exc
 
-    branch = f"feature/{project}/{num}-{slug.slugify(task.summary)}"
+    branch = f"{kind}/{project}/{num}-{slug.slugify(task.summary)}"
     previous = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)
     try:
         gitwrap.run(["checkout", "--quiet", "-b", branch, base], cwd)
