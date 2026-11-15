@@ -84,6 +84,8 @@ def _as_date(value: object, where: str) -> date:
 
 def load_plan(path: Path, reg: registry.Registry) -> Plan:
     """Parse + validate against the union: unknown ids and duplicates refuse loud."""
+    if not path.exists():
+        raise JearlessError(f"{path}: no such plan file")
     yaml = YAML(typ="rt")
     try:
         data = yaml.load(path)

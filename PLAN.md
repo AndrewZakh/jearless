@@ -25,7 +25,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |
 | `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
-| `retro <plan.md>` | join the plan's bar ids (the gantt contract) with the actual timeline; planning misses | 3 |
+| `retro <plan.yml>` | join the authored sprint contract (plan/sprint_N.yml) with first-arrival merges: dated windows report the drift, undated join by membership; merged-but-unplanned work is the visible hole | 3 |
 | `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); available/in_progress always live in tasks.yml, identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen | 4 |
 | `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity (union points, first-arrival), scope creep (plan-birth derivation), cycle time (median + p85, client-clock disclaimer), rework rate (prefixes), attribution (derived) | — |
 | `plan <file> [--gantt]` | validate the authored sprint contract (`plan/sprint_N.yml` in `.jearless/plans/`): ids vs the union, duplicates, dates; the file's git birth is the sprint start; the order of ids is the sprint priority; `--gantt` renders the derived plan gantt | — |
