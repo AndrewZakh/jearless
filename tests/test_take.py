@@ -62,3 +62,27 @@ def test_take_requires_a_remote(empty_repo: Path):
     (empty_repo / "tasks.yml").write_text(REGISTRY, encoding="utf-8")
     with pytest.raises(JearlessError, match="remote"):
         take_mod.take(empty_repo, "tooling", 1)
+
+
+# --- typed take (task tooling/19) ---
+
+
+def test_take_typed_fix_branch(work):
+    _, clone = work
+    branch = take_mod.take(clone, "tooling", 1, kind="fix")
+    assert branch == "fix/tooling/1-add-a-task-to-the-registry"
+    assert branch in gitwrap.remote_heads(clone)  # the declared kind rides the push
+
+
+def test_take_kind_blocked_across_types(work):
+    """Occupancy ignores the kind: one task, one live branch — a fix cannot dodge it."""
+    _, clone = work
+    take_mod.take(clone, "tooling", 1, kind="fix")
+    with pytest.raises(JearlessError, match="already taken"):
+        take_mod.take(clone, "tooling", 1)  # the default feature kind
+
+
+def test_take_rejects_unknown_kind(work):
+    _, clone = work
+    with pytest.raises(JearlessError, match="kind must be one of"):
+        take_mod.take(clone, "tooling", 1, kind="hotfix")  # the auto-hotfix, refused
