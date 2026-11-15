@@ -1,4 +1,12 @@
 # Changelog
+## v0.21.7 (2026-11-15)
+### Added
+- tooling-15: housekeeping — all artifacts under .jearless/ (registry move, resolution order)
+- tooling-16: planning — the sprint plan contract: plan/sprint_N.yml
+- tooling-17: report — the release-time PM snapshot (velocity, cycle time, rework)
+- tooling-18: RAG — the red-yellow-green view over plan x state, on demand
+- tooling-19: take — typed branches: --type fix|chore|feature (default feature)
+
 ## v0.16.7 (2026-11-14)
 ### Added
 - tooling-8: archive — moving done tasks out
