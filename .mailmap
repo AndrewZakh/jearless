@@ -1,0 +1,4 @@
+# Identity normalization for attribution (task tooling/22).
+# The early commits (bootstrap era) were authored as AndrewZakh <andy-zzz@yandex.ru>;
+# everything after mid-project carries the canonical identity below.
+Andrei Zakhrebetkov <andrei.zakhrebetkov@macromer.ru> AndrewZakh <andy-zzz@yandex.ru>
