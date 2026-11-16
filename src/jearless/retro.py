@@ -41,13 +41,15 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
         if entry.task not in actual:
             print(f"  plan-only: {entry.task[0]}/{entry.task[1]} — not done yet (or never taken)")
     # actual-only = unplanned work INSIDE the plan's lifetime: merges after the
-    # plan's birth. Merges before it are pre-plan history, not a hole.
+    # plan's birth. Merges before it are pre-plan history, not a hole. Full
+    # timestamps on both sides: a day-granularity compare let same-day pre-plan
+    # merges pass as "in window".
     if birth:
-        birth_day = datetime.fromisoformat(birth).date()
+        birth_dt = datetime.fromisoformat(birth)
         in_window = [
             key
             for key in sorted(set(actual) - set(planned))
-            if datetime.fromisoformat(actual[key].end).date() >= birth_day
+            if datetime.fromisoformat(actual[key].end) >= birth_dt
         ]
         for key in in_window:
             print(f"  actual-only: {key[0]}/{key[1]} — the work nobody planned")
