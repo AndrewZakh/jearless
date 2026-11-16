@@ -1,4 +1,12 @@
 # Changelog
+## v0.25.8 (2026-11-16)
+### Added
+- tooling-20: retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail)
+- tooling-21: registry race — test two concurrent adds and document the resolution flow
+- tooling-22: mailmap — normalize author identity for attribution (%aN)
+- tooling-23: release checklist — publish to PyPI after jear release
+# 1 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.21.7 (2026-11-15)
 ### Added
 - tooling-15: housekeeping — all artifacts under .jearless/ (registry move, resolution order)
