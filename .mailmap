@@ -2,3 +2,5 @@
 # The early commits (bootstrap era) were authored as AndrewZakh <andy-zzz@yandex.ru>;
 # everything after mid-project carries the canonical identity below.
 Andrei Zakhrebetkov <andrei.zakhrebetkov@macromer.ru> AndrewZakh <andy-zzz@yandex.ru>
+# Lives at the repo ROOT: git reads .mailmap by convention (%aN/%cN).
+# Do NOT move into .jearless/ — git would silently stop normalizing (task tooling/22).
