@@ -197,3 +197,20 @@ tasks:
         end ("now: uv build && uv publish"), and the README gains the release
         checklist. No CI publishing — nothing automatic touches the forge.
       story_points: 1
+    - id: 24
+      summary: logo — vector redraw of the mascot
+      description: |
+        The mascot is canon: a hedgehog whose spines are a gear (jear = gear).
+        Done so far (uncommitted work on the feature branch): hand-authored
+        assets/img/logo.svg — 2.5 KB of true Bézier curves, no autotrace mess.
+        The gear is computed by polar math (12 teeth, rotated +12 deg so the
+        right ones hide behind the crown); the organics (back, face+chest,
+        muzzle, eye, paws) are hand-tuned over 5 render-iterate rounds via
+        macOS qlmanage (SVG -> PNG -> eyeball). Palette from the draft:
+        #F5A62B / #252E45 / #A6AFBF / #F2EFE6 / #1D2436. Background and glow
+        deliberately dropped (re-addable as a radial gradient). Remaining:
+        the user's iteration feedback (pupil size, muzzle angle, paw
+        thickness), then derivatives — favicon 32x32, README header variant,
+        monochrome badge — and the fate of the PNG draft (keep as reference
+        or drop).
+      story_points: 2
