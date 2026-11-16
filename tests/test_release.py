@@ -46,7 +46,10 @@ def _merge_branch(clone, branch: str, committer: str):
 def test_first_release(repo, capsys):
     _merge_branch(repo, "feature/p/1-first", "2026-11-02T10:00:00")
     assert release_mod.run(repo) == 0
-    assert "released v0.1.0" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "released v0.1.0" in out
+    # the publish hint (task tooling/23): the release is local until published
+    assert "uv build && uv publish" in out
     assert "refs/tags/v0.1.0" in gitwrap.out(["ls-remote", "--tags", "origin"], repo)
     text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
     assert "## v0.1.0 (" in text and "- p-1: first task" in text

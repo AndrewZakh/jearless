@@ -30,7 +30,7 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 | `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity (union points, first-arrival), scope creep (plan-birth derivation), cycle time (median + p85, client-clock disclaimer), rework rate (prefixes), attribution (derived) | — |
 | `plan <file> [--gantt]` | validate the authored sprint contract (`plan/sprint_N.yml` in `.jearless/plans/`): ids vs the union, duplicates, dates; the file's git birth is the sprint start; the order of ids is the sprint priority; `--gantt` renders the derived plan gantt | — |
 | `sprint --rag <plan>` | red-yellow-green over plan × state × depends_on, on demand, never stored; aging N in `[rag]` | — |
-| `release [--tag TAG]` | tag + changelog section + timeline snapshot in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them | — |
+| `release [--tag TAG]` | tag + changelog section + timeline snapshot + PM report in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them; ends with the publish reminder (`uv build && uv publish` — the README carries the full checklist) | — |
 | `graph` | mermaid flowchart of the registry's `depends_on` links — the plan-side dependency view (gantt cannot draw arrows); refuses unknown targets and cycles, doctor reports them as findings | — |
 
 ## Phases and Definitions of Done
