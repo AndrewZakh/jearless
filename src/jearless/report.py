@@ -82,12 +82,14 @@ def _task_births(cwd: Path, reg_path: Path) -> dict[tuple[str, int], str]:
 
 def _attribution(cwd: Path, own: list[str], merge_sha: str) -> str:
     """Derived, nothing stored: the author of most of the branch's own commits,
-    fallback — the committer of its first commit. Who merged is always exact."""
+    fallback — the committer of its first commit. Who merged is always exact.
+    %aN/%cN are mailmap-aware: identities normalize through .mailmap
+    (task tooling/22 — one person, two historical identities)."""
     if not own:
-        return gitwrap.out(["log", "-1", "--format=%cn", merge_sha], cwd)
+        return gitwrap.out(["log", "-1", "--format=%cN", merge_sha], cwd)
     names: Counter[str] = Counter()
     for sha in own:
-        names[gitwrap.out(["show", "-s", "--format=%an", sha], cwd)] += 1
+        names[gitwrap.out(["show", "-s", "--format=%aN", sha], cwd)] += 1
     return names.most_common(1)[0][0]
 
 

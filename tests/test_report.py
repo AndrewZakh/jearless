@@ -87,3 +87,34 @@ def test_prev_tag(repo):
     gitwrap.run(["tag", "v0.2.0"], repo)
     assert report_mod._prev_tag(repo, "v0.2.0") == "v0.1.0"
     assert report_mod._prev_tag(repo, "v0.1.0") is None  # whole history is the range
+
+
+def test_mailmap_normalizes_identity(repo, capsys):
+    """Task tooling/22: two historical identities, one person — %aN + .mailmap collapse them."""
+    _merge_branch(repo, "feature/p/1-a", "Alice", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    # her early commits carried a different identity; .mailmap maps it to Alice
+    (repo / ".mailmap").write_text(
+        "Alice <alice@x> Alice Old <alice-old@x>\n", encoding="utf-8"
+    )
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/2-b"], repo)
+    (repo / "feat_p_2-b.txt").write_text("done", encoding="utf-8")
+    gitwrap.run(["add", "."], repo)
+    gitwrap.run(
+        ["commit", "-q", "-m", "wip", "--date", "2026-11-03T10:00:00"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-03T10:00:00",
+             "GIT_AUTHOR_NAME": "Alice Old", "GIT_AUTHOR_EMAIL": "alice-old@x"},
+    )
+    gitwrap.run(["push", "-q", "-u", "origin", "feature/p/2-b"], repo)
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/2-b'", "feature/p/2-b"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-04T10:00:00"},
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    assert report_mod.run(repo, "v0.1.0") == 0
+    out = capsys.readouterr().out
+    assert "p/1 — Alice" in out and "p/2 — Alice" in out  # one person, one name
+    assert "Alice Old" not in out
