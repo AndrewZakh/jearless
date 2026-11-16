@@ -117,6 +117,16 @@ How work is planned, measured and — deliberately — not measured. Every refus
 - The insurance against someone else's squash/rebase is **a task trailer in the commit message** (`Task: door_design/16`; modern gits even have `git commit --trailer`): it rides in the object itself and survives a squash if it made it into the squash message. git notes and refs/replace were rejected as metadata channels: they do not travel with a default clone/fetch and forges do not show them. When a squash has already happened, the key cannot be attached retroactively (amend would rewrite main) — which is why the generator's dry-run must highlight unattributed commits loudly: the hole must be visible, not silent.
 - The applicability boundary: the moment you need labels, assignees or task discussion — move to Issues, do not build a hybrid. Jira earns its keep for large teams and corporate scale; jearless is for the small and the swift.
 
+## Release checklist (human-run)
+
+Nothing automatic touches the forge; the release step reminds you of the rest:
+
+1. `jear release` — changelog section, timeline snapshot, PM report, annotated tag, all pushed.
+2. `uv build` — wheel + sdist.
+3. Metadata changed since the last release? Rehearse on TestPyPI first (`uv publish --publish-url https://test.pypi.org/legacy/` — a separate account/token).
+4. `uv publish` — the version lands on PyPI; a released-but-unpublished version drifts.
+5. Verify: the JSON API (`pypi.org/pypi/jearless/json`) is the ground truth; a fresh install may need `--refresh` while uv's cache catches up.
+
 ## Open questions
 
 - The generator config: the regex + the line template + the prefix-to-section mapping; the dry-run format.

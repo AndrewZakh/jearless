@@ -92,4 +92,7 @@ def run(cwd: Path, tag: str | None = None, remote: str = "origin") -> int:
         f"released {tag}: CHANGELOG.md section + {SNAPSHOTS_DIR}/timeline-{tag}.mmd"
         f" + {REPORTS_DIR}/report-{tag}.md, tag pushed"
     )
+    # the publish hint (task tooling/23): a released-but-unpublished version
+    # drifts away from PyPI — it happened once, hence the reminder
+    print("now: uv build && uv publish — the release is local until published")
     return 0
