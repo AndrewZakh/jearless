@@ -214,3 +214,68 @@ tasks:
         monochrome badge — and the fate of the PNG draft (keep as reference
         or drop).
       story_points: 2
+    - id: 25
+      summary: board — the kanban view over the canonical states
+      description: |
+        A mermaid kanban view over the canonical join — the human-familiar
+        board, derived, nothing stored. Sprint-first: `jear board` renders the
+        latest plan's tasks; `--plan FILE` explicit; `--all` the fallback with
+        PER-COLUMN limits: available — last N by id (free, monotonic; no
+        history walk), done — last N by merge date (derivable from bars),
+        in_progress — all (branches are few), plus the disclosure "and M more
+        available". Rows follow the plan's order when planned. Columns are
+        STATES, not sprints — multi-sprint boards refused: that is the
+        velocity trend's job (tooling/27). GitHub may not render the mermaid
+        kanban type (v11) — accepted: the output is portable text (GitLab
+        renders natively; local via mermaid.live/CLI).
+      story_points: 2
+    - id: 26
+      summary: retake — reopening done tasks with a declared kind
+      description: |
+        Re-take a DONE task — four atoms, story points untouched. (1) take on
+        a done task refuses the default kind ("done — re-take requires
+        --type fix"): the kind stays declared, not inferred. (2) the state
+        join derives REOPEN: a live branch forked after the done-merge
+        (merge-base date > merge committer date) wins over done — in_progress
+        again. (3) changelog/timeline dedupe keys on the BRANCH, not the
+        task: same branch twice = re-merge artifact (collapse); a different
+        prefix = new work (changelog "Fixed"). (4) the timeline bar id gets a
+        _fix suffix — rework must be visible on the chart. Points are NOT
+        incremented: a frozen estimate that velocity would double-count; the
+        fix's cost is derived (its own cycle time + the rework rate). "Why"
+        lives in the fix branch's first commit message.
+      story_points: 3
+    - id: 27
+      summary: burndown — sprint burn-down and velocity trend via xychart
+      description: |
+        Two derived charts via xychart-beta (GitHub may not render it —
+        accepted, portable text). (1) Sprint burn-down for a plan: the ideal
+        line = total planned points declining linearly over the window (plan
+        birth -> last planned end; undated plans degrade with a disclaimer),
+        the actual line = remaining points after each first-arrival merge,
+        plotted per day. (2) Velocity trend across plans: bars of points done
+        per sprint (plans + archives union x merges) — answers the
+        planning-buffer question (mean unplanned share). `jear burndown
+        <plan>` for (1); (2) lands in the report or as a flag — decide at
+        implementation.
+      story_points: 3
+    - id: 28
+      summary: 'ci — a test gate workflow: pytest and ruff on pull requests'
+      description: |
+        152 tests exist and NOTHING enforces them on the forge: PRs #1-#4
+        were merged without a single pytest run — the dashboard bot only
+        posts pictures. Deliverable: .github/workflows/tests.yml — pytest +
+        ruff on pull_request and push to main, Python 3.12, uv for speed.
+        The suite is integration-heavy (real repos, ~45s) — CI makes its
+        growth visible; a speed budget is follow-up policy, not this task.
+      story_points: 1
+    - id: 29
+      summary: windows — reconcile the OS-Independent claim with the tzset conftest
+      description: |
+        pyproject claims OS Independent, but conftest calls time.tzset() —
+        absent on Windows; the suite cannot even import there. Two honest
+        exits: drop the classifier (and state POSIX-only in the README), or
+        make the fixture portable (guard tzset behind hasattr / skip
+        date-dependent asserts on win32). Pick one at implementation; the
+        claim must stop lying either way.
+      story_points: 1
