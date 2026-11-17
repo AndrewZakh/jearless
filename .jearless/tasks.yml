@@ -298,3 +298,22 @@ tasks:
         pointer; the sprint.md refresh line lives in the file. Plus the
         scale-boundary note: hundreds of merges a day ~= tens of seconds.
       story_points: 3
+    - id: 31
+      summary: doctor_ignore — the scar ledger for accepted holes
+      description: |
+        "The visible hole" evolves into "the documented hole": .jearless/
+        doctor_ignore is the ledger of accepted scars — one sha per line
+        (# comments allowed), each with the cause. Matching is by SHA only
+        (immutable, exact — it can never hide a NEW violation, only the ones
+        acknowledged by hand). The ledger lives in .jearless/ (its reader is
+        jearless; git-convention files stay at the root). Doctor prints
+        non-ignored findings loud, then "N accepted scar(s) on the ledger",
+        and the exit code counts only non-ignored — doctor becomes
+        gate-able. Scope: the ledger applies to unattributed-commit findings
+        only; registry/links/naming findings are fixable — fix, don't
+        ignore. The ledger itself must be SANCTIONED for direct edits, or
+        its update commit becomes a new finding (infinite regress). Effect
+        in our repo: doctor exits 0 and joins the CI gate from tooling/28.
+        First live false positive of the duplicate guard recorded on the way
+        (67% vs tooling/5 — the net caught a non-fish; --yes applied).
+      story_points: 2
