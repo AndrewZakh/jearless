@@ -1,0 +1,15 @@
+plan:
+  goal: close the debts — gate, windows, views, storefront
+  tasks:
+    - task: tooling/28
+      planned: {start: 2026-11-17, end: 2026-11-17}
+    - task: tooling/29
+      planned: {start: 2026-11-17, end: 2026-11-18}
+    - task: tooling/25
+      planned: {start: 2026-11-18, end: 2026-11-20}
+    - task: tooling/26
+      planned: {start: 2026-11-20, end: 2026-11-22}
+    - task: tooling/27
+      planned: {start: 2026-11-22, end: 2026-11-24}
+    - task: tooling/30
+      planned: {start: 2026-11-24, end: 2026-11-26}
