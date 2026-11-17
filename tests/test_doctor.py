@@ -122,3 +122,47 @@ def test_md_plus_code_commit_is_flagged(repo, capsys):
     gitwrap.run(["commit", "-q", "-m", "docs and code mixed"], repo)
     gitwrap.run(["push", "-q", "origin", "main"], repo)
     assert doctor_mod.run(repo) == 1  # code inside: still a hole
+
+
+# --- the scar ledger (task tooling/31) ---
+
+
+def _direct_commit(repo, filename: str, message: str) -> str:
+    (repo / filename).write_text("x", encoding="utf-8")
+    gitwrap.run(["add", filename], repo)
+    gitwrap.run(["commit", "-q", "-m", message], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    return gitwrap.out(["rev-parse", "HEAD"], repo)
+
+
+def test_ledger_silences_an_acknowledged_scar(repo, capsys):
+    sha = _direct_commit(repo, "legacy.py", "a real accident, accepted")
+    ledger = repo / ".jearless" / "doctor_ignore"
+    ledger.parent.mkdir(exist_ok=True)
+    ledger.write_text(f"# accepted: content superseded later\n{sha[:7]}  # the cause\n",
+                      encoding="utf-8")
+    assert doctor_mod.run(repo) == 0  # exit 0: gate-able at last
+    out = capsys.readouterr().out
+    assert "1 accepted scar(s) on the ledger (.jearless/doctor_ignore)" in out
+    assert "unattributed" not in out
+
+
+def test_ledger_sha_precision(repo, capsys):
+    """The ledger by exact sha: it can never hide a NEW violation."""
+    sha = _direct_commit(repo, "old.py", "accepted accident")
+    ledger = repo / ".jearless" / "doctor_ignore"
+    ledger.parent.mkdir(exist_ok=True)
+    ledger.write_text(f"{sha[:7]}  # acknowledged\n", encoding="utf-8")
+    _direct_commit(repo, "new.py", "a fresh sin")
+    assert doctor_mod.run(repo) == 1
+    out = capsys.readouterr().out
+    assert "1 accepted scar(s) on the ledger" in out  # the old one suppressed
+    assert "a fresh sin" in out  # the new one screams
+
+
+def test_ledger_ignores_comments_and_blanks(repo, capsys):
+    sha = _direct_commit(repo, "old.py", "accepted accident")
+    ledger = repo / ".jearless" / "doctor_ignore"
+    ledger.parent.mkdir(exist_ok=True)
+    ledger.write_text(f"# header\n\n{sha[:7]}  # cause\n\n# tail\n", encoding="utf-8")
+    assert doctor_mod.run(repo) == 0
