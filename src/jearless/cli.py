@@ -11,6 +11,7 @@ from pathlib import Path
 from jearless import __version__
 from jearless import add as add_mod
 from jearless import archive as archive_mod
+from jearless import board as board_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import graph as graph_mod
@@ -66,6 +67,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="feature",
         help="the declared kind of work — the branch prefix (default feature)",
     )
+
+    p = sub.add_parser("board", help="the kanban view over the canonical states (task tooling/25)")
+    p.add_argument("--plan", default=None, metavar="FILE", help="board a specific sprint plan")
+    p.add_argument("--all", action="store_true", help="ignore plans; board everything with column limits")
+    p.add_argument("--limit", type=int, default=10, metavar="N", help="per-column cap for --all (default 10)")
 
     p = sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
     p.add_argument(
@@ -149,6 +155,8 @@ def main(argv: list[str] | None = None) -> int:
             return release_mod.run(cwd, tag=args.tag)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)
+        if args.command == "board":
+            return board_mod.run(cwd, plan_path=args.plan, show_all=args.all, limit=args.limit)
         if args.command == "plan":
             return plan_mod.run(cwd, Path(args.file), gantt=args.gantt)
         if args.command == "report":
