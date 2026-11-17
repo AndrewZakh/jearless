@@ -4,3 +4,4 @@
 d200781  # the day-granularity retro filter — superseded by 1834299, content subsumed
 7c87515  # bootstrap: the skeleton landed before the charter existed
 c0a9722  # initial commit — the egg before the chicken
+cf1d514  # the board-parser restore — committed directly to main (branch-before-commit slip, caught by doctor)
