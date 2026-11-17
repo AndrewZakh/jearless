@@ -1,4 +1,15 @@
 # Changelog
+## v0.32.8 (2026-11-17)
+### Added
+- tooling-25: board — the kanban view over the canonical states
+- tooling-26: retake — reopening done tasks with a declared kind
+- tooling-27: burndown — sprint burn-down and velocity trend via xychart
+- tooling-28: ci — a test gate workflow: pytest and ruff on pull requests
+- tooling-29: windows — reconcile the OS-Independent claim with the tzset conftest
+- tooling-30: docs — storefront restructure: manifest, contributing, examples, horizons
+- tooling-31: doctor_ignore — the scar ledger for accepted holes
+# 1 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.25.8 (2026-11-16)
 ### Added
 - tooling-20: retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail)
