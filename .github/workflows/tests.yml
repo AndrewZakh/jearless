@@ -1,0 +1,28 @@
+# The test gate (task tooling/28): pytest + ruff on every PR and push to main.
+# The dashboard bot posts pictures; this one guards the code.
+
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - name: install with dev deps
+        run: uv pip install --system -e ".[dev]"
+      - name: ruff
+        run: ruff check src tests
+      - name: pytest
+        run: pytest -q

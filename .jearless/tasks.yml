@@ -281,4 +281,20 @@ tasks:
       story_points: 1
     - id: 30
       summary: 'docs — storefront restructure: manifest, contributing, examples, horizons'
+      description: |
+        (1) manifest.md — the planning manifest moves out of README, plus the
+        charter rules (main by merges, --no-ff, derived-not-stored,
+        one-carrier) and the decision history: every rule with the cause that
+        born it. The new thesis lands here: humans bring chaos, and chaos is
+        data, not a violation — the retro shows it, the report counts it;
+        discipline lies in visibility, not in prohibition. (2) CONTRIBUTING.md
+        — setup, the branch ritual, pointers to the manifest and the CI gate.
+        (3) README becomes the storefront: logo (when tooling/24 lands), the
+        pitch, install, quickstart, and REAL artifacts as the hook — the dark
+        gantt, the board, a changelog fragment. (4) the deprecation horizon:
+        the root-registry fallback dies in 1.0. (5) .jearless/release.md —
+        the authored release checklist printed by every release (missing file
+        -> the one-line fallback); README's checklist section becomes a
+        pointer; the sprint.md refresh line lives in the file. Plus the
+        scale-boundary note: hundreds of merges a day ~= tens of seconds.
       story_points: 3
