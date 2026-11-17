@@ -6,6 +6,13 @@ sanctioned artifacts — the registry, the changelog, timeline snapshots (README
 Commits that arrived inside a --no-ff merge hang off second parents and are
 attributed by that merge. Everything else on the chain is a hole: a squash,
 a fast-forward or plain drift.
+
+Accepted holes — scars that cannot be fixed without rewriting history — are
+acknowledged in the scar ledger `.jearless/doctor_ignore` (task tooling/31):
+one sha per line, each with a cause. Matching is by sha prefix only, so the
+ledger can never hide a new violation — only the ones acknowledged by hand.
+Ignored findings are still counted aloud ("N accepted scar(s) on the
+ledger"); the exit code counts only live findings, so doctor is gate-able.
 """
 
 from pathlib import Path
@@ -13,6 +20,8 @@ from pathlib import Path
 from jearless import config, gitwrap, registry
 from jearless.gitwrap import GitError
 from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
+
+LEDGER_NAME = "doctor_ignore"
 
 
 def _check_registry(cwd: Path, findings: list[str]) -> None:
@@ -49,12 +58,28 @@ def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: 
 # The registry and archives are sanctioned in BOTH homes (task tooling/15).
 _H = f"{HOMEDIR}/"
 _SANCTIONED_EXACT = frozenset(
-    {REGISTRY_NAME, f"{_H}{REGISTRY_NAME}", "CHANGELOG.md", "env.yml"}
+    {REGISTRY_NAME, f"{_H}{REGISTRY_NAME}", "CHANGELOG.md", "env.yml", f"{_H}{LEDGER_NAME}"}
 )
 _SANCTIONED_PREFIXES = (
     "archive_", f"{_H}archive_", "snapshots/", f"{_H}snapshots/",
     f"{_H}reports/", f"{_H}plans/",
 )
+
+
+def _ledger(cwd: Path) -> set[str]:
+    """The accepted scars: shas from the ledger, comments and blanks stripped.
+
+    An absent ledger is not an error — a repo without scars needs no file.
+    """
+    path = cwd / HOMEDIR / LEDGER_NAME
+    if not path.exists():
+        return set()
+    shas: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        entry = line.split("#", 1)[0].strip()
+        if entry:
+            shas.add(entry.split()[0])
+    return shas
 
 
 def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:
@@ -67,15 +92,18 @@ def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:
     )
 
 
-def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
+def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> int:
+    """Loud findings per live hole; returns the number of ledger-acknowledged scars."""
     ref = f"{remote}/main"
+    ledger = _ledger(cwd)
     try:
         # first-parent only: WIP that arrived inside a --no-ff merge is attributed
         # by that merge, not audited on its own
         log = gitwrap.out(["log", "--first-parent", ref, "--format=%H%x1f%P%x1f%s"], cwd)
     except GitError:
         findings.append(f"main: no {ref} — nothing to audit yet")
-        return
+        return 0
+    suppressed = 0
     for line in log.splitlines():
         if not line.strip():
             continue
@@ -84,10 +112,14 @@ def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> None:
             continue  # a merge: attributed by its branch name
         if _is_sanctioned_edit(cwd, sha):
             continue  # a sanctioned human edit: a task, the changelog, a snapshot
+        if any(sha.startswith(entry) for entry in ledger):
+            suppressed += 1  # on the ledger: counted aloud below, not nagged
+            continue
         findings.append(
             f"main: unattributed commit {sha[:7]} \"{subject}\" "
             f"(not a merge, not a registry edit) — squash or fast-forward suspected"
         )
+    return suppressed
 
 
 def run(cwd: Path, remote: str = "origin") -> int:
@@ -96,8 +128,10 @@ def run(cwd: Path, remote: str = "origin") -> int:
     _check_links(cwd, findings)
     cfg = config.load(cwd)
     _check_branches(cwd, cfg, findings, remote)
-    _check_unattributed(cwd, findings, remote)
+    suppressed = _check_unattributed(cwd, findings, remote)
     for line in findings:
         print(line)
+    if suppressed:
+        print(f"{suppressed} accepted scar(s) on the ledger ({HOMEDIR}/{LEDGER_NAME})")
     print(f"doctor: {len(findings)} finding(s)")
     return 1 if findings else 0
