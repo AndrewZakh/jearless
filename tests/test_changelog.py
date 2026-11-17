@@ -108,6 +108,19 @@ def test_double_merge_single_entry(history, capsys):
     assert "1 re-merge(s) collapsed" in out  # collapsed aloud
 
 
+def test_retake_fix_lands_in_fixed_not_skipped(history, capsys):
+    """Task tooling/26: a DIFFERENT branch naming the same task is a declared
+    re-take — new work in "Fixed", never skipped as a shipped-before artifact."""
+    _merge_branch(history, "feature/p/1-first", "Merge branch 'feature/p/1-first'")
+    gitwrap.run(["tag", "v0.1.0"], history)
+    _merge_branch(history, "fix/p/1-first", "Merge branch 'fix/p/1-first'")
+    assert changelog_mod.run(history) == 0
+    out = capsys.readouterr().out
+    assert "### Added" in out and "- p-1: first task" in out
+    assert "### Fixed" in out and "- p-1: first task" in out.split("### Fixed")[1]
+    assert "re-merge(s) collapsed" not in out  # a re-take is not an artifact
+
+
 def test_first_merge_predates_range(history, capsys):
     clone = history
     _merge_branch(clone, "feature/p/1-first", "Merge branch 'feature/p/1-first'")

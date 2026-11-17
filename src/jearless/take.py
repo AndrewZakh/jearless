@@ -9,7 +9,7 @@ hypothesis, rejected).
 
 from pathlib import Path
 
-from jearless import config, gitwrap, registry, slug
+from jearless import config, gitwrap, registry, slug, state
 from jearless.errors import JearlessError
 
 KINDS = ("feature", "fix", "chore")
@@ -61,6 +61,12 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = 
         gitwrap.run(["rev-parse", "--verify", "--quiet", base], cwd)
     except gitwrap.GitError as exc:
         raise JearlessError(f"no {base}: take branches off the main tip ({exc})") from exc
+
+    # a DONE task re-taken is rework: the kind stays declared (task tooling/26)
+    view = state.compute(cwd, cfg, registry.load(cwd), remote)
+    tv = next((tv for tv in view.tasks if (tv.task.project, tv.task.id) == (project, num)), None)
+    if tv is not None and tv.state == state.DONE and kind != "fix":
+        raise JearlessError(f"task {project}/{num} is done — re-take requires --type fix")
 
     branch = f"{kind}/{project}/{num}-{slug.slugify(task.summary)}"
     previous = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)

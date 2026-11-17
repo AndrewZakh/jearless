@@ -134,3 +134,15 @@ def test_planned_entry_without_dates_field_is_undated(repo, capsys):
     )
     assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
     assert "no planned window" in capsys.readouterr().out
+
+
+def test_retro_fix_bar_does_not_overwrite_the_join(repo, capsys):
+    """Task tooling/26: a fix re-take bar is rework — the join keeps the feature bar."""
+    _merge_branch(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T09:00:00")
+    _merge_branch(repo, "fix/p/1-rework", "2026-11-06T10:00:00", "2026-11-06T12:00:00")
+    (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
+    out = capsys.readouterr().out
+    assert out.count("p/1:") == 1
+    # the join keeps the feature bar: on time; the fix bar is not the planned completion
+    assert "p/1: planned 11-01→11-02, actual 11-01→11-02, on time" in out

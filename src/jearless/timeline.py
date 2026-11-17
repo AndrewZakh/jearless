@@ -52,6 +52,7 @@ class Bar:
     label: str
     start: str
     end: str
+    kind: str = "feature"  # the branch prefix; fix/chore bars get an id suffix
 
 
 def _author_date(cwd: Path, sha: str) -> str:
@@ -88,30 +89,33 @@ def _first_own_commit(cwd: Path, sha: str, excluded: str) -> str | None:
 
 
 def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) -> list[Bar]:
-    """Done tasks: ONE bar per task — the first arrival (task tooling/11).
+    """Done tasks: ONE bar per BRANCH (task tooling/26 refines tooling/11).
 
-    The same branch can be merged twice (divergence, restore): the re-merge
-    is an artifact — a task ships in the version of its first merge — so the
-    earliest merge owns the bar and the newer one is discarded.
+    The same branch merged twice is a re-merge artifact — the first arrival
+    owns that branch's bar. A DIFFERENT branch naming the same task is a
+    declared re-take: new work, its own bar (id suffix _fix/_chore) — rework
+    must be visible on the chart.
     """
     log = gitwrap.out(
         ["log", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
         cwd,
         env=_UTC,
     )
-    bars: dict[tuple[str, int], Bar] = {}
+    bars: dict[tuple[str, int, str], Bar] = {}
     for line in reversed([ln for ln in log.splitlines() if ln.strip()]):  # oldest first
         sha, subject, cdate = line.split("\x1f", 2)
         branch = state.branch_from_merge_subject(subject)
         m = cfg.match_branch(branch) if branch else None
         if not m:
             continue
-        key = (m.group("project"), int(m.group("num")))
+        key = (m.group("project"), int(m.group("num")), branch)
         if key in bars:
             continue  # a re-merge: the first arrival already owns the bar
         first = _first_own_commit(cwd, f"{sha}^2", f"{sha}^1")
         start = _author_date(cwd, first) if first else cdate  # zero-commit branch: the merge is the task
-        bars[key] = Bar(m.group("project"), int(m.group("num")), _label(reg, m), start, cdate)
+        kind = branch.split("/", 1)[0]
+        suffix = "" if kind == "feature" else f"_{kind}"
+        bars[key] = Bar(m.group("project"), int(m.group("num")), _label(reg, m), start, cdate, suffix)
     return list(bars.values())
 
 
@@ -200,7 +204,8 @@ def render(
         for bar in sorted(
             (b for b in bars if b.project == project), key=lambda b: (b.start, b.num)
         ):
-            lines.append(f"    {_sanitize(bar.label)} :{bar.project}_{bar.num}, {bar.start}, {bar.end}")
+            bar_id = f"{bar.project}_{bar.num}{bar.kind if bar.kind != 'feature' else ''}"
+            lines.append(f"    {_sanitize(bar.label)} :{bar_id}, {bar.start}, {bar.end}")
     return "\n".join(lines) + "\n"
 
 

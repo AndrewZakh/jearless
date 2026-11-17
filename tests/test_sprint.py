@@ -87,6 +87,25 @@ def test_sprint_requires_a_remote(empty_repo, monkeypatch, capsys):
         sprint_mod.run(empty_repo)
 
 
+def test_reopen_derived_from_fork_after_done_merge(board, capsys):
+    """Task tooling/26: a fix branch forked after the done-merge reopens the task."""
+    _merge_task(board, 1, "first-task")  # p/1 done, branch pushed (stays on origin)
+    # a fix branch forked AT the done-merge commit: rework starts immediately
+    gitwrap.run(["checkout", "-q", "-b", "fix/p/1-follow-up"], board)
+    (board / "rework.txt").write_text("rework", encoding="utf-8")
+    gitwrap.run(["add", "rework.txt"], board)
+    gitwrap.run(["commit", "-q", "-m", "rework"], board)
+    gitwrap.run(["push", "-q", "-u", "origin", "fix/p/1-follow-up"], board)
+
+    assert sprint_mod.run(board) == 0
+    out = capsys.readouterr().out
+    assert "in_progress (1):" in out
+    assert "[fix/p/1-follow-up]" in out
+    # the p/1 card moved from Done to In progress
+    assert "p/1" in out.split("available")[0]
+    assert "done (0):" in out
+
+
 def test_double_merge_done_is_set_semantics(board, capsys):
     """Task tooling/11: sprint is expected safe — done is a set, a re-merge adds nothing."""
     _merge_task(board, 1, "first-task")

@@ -100,6 +100,17 @@ def test_double_merge_one_bar_first_arrival(repo, capsys):
     assert "%% visibility floor" in out  # the floor is disclosed on the chart
 
 
+def test_retake_fix_bar_has_suffix(repo, capsys):
+    """Task tooling/26: the re-take bar is visible and id-suffixed — no collisions."""
+    _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    _merge_with_dates(repo, "fix/p/1-follow-up", "2026-11-05T10:00:00", "2026-11-06T10:00:00")
+    assert timeline_mod.run(repo, snapshot="origin/main") == 0
+    out = capsys.readouterr().out
+    assert "p_1, 2026-11-01T10:00:00, 2026-11-02T10:00:00" in out  # the feature bar, plain id
+    assert "p_1_fix, 2026-11-05T10:00:00, 2026-11-06T10:00:00" in out  # the rework bar, suffixed
+    assert out.count("p_1,") == 1  # no duplicate mermaid ids
+
+
 def test_floor_stretches_slivers_on_a_long_axis(repo, capsys):
     """Second-scale bars on a days-scale axis are sub-pixel: the render floors them."""
     _merge_with_dates(repo, "feature/p/1-first", "2026-11-01T10:00:00", "2026-11-01T10:00:06")
