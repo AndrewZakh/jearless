@@ -279,3 +279,6 @@ tasks:
         date-dependent asserts on win32). Pick one at implementation; the
         claim must stop lying either way.
       story_points: 1
+    - id: 30
+      summary: 'docs — storefront restructure: manifest, contributing, examples, horizons'
+      story_points: 3
