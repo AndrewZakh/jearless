@@ -25,23 +25,24 @@ def _summary_for(reg: registry.Registry, project: str, num: int, slug: str | Non
 def _entries_from_history(
     cwd: Path, cfg: config.Config, reg: registry.Registry, rev_range: str, from_tag: str | None
 ) -> tuple[dict[str, list[tuple[tuple[str, int], str]]], int, int]:
-    """Merge commits → entries; re-merges collapse to the first arrival (task tooling/11).
+    """Merge commits → entries; dedupe keys on the BRANCH (task tooling/26).
 
-    A task ships in the version of its first merge: an entry whose task was
-    already merged before the range (shipped_before) or earlier inside the
-    range (seen) is an artifact of a re-merge and is counted aloud instead.
+    The same branch merged twice is a re-merge artifact (collapse, counted
+    aloud). A DIFFERENT branch naming the same task — a declared re-take —
+    is new work: it lands in its own kind's section (a fix in "Fixed") even
+    when the task shipped before the range.
     """
     sections: dict[str, list[tuple[tuple[str, int], str]]] = {}
     skipped = 0
     remerged = 0
-    seen: set[tuple[str, int]] = set()
-    shipped_before: set[tuple[str, int]] = set()
+    seen: set[tuple[str, int, str]] = set()
+    shipped_before: set[tuple[str, int, str]] = set()
     if from_tag:
         for subject in gitwrap.lines(["log", from_tag, "--merges", "--format=%s"], cwd):
             branch = state.branch_from_merge_subject(subject)
             m = cfg.match_branch(branch) if branch else None
             if m:
-                shipped_before.add((m.group("project"), int(m.group("num"))))
+                shipped_before.add((m.group("project"), int(m.group("num")), branch))
     for subject in gitwrap.lines(["log", rev_range, "--merges", "--format=%s"], cwd):
         branch = state.branch_from_merge_subject(subject)
         m = cfg.match_branch(branch) if branch else None
@@ -49,7 +50,7 @@ def _entries_from_history(
             skipped += 1  # off-taxonomy merge: the visible hole, counted aloud
             continue
         project, num = m.group("project"), int(m.group("num"))
-        key = (project, num)
+        key = (project, num, branch)
         if key in shipped_before or key in seen:
             remerged += 1
             continue
@@ -62,7 +63,7 @@ def _entries_from_history(
             slug=m.group("slug") or "",
             summary=summary,
         )
-        sections.setdefault(m.group("type"), []).append((key, line))
+        sections.setdefault(m.group("type"), []).append(((project, num), line))
     return sections, skipped, remerged
 
 

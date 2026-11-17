@@ -16,7 +16,11 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
     reg = registry.load_all(cwd)
     plan_obj = plan.load_plan(plan_path, reg)
     bars = timeline.merge_bars(cwd, config.load(cwd), reg, ref)
-    actual = {(b.project, b.num): b for b in bars}
+    # the join uses the FIRST arrival per task (the feature bar): a fix bar is
+    # rework, not the planned completion — it must not overwrite the join
+    actual: dict[tuple[str, int], timeline.Bar] = {}
+    for bar in bars:
+        actual.setdefault((bar.project, bar.num), bar)
     planned = {entry.task: entry for entry in plan_obj.entries}
     birth = plan.birth_date(cwd, plan_path)  # full timestamp; None = unborn
 

@@ -86,3 +86,37 @@ def test_take_rejects_unknown_kind(work):
     _, clone = work
     with pytest.raises(JearlessError, match="kind must be one of"):
         take_mod.take(clone, "tooling", 1, kind="hotfix")  # the auto-hotfix, refused
+
+
+# --- re-take of a DONE task (task tooling/26) ---
+
+
+def _merge_done(clone):
+    branch = "feature/tooling/1-add-a-task-to-the-registry"
+    gitwrap.run(["checkout", "-q", "-b", branch], clone)
+    (clone / "done.txt").write_text("done", encoding="utf-8")
+    gitwrap.run(["add", "done.txt"], clone)
+    gitwrap.run(["commit", "-q", "-m", "task work"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", branch], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", f"Merge branch '{branch}'", branch], clone)
+    gitwrap.run(["push", "-q", "origin", "main"], clone)
+    # the charter lifecycle: merged branches are deleted (forge auto-delete does it too)
+    gitwrap.run(["push", "-q", "origin", "--delete", branch], clone)
+    gitwrap.run(["branch", "-q", "-D", branch], clone)
+
+
+def test_take_done_task_refused_without_fix_kind(work):
+    """Task tooling/26: a done task re-taken is rework — the kind stays declared."""
+    _, clone = work
+    _merge_done(clone)
+    with pytest.raises(JearlessError, match="re-take requires --type fix"):
+        take_mod.take(clone, "tooling", 1)  # the default kind on a done task
+
+
+def test_take_done_task_with_fix_kind_proceeds(work):
+    _, clone = work
+    _merge_done(clone)
+    branch = take_mod.take(clone, "tooling", 1, kind="fix")
+    assert branch == "fix/tooling/1-add-a-task-to-the-registry"
+    assert branch in gitwrap.remote_heads(clone)  # the re-take is declared on origin

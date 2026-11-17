@@ -51,6 +51,12 @@ def is_repo(cwd: Path) -> bool:
     return proc.returncode == 0 and proc.stdout.strip() == "true"
 
 
+def is_ancestor(ancestor: str, descendant: str, cwd: Path) -> bool:
+    """merge-base --is-ancestor: rc 0 = ancestor or equal."""
+    proc = _git(["merge-base", "--is-ancestor", ancestor, descendant], cwd)
+    return proc.returncode == 0
+
+
 def has_commits(cwd: Path) -> bool:
     """A fresh `git init` is a repository without commits: a Phase 0 empty state."""
     proc = _git(["rev-parse", "--verify", "--quiet", "HEAD"], cwd)
