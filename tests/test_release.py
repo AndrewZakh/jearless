@@ -79,6 +79,20 @@ def test_second_release_prepends_and_respects_range(repo):
     assert "- p-1" not in v02  # the range is v0.1.0..HEAD, not the whole history
 
 
+def test_authored_release_md_is_printed(repo, capsys):
+    """Task tooling/30: the authored checklist (.jearless/release.md) is the
+    single carrier — the release prints it instead of the fallback line."""
+    (repo / ".jearless").mkdir(exist_ok=True)
+    (repo / ".jearless" / "release.md").write_text(
+        "# our own checklist\nrefresh the dashboard\n", encoding="utf-8"
+    )
+    _merge_branch(repo, "feature/p/1-first", "2026-11-02T10:00:00")
+    assert release_mod.run(repo) == 0
+    out = capsys.readouterr().out
+    assert "# our own checklist" in out and "refresh the dashboard" in out
+    assert "uv build && uv publish" not in out  # the fallback yields to the authored file
+
+
 def test_dirty_tree_rejected(repo):
     (repo / "junk.txt").write_text("x", encoding="utf-8")
     with pytest.raises(JearlessError, match="dirty"):

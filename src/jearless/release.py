@@ -17,6 +17,9 @@ from jearless.registry import HOMEDIR
 CHANGELOG_NAME = "CHANGELOG.md"
 SNAPSHOTS_DIR = f"{HOMEDIR}/snapshots"
 REPORTS_DIR = f"{HOMEDIR}/reports"
+CHECKLIST_NAME = "release.md"
+
+_FALLBACK_HINT = "now: uv build && uv publish — the release is local until published"
 
 
 def _flow_version(cwd: Path) -> str:
@@ -92,7 +95,11 @@ def run(cwd: Path, tag: str | None = None, remote: str = "origin") -> int:
         f"released {tag}: CHANGELOG.md section + {SNAPSHOTS_DIR}/timeline-{tag}.mmd"
         f" + {REPORTS_DIR}/report-{tag}.md, tag pushed"
     )
-    # the publish hint (task tooling/23): a released-but-unpublished version
-    # drifts away from PyPI — it happened once, hence the reminder
-    print("now: uv build && uv publish — the release is local until published")
+    # the authored checklist (task tooling/23 + tooling/30): the team edits
+    # .jearless/release.md, the release prints it; the one-liner is the fallback
+    checklist = cwd / HOMEDIR / CHECKLIST_NAME
+    if checklist.exists():
+        print(checklist.read_text(encoding="utf-8"), end="")
+    else:
+        print(_FALLBACK_HINT)
     return 0
