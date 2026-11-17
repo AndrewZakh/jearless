@@ -12,6 +12,8 @@ From PyPI, straight into an isolated environment:
 pipx install jearless        # the intended way for daily use
 ```
 
+POSIX systems only (Linux, macOS — and WSL counts as Linux); native Windows is untested.
+
 For development, one command builds the venv with everything. There is
 deliberately **no requirements.txt**: `pyproject.toml` is the single authored
 source of dependencies, and a second list would drift.
