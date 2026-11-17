@@ -1,5 +1,9 @@
 # jearless
 
+<p align="center">
+  <img src="assets/img/logo.png" alt="jearless — the hedgehog whose spines are a gear" width="320">
+</p>
+
 **Fearless. Jearless.** Task tracking and a changelog on bare git — for small teams.
 
 *Why the name: by ear — a faint echo of Jira; by sight — fearless; spelled with an error — and we track errors for a living; a jearless sprint — a fast run without fat. The mascot: a hedgehog whose spines are a gear.*

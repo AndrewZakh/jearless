@@ -7,4 +7,4 @@
    (separate account/token).
 3. Verify: the JSON API (`pypi.org/pypi/jearless/json`) is the ground truth;
    a fresh install may need `--refresh` while uv's index cache catches up.
-4. The dashboard may be stale: `jear sprint --write` and commit it.
+4. The dashboard is on demand (`jear sprint`) — nothing to refresh.
