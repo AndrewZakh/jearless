@@ -69,14 +69,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="the declared kind of work — the branch prefix (default feature)",
     )
 
+    p = sub.add_parser("board", help="the kanban view over the canonical states (task tooling/25)")
+    p.add_argument("--plan", default=None, metavar="FILE", help="board a specific sprint plan")
+    p.add_argument("--all", action="store_true", help="ignore plans; board everything with column limits")
+    p.add_argument("--limit", type=int, default=10, metavar="N", help="per-column cap for --all (default 10)")
+
     p = sub.add_parser(
         "burndown", help="sprint burn-down and the velocity trend via xychart (task tooling/27)"
     )
     p.add_argument("plan", nargs="?", default=None, metavar="FILE")
     p.add_argument("--trend", action="store_true", help="points done per sprint, across plans")
-    p.add_argument("--plan", default=None, metavar="FILE", help="board a specific sprint plan")
-    p.add_argument("--all", action="store_true", help="ignore plans; board everything with column limits")
-    p.add_argument("--limit", type=int, default=10, metavar="N", help="per-column cap for --all (default 10)")
 
     p = sub.add_parser("sprint", help="sprint: registry × branches × merge log join (Phase 1)")
     p.add_argument(
