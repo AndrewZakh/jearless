@@ -65,6 +65,8 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 
 Ad-hoc questions (total effort, per-project sums, dependencies) answer by one-liners — the query cookbook: [tasks_query.md](tasks_query.md).
 
+The philosophy behind it — EngineerOps, the engineer-first artifact model — lives in [ENGINEEROPS.md](ENGINEEROPS.md) (Concept 0.1).
+
 The planning rules — why there is no priority field, why kind is declared while membership is derived, why hours are honestly unanswered — live in [manifest.md](manifest.md). The mechanics of contributing: [CONTRIBUTING.md](CONTRIBUTING.md). The implementation plan and its reasoning: [PLAN.md](PLAN.md).
 
 ## Release checklist
