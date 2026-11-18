@@ -332,3 +332,15 @@ tasks:
         Documented in manifest.md ("GitFlow mode") — our repo stays trunk-based;
         the mode is for adopters whose forges accumulate on an integration branch.
       story_points: 3
+    - id: 33
+      summary: trunk_ref and integration_ref templates — master and release-sN support
+      description: |
+        Names are configurable for every flow. [git] trunk_ref = "main"
+        (default) — the delivery trunk: state walks, the doctor audit, the
+        release sync check, the reopen merge-base, the live_ref trunk
+        fallback. [git] integration_ref supports the {n} template resolved
+        from the LATEST plan number (release-s{n} for sprint_N.yml) — no
+        per-sprint manual config edits. Validation charset extended with
+        braces for the template. The doctor audit stays on the trunk only:
+        integration-branch internals are the team's discipline.
+      story_points: 2
