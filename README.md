@@ -63,6 +63,8 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 - **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join.
 - **`jear doctor`** audits main: unattributed commits (squash/fast-forward scars) are loud; acknowledged scars live in the `.jearless/doctor_ignore` ledger, counted aloud.
 
+Ad-hoc questions (total effort, per-project sums, dependencies) answer by one-liners — the query cookbook: [tasks_query.md](tasks_query.md).
+
 The planning rules — why there is no priority field, why kind is declared while membership is derived, why hours are honestly unanswered — live in [manifest.md](manifest.md). The mechanics of contributing: [CONTRIBUTING.md](CONTRIBUTING.md). The implementation plan and its reasoning: [PLAN.md](PLAN.md).
 
 ## Release checklist
