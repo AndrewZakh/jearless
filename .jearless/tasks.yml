@@ -317,3 +317,18 @@ tasks:
         First live false positive of the duplicate guard recorded on the way
         (67% vs tooling/5 — the net caught a non-fish; --yes applied).
       story_points: 2
+    - id: 32
+      summary: integration_ref — the GitFlow mode for done-detection and live views
+      description: |
+        Config: [git] integration_ref = "staging" in .jearless.toml (validated).
+        done-detection walks the UNION of remote/main and remote/<integration_ref>
+        merges — a task merged into the integration branch is DONE ("integrated"),
+        no more available-flicker when the forge auto-deletes the feature branch.
+        cfg.live_ref(remote): every LIVE/unreleased surface (state reopen base,
+        changelog default, timeline --live, burndown bars, take fork base) reads
+        the integration tip when configured; TAG-based released views (changelog
+        ranges, report, snapshots) stay on main/tags — release semantics unchanged.
+        Promotions must be true merges (doctor polices; squash = loud finding).
+        Documented in manifest.md ("GitFlow mode") — our repo stays trunk-based;
+        the mode is for adopters whose forges accumulate on an integration branch.
+      story_points: 3
