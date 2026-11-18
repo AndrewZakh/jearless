@@ -1,0 +1,39 @@
+%%{init: {"themeCSS": "svg{background-color:#0d1117} text{fill:#e6edf3} .section0,.section1,.section2,.section3{fill:transparent} .task,.rect{fill:#58a6ff;stroke:#1f6feb} .grid .tick line{stroke:#30363d} .grid path{stroke:#30363d}"}}%%
+gantt
+    title jearless — snapshot v0.34.9
+    dateFormat YYYY-MM-DDTHH:mm:ss
+    axisFormat %d.%m %H:%M
+%% visibility floor: 8:05:52.080000 per bar (32 bar(s) stretched) — exact times live in git
+    section tooling
+    take — claim a task with a single push :tooling_2, 2026-11-06T20:14:45, 2026-11-07T04:20:37
+    add — append a task to the registry :tooling_1, 2026-11-06T20:16:11, 2026-11-07T04:22:03
+    sprint — a join of three sources :tooling_3, 2026-11-06T20:18:06, 2026-11-07T04:23:58
+    changelog — a generator over merge commits :tooling_4, 2026-11-06T20:34:25, 2026-11-07T04:40:17
+    doctor — the visible hole :tooling_5, 2026-11-06T20:35:40, 2026-11-07T04:41:32
+    timeline — live and snapshot :tooling_6, 2026-11-06T20:44:07, 2026-11-07T04:49:59
+    retro — plan versus actual :tooling_7, 2026-11-06T20:45:03, 2026-11-07T04:50:55
+    release step — tag  changelog and timeline snapshot in one move :tooling_9, 2026-11-06T21:36:41, 2026-11-07T05:42:33
+    add — duplicate guard  keyword-overlap warning and confirmation :tooling_10, 2026-11-07T06:57:24, 2026-11-07T15:03:16
+    graph — the dependency view  task links and a mermaid flowchart :tooling_12, 2026-11-14T11:48:59, 2026-11-14T19:54:51
+    sprint — markdown dashboard  --write with default path :tooling_13, 2026-11-14T12:09:19, 2026-11-14T20:15:11
+    double-merge resilience — the same branch merged twice after a restore :tooling_11, 2026-11-14T12:26:23, 2026-11-14T20:32:15
+    sprint dashboard on every MR — a GitHub Action posting a sticky PR comment :tooling_14, 2026-11-14T12:41:18, 2026-11-14T20:47:10
+    archive — moving done tasks out :tooling_8, 2026-11-14T13:11:57, 2026-11-14T21:17:49
+    housekeeping — all artifacts under .jearless/ (registry move  resolution order) :tooling_15, 2026-11-14T20:48:11, 2026-11-15T04:54:03
+    planning — the sprint plan contract  plan/sprint_N.yml :tooling_16, 2026-11-14T21:00:10, 2026-11-15T05:06:02
+    report — the release-time PM snapshot (velocity  cycle time  rework) :tooling_17, 2026-11-14T21:13:50, 2026-11-15T05:19:42
+    RAG — the red-yellow-green view over plan x state  on demand :tooling_18, 2026-11-14T21:25:37, 2026-11-15T05:31:29
+    take — typed branches  --type fix|chore|feature (default feature) :tooling_19, 2026-11-15T05:27:02, 2026-11-15T13:32:54
+    retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail) :tooling_20, 2026-11-15T06:01:49, 2026-11-15T14:07:41
+    registry race — test two concurrent adds and document the resolution flow :tooling_21, 2026-11-16T20:24:21, 2026-11-17T04:30:13
+    mailmap — normalize author identity for attribution (%aN) :tooling_22, 2026-11-16T20:32:06, 2026-11-17T04:37:58
+    release checklist — publish to PyPI after jear release :tooling_23, 2026-11-16T20:39:09, 2026-11-17T04:45:01
+    ci — a test gate workflow  pytest and ruff on pull requests :tooling_28, 2026-11-17T00:04:28, 2026-11-17T08:10:20
+    doctor_ignore — the scar ledger for accepted holes :tooling_31, 2026-11-17T00:18:00, 2026-11-17T08:23:52
+    windows — reconcile the OS-Independent claim with the tzset conftest :tooling_29, 2026-11-17T04:48:20, 2026-11-17T12:54:12
+    board — the kanban view over the canonical states :tooling_25, 2026-11-17T04:59:31, 2026-11-17T13:05:23
+    retake — reopening done tasks with a declared kind :tooling_26, 2026-11-17T05:42:29, 2026-11-17T13:48:21
+    burndown — sprint burn-down and velocity trend via xychart :tooling_27, 2026-11-17T06:44:46, 2026-11-17T14:50:38
+    docs — storefront restructure  manifest  contributing  examples  horizons :tooling_30, 2026-11-17T07:15:40, 2026-11-17T15:21:32
+    integration_ref — the GitFlow mode for done-detection and live views :tooling_32, 2026-11-18T01:41:50, 2026-11-18T09:47:42
+    trunk_ref and integration_ref templates — master and release-sN support :tooling_33, 2026-11-18T02:10:14, 2026-11-18T10:16:06

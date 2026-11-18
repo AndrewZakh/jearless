@@ -1,4 +1,10 @@
 # Changelog
+## v0.34.9 (2026-11-18)
+### Added
+- tooling-32: integration_ref — the GitFlow mode for done-detection and live views
+- tooling-33: trunk_ref and integration_ref templates — master and release-sN support
+# 2 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.32.8 (2026-11-17)
 ### Added
 - tooling-25: board — the kanban view over the canonical states
