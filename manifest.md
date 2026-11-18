@@ -23,6 +23,34 @@ drift apart.
 - **Nothing automatic writes to main.** Releases, archives, dashboards — human-run, the tool prints the hints.
 - **Artifacts live under `.jearless/`** (plans, reports, archives, snapshots, the release checklist); files other things read by convention stay at the root (README, CHANGELOG, `.mailmap`, `.gitignore`, `.jearless.toml`). The root-registry fallback dies in 1.0.
 
+## Boundary cases
+
+Both classic sprint-boundary scenarios fall out of the design with zero
+special cases — because states are sprint-blind: sprints are plans (authored),
+the state belongs to git, and the retro is where the two calendars meet and
+tell the truth about both. Verified live (2026-11-17).
+
+- **Pull-forward.** An early finisher takes a task from the next sprint's
+  scope: `take` works — tasks are sprint-blind. The current sprint's retro
+  lists it as actual-only ("the work nobody planned") — that is the
+  planning-buffer data; the next sprint's retro joins it as planned and on
+  time. The velocity trend counts the points once, for the sprint whose plan
+  owns the task. Gap to know: an unplanned pulled task is invisible on the
+  sprint board until the plan includes it — `board --all` and the retro cover
+  the gap.
+- **Carry-over.** A task that slips to the next sprint: the old sprint's retro
+  shows the miss loudly (`end +Nd`) and never counts the points — the
+  burn-down stays above the ideal at the window's end; the new sprint's retro
+  counts the completion — no double-count, the mirror of the points-increment
+  rejection. The old plan is NOT amended retroactively: the missed commitment
+  stays visible; the retro explains why.
+- **No retroactive credit.** Opening a sprint after some of its tasks already
+  merged cannot claim that work: the plan-birth filter excludes pre-plan
+  merges from the burn-down and the retro. You may record the tasks and track
+  what is still open — the system refuses to issue credit for the past, the
+  same way it refuses to increment points. A late plan shows as late; the
+  retro explains why.
+
 ## The decision history (cause → rule)
 
 | Cause | Rule |
