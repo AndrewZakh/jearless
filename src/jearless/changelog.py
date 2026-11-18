@@ -73,7 +73,9 @@ def render(
     """The changelog as text; `header` overrides the section title (used by release)."""
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
-    to_ref = to_tag or "HEAD"
+    # explicit tags = released ranges on main; no to_tag = the unreleased view
+    # (the integration tip in GitFlow mode, HEAD in trunk)
+    to_ref = to_tag if to_tag else cfg.live_ref("origin")
     rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
     try:
         sections, skipped, remerged = _entries_from_history(cwd, cfg, reg, rev_range, from_tag)

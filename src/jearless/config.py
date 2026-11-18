@@ -31,9 +31,16 @@ class Config:
     line_template: str
     duplicate_threshold: float = DEFAULT_DUPLICATE_THRESHOLD
     rag_aging_days: int = DEFAULT_RAG_AGING_DAYS
+    integration_ref: str = ""  # e.g. "staging" — GitFlow mode (task tooling/32); "" = trunk
 
     def match_branch(self, name: str) -> re.Match | None:
         return self.branch_pattern.match(name)
+
+    def live_ref(self, remote: str) -> str:
+        """The tip unreleased work integrates into: main in trunk mode, the
+        integration branch in GitFlow mode. Live views read it; released
+        (tag-based) views keep reading main/tags."""
+        return f"{remote}/{self.integration_ref}" if self.integration_ref else f"{remote}/main"
 
 
 def _compile_branch_pattern(pattern: str) -> re.Pattern:
@@ -66,6 +73,12 @@ def load(cwd: Path) -> Config:
     aging = rag.get("aging_days", DEFAULT_RAG_AGING_DAYS)
     if not isinstance(aging, int) or isinstance(aging, bool) or aging < 1:
         raise ConfigError("[rag] aging_days must be a positive integer")
+    git_cfg = data.get("git", {})
+    integration_ref = git_cfg.get("integration_ref", "")
+    if not isinstance(integration_ref, str):
+        raise ConfigError("[git] integration_ref must be a branch-name string")
+    if integration_ref and not re.fullmatch(r"[A-Za-z0-9/_.-]+", integration_ref):
+        raise ConfigError(f"[git] integration_ref: '{integration_ref}' is not a branch name")
     sections = {**DEFAULT_SECTIONS, **changelog.get("sections", {})}
     return Config(
         branch_pattern=_compile_branch_pattern(branch.get("pattern", DEFAULT_BRANCH_PATTERN)),
@@ -73,4 +86,5 @@ def load(cwd: Path) -> Config:
         line_template=changelog.get("line_template", DEFAULT_LINE_TEMPLATE),
         duplicate_threshold=float(threshold),
         rag_aging_days=aging,
+        integration_ref=integration_ref,
     )

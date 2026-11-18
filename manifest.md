@@ -36,3 +36,16 @@ drift apart.
 | Story points incremented post-hoc double-count in velocity and rewrite the past | points are frozen estimates; rework cost is derived (cycle time + rework rate) |
 | An unread config key rots like an unread field | config sections are born with the feature that needs them |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
+
+## GitFlow mode
+
+For forges that accumulate unreleased work on an integration branch (staging)
+instead of promoting per task: `[git] integration_ref = "staging"` in
+`.jearless.toml`. Then done = "merged into main OR the integration tip"
+(the union kills the pre-promotion available-flicker), and every live view —
+the board, the sprint, the burndown, the changelog's unreleased section,
+take's fork base — reads the integration tip. Released (tag-based) views keep
+reading main: the promotion delivers the accumulated batch, and the changelog
+range catches it naturally via reachability. Promotions must be true merges —
+a squash promotion loses the task names and `jear doctor`'s ledger will hear
+about it. Our own repository stays trunk-based; the mode is for adopters.
