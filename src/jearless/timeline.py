@@ -121,7 +121,7 @@ def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) 
 
 def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str = "origin") -> list[Bar]:
     """Done tasks plus in-progress branches, the latter ending 'now'."""
-    done = merge_bars(cwd, cfg, reg, f"{remote}/main")
+    done = merge_bars(cwd, cfg, reg, cfg.live_ref(remote))
     done_keys = {(b.project, b.num) for b in done}
     now = _utc_now()
     bars = list(done)
@@ -129,7 +129,7 @@ def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str
         m = cfg.match_branch(name)
         if not m or (m.group("project"), int(m.group("num"))) in done_keys:
             continue
-        first = _first_own_commit(cwd, sha, f"{remote}/main")
+        first = _first_own_commit(cwd, sha, cfg.live_ref(remote))
         if not first:
             continue
         bars.append(

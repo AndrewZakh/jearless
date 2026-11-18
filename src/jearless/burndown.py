@@ -84,7 +84,7 @@ def burndown_render(cwd: Path, plan_path: Path, cfg: config.Config, remote: str 
         ideal_vals[d] = remaining
 
     # the actual line burns at each first-arrival merge of a planned task
-    bars = timeline.merge_bars(cwd, cfg, reg_all, f"{remote}/main")
+    bars = timeline.merge_bars(cwd, cfg, reg_all, cfg.live_ref(remote))
     arrivals = _first_arrivals(bars)
     actual_burn: dict[date, float] = {}
     for entry in plan_obj.entries:
