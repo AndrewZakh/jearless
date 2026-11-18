@@ -75,7 +75,7 @@ def render(
     reg = registry.load_all(cwd)
     # explicit tags = released ranges on main; no to_tag = the unreleased view
     # (the integration tip in GitFlow mode, HEAD in trunk)
-    to_ref = to_tag if to_tag else cfg.live_ref("origin")
+    to_ref = to_tag if to_tag else cfg.live_ref(cwd, "origin")
     rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
     try:
         sections, skipped, remerged = _entries_from_history(cwd, cfg, reg, rev_range, from_tag)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from jearless import changelog, gitwrap, timeline
+from jearless import changelog, config, gitwrap, timeline
 from jearless import report as report_mod
 from jearless.errors import JearlessError
 from jearless.registry import HOMEDIR
@@ -40,14 +40,15 @@ def _last_tag(cwd: Path) -> str | None:
         return None  # no tags yet — the whole history is the range
 
 
-def _preconditions(cwd: Path, remote: str) -> None:
+def _preconditions(cwd: Path, cfg: config.Config, remote: str) -> None:
     if gitwrap.out(["status", "--porcelain"], cwd):
         raise JearlessError("working tree is dirty — commit or stash first")
-    if gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd) != "main":
-        raise JearlessError("release runs on main")
+    if gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd) != cfg.trunk_ref:
+        raise JearlessError(f"release runs on the trunk ({cfg.trunk_ref})")
     gitwrap.run(["fetch", "--quiet", remote], cwd)
-    if gitwrap.out(["rev-parse", "main"], cwd) != gitwrap.out(["rev-parse", f"{remote}/main"], cwd):
-        raise JearlessError(f"main is not in sync with {remote}/main")
+    local_trunk = gitwrap.out(["rev-parse", cfg.trunk_ref], cwd)
+    if local_trunk != gitwrap.out(["rev-parse", f"{remote}/{cfg.trunk_ref}"], cwd):
+        raise JearlessError(f"{cfg.trunk_ref} is not in sync with {remote}/{cfg.trunk_ref}")
 
 
 def _merge_changelog(path: Path, body: str) -> None:
@@ -61,7 +62,8 @@ def _merge_changelog(path: Path, body: str) -> None:
 
 
 def run(cwd: Path, tag: str | None = None, remote: str = "origin") -> int:
-    _preconditions(cwd, remote)
+    cfg = config.load(cwd)
+    _preconditions(cwd, cfg, remote)
     tag = tag or _flow_version(cwd)
     try:
         gitwrap.run(["rev-parse", "--verify", "--quiet", f"refs/tags/{tag}"], cwd)
@@ -89,7 +91,7 @@ def run(cwd: Path, tag: str | None = None, remote: str = "origin") -> int:
         ["commit", "-q", "-m", f"release {tag}: changelog, timeline snapshot, PM report"], cwd
     )
     gitwrap.run(["tag", "-a", tag, "-m", f"Release {tag}"], cwd)
-    gitwrap.run(["push", "-q", remote, "main"], cwd)
+    gitwrap.run(["push", "-q", remote, cfg.trunk_ref], cwd)
     gitwrap.run(["push", "-q", remote, tag], cwd)
     print(
         f"released {tag}: CHANGELOG.md section + {SNAPSHOTS_DIR}/timeline-{tag}.mmd"

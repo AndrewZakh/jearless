@@ -92,9 +92,11 @@ def _is_sanctioned_edit(cwd: Path, sha: str) -> bool:
     )
 
 
-def _check_unattributed(cwd: Path, findings: list[str], remote: str) -> int:
+def _check_unattributed(
+    cwd: Path, findings: list[str], remote: str, trunk_ref: str
+) -> int:
     """Loud findings per live hole; returns the number of ledger-acknowledged scars."""
-    ref = f"{remote}/main"
+    ref = f"{remote}/{trunk_ref}"
     ledger = _ledger(cwd)
     try:
         # first-parent only: WIP that arrived inside a --no-ff merge is attributed
@@ -128,7 +130,7 @@ def run(cwd: Path, remote: str = "origin") -> int:
     _check_links(cwd, findings)
     cfg = config.load(cwd)
     _check_branches(cwd, cfg, findings, remote)
-    suppressed = _check_unattributed(cwd, findings, remote)
+    suppressed = _check_unattributed(cwd, findings, remote, cfg.trunk_ref)
     for line in findings:
         print(line)
     if suppressed:

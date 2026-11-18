@@ -153,7 +153,7 @@ def _rag_rows(cwd: Path, cfg: config.Config, plan_path: Path, remote: str) -> li
             rows.append(f"  PENDING {label}  — not taken")
             continue
         branch = tv.branch
-        own = gitwrap.lines(["rev-list", branch, "--not", f"{remote}/main"], cwd)
+        own = gitwrap.lines(["rev-list", branch, "--not", cfg.live_ref(cwd, remote)], cwd)
         if not own:
             anchor = gitwrap.out(
                 ["log", "-1", "--format=%cd", "--date=format-local:%Y-%m-%d", branch],

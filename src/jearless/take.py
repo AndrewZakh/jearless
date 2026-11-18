@@ -55,7 +55,7 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = 
             f"task {project}/{num} is already taken: branch '{busy}' exists on {remote}"
         )
 
-    base = cfg.live_ref(remote)  # trunk: origin/main; GitFlow: the integration tip
+    base = cfg.live_ref(cwd, remote)  # trunk: origin/main; GitFlow: the integration tip
     try:
         gitwrap.run(["fetch", "--quiet", remote], cwd)
         gitwrap.run(["rev-parse", "--verify", "--quiet", base], cwd)

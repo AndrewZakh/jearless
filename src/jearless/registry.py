@@ -8,10 +8,10 @@ from pathlib import Path
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
+from jearless.config import HOMEDIR
 from jearless.errors import JearlessError
 
 REGISTRY_NAME = "tasks.yml"
-HOMEDIR = ".jearless"
 
 # Live-state fields are forbidden in the registry: git knows the state (README).
 FORBIDDEN_FIELDS = {"status"}
