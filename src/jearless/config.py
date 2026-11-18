@@ -42,13 +42,16 @@ class Config:
     def live_ref(self, cwd: Path, remote: str) -> str:
         """The tip unreleased work integrates into. Trunk: origin/<trunk_ref>.
         GitFlow: origin/<integration_ref> with {n} resolved to the latest plan
-        number; unresolvable templates pass through — the walks tolerate a
-        missing ref."""
+        number — and no plans committed means trunk behavior everywhere (the
+        same rule the board and the burndown follow)."""
         if not self.integration_ref:
             return f"{remote}/{self.trunk_ref}"
         ref = self.integration_ref
         if "{n}" in ref:
-            ref = ref.replace("{n}", str(latest_plan_number(cwd)))
+            latest = latest_plan_number(cwd)
+            if latest == 0:
+                return f"{remote}/{self.trunk_ref}"
+            ref = ref.replace("{n}", str(latest))
         return f"{remote}/{ref}"
 
 

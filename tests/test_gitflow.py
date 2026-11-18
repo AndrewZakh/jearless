@@ -99,3 +99,18 @@ def test_bad_integration_ref_rejected(tmp_path):
     (tmp_path / ".jearless.toml").write_text('[git]\nintegration_ref = "bad ref!"\n', encoding="utf-8")
     with pytest.raises(ConfigError):
         config_mod.load(tmp_path)
+
+
+def test_zero_plans_falls_back_to_trunk(origin_and_clone):
+    """Task tooling/33: {n} with NO plans resolves to the trunk — the same
+    rule the board and the burndown follow. A live demo caught release-s0."""
+    _bare, clone = origin_and_clone
+    (clone / ".jearless.toml").write_text(
+        '[git]\nintegration_ref = "release-s{n}"\n', encoding="utf-8"
+    )
+    (clone / "tasks.yml").write_text(REGISTRY, encoding="utf-8")
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "cfg + registry"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    branch = take_mod.take(clone, "p", 1)
+    assert branch.startswith("feature/p/1-")  # trunk fallback, not release-s0
