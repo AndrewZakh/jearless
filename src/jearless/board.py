@@ -85,7 +85,7 @@ def run(
                 # "last N by merge date": oldest first, keep the tail
                 ends = {
                     (b.project, b.num): b.end
-                    for b in timeline.merge_bars(cwd, cfg, reg, cfg.live_ref(remote))
+                    for b in timeline.merge_bars(cwd, cfg, reg, cfg.live_ref(cwd, remote))
                 }
                 cards = sorted(cards, key=lambda tv: ends.get((tv.task.project, tv.task.id), ""))
             if len(cards) > limit:

@@ -69,9 +69,9 @@ def compute(
         live.setdefault(key, []).append(name)
 
     done: dict[tuple[str, int], set[str]] = {}  # key -> shas of done-merges, all refs
-    refs_to_walk = [f"{remote}/main"]
+    refs_to_walk = [f"{remote}/{cfg.trunk_ref}"]
     if cfg.integration_ref:
-        refs_to_walk.append(f"{remote}/{cfg.integration_ref}")  # GitFlow mode (task tooling/32)
+        refs_to_walk.append(cfg.live_ref(cwd, remote))  # GitFlow mode (task tooling/32)
     for ref in refs_to_walk:
         try:
             merges = gitwrap.lines(["log", ref, "--merges", "--format=%H%x1f%s"], cwd)
@@ -98,7 +98,7 @@ def compute(
             return False
         return any(gitwrap.is_ancestor(done_sha, base, cwd) for done_sha in done_shas)
 
-    ref = f"{remote}/main"
+    ref = f"{remote}/{cfg.trunk_ref}"
     views: list[TaskView] = []
     for task in reg.all():
         key = (task.project, task.id)

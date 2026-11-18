@@ -105,7 +105,8 @@ def test_duplicate_tag_rejected(repo):
         release_mod.run(repo)  # the flow version has not moved since
 
 
-def test_release_runs_on_main_only(repo):
+def test_release_runs_on_trunk_only(repo):
+    """Trunk is configurable (task tooling/33): the check follows cfg.trunk_ref."""
     gitwrap.run(["checkout", "-q", "-b", "feature/p/1-first"], repo)
-    with pytest.raises(JearlessError, match="on main"):
+    with pytest.raises(JearlessError, match="on the trunk"):
         release_mod.run(repo)
