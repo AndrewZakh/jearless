@@ -16,6 +16,7 @@ from jearless import burndown as burndown_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import graph as graph_mod
+from jearless import log as log_mod
 from jearless import plan as plan_mod
 from jearless import release as release_mod
 from jearless import report as report_mod
@@ -68,6 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="feature",
         help="the declared kind of work — the branch prefix (default feature)",
     )
+
+    p = sub.add_parser(
+        "log", help="the per-task journal: branches, commits, merges (task tooling/34)"
+    )
+    p.add_argument("project", help="project key, e.g. tooling")
+    p.add_argument("id", type=int, help="task id")
+    p.add_argument("--remote", default="origin")
 
     p = sub.add_parser("board", help="the kanban view over the canonical states (task tooling/25)")
     p.add_argument("--plan", default=None, metavar="FILE", help="board a specific sprint plan")
@@ -162,6 +170,8 @@ def main(argv: list[str] | None = None) -> int:
             return release_mod.run(cwd, tag=args.tag)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)
+        if args.command == "log":
+            return log_mod.run(cwd, args.project, args.id, remote=args.remote)
         if args.command == "board":
             return board_mod.run(cwd, plan_path=args.plan, show_all=args.all, limit=args.limit)
         if args.command == "burndown":
