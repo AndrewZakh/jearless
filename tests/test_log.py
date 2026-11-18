@@ -70,7 +70,7 @@ def test_log_live_branch_not_yet_merged(repo, capsys):
     assert log_mod.run(repo, "tooling", 22) == 0
     out = capsys.readouterr().out
     assert "branch feature/tooling/22-wip [feature]" in out
-    assert "live — not yet merged" in out
+    assert "live, not yet merged" in out
 
 
 def test_log_unknown_task_refused(repo):
