@@ -344,3 +344,46 @@ tasks:
         braces for the template. The doctor audit stays on the trunk only:
         integration-branch internals are the team's discipline.
       story_points: 2
+    - id: 34
+      summary: log — the per-task journal across branches and merges
+      description: |
+        The task lifecycle is scattered across branches: the feature branch,
+        fix re-take branches, the merges into the trunk naming them, the
+        dates. `jear log <project> <id>` — one command, the full journal:
+        every branch of the task (any kind), its own commits, the merge dates
+        into the trunk, sorted oldest first. A retake story reads top to
+        bottom: shipped, then the fix branch, then that merge. Source: local
+        branches + origin branches + trunk merges filtered by
+        `<project>/<id>-`. No state semantics — pure provenance view.
+      story_points: 2
+    - id: 35
+      summary: find — search across the eternal registry
+      description: |
+        The eternal registry grows forever — finding "that task about unbound"
+        must not be a manual grep. `jear find <query>` — case-insensitive
+        substring search across summaries and descriptions of the live
+        registry; prints project/num, summary, story_points. Archives stay
+        out of v1 (the union is the report's business, find works on the
+        working set).
+      story_points: 1
+    - id: 36
+      summary: doctor acknowledge — the ledger UX command
+      description: |
+        The scar ledger is hand-edited today: no sha validation, no required
+        cause. `jear doctor --acknowledge <sha> <cause...>` — validates the
+        sha exists on the trunk's first-parent chain, appends the ledger line
+        with the cause, prints the ledger summary. The ledger file itself is
+        sanctioned for direct edits (the tool edits it; the human commits —
+        the charter holds). The duplicate guard may flag this task against
+        tooling/31 — a false positive, --yes applied.
+      story_points: 1
+    - id: 37
+      summary: housekeeping pack — doctor in the CI gate, xcf ignored, take blocked-warning
+      description: |
+        The freebies pack: (a) doctor joins the tooling/28 tests workflow as
+        the fourth step — gate-able since the scar ledger landed (exit 0 on
+        our repo); (b) *.xcf into .gitignore — the GIMP source stays
+        untracked by the user's own decision, the status noise stops;
+        (c) take warns when a task's depends_on has an undone target — not a
+        refusal, one state.compute line, the RAG already knows.
+      story_points: 1
