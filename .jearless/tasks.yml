@@ -410,3 +410,13 @@ tasks:
         analogue: preparation and provenance are measured, effectiveness
         is not.
       story_points: 2
+    - id: 39
+      summary: storefront polish — plan, EngineerOps in English, cookbook rename
+      description: |
+        Actualize PLAN.md (the phase plan is history — the surface map is reality);
+        translate ENGINEEROPS.md to English (a public repo speaks English);
+        rename tasks_query.md to COOKBOOK.md (agent vote: COOKBOOK promises copy-paste
+        recipes, QUERIES is vaguer) and update the README link. The owner's refreshed
+        logo.png rides along here (the storefront hero) — tooling/24's vector redraw
+        stays open on its own branch.
+      story_points: 2
