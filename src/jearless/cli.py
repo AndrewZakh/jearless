@@ -19,6 +19,7 @@ from jearless import find as find_mod
 from jearless import graph as graph_mod
 from jearless import log as log_mod
 from jearless import plan as plan_mod
+from jearless import reject as reject_mod
 from jearless import release as release_mod
 from jearless import report as report_mod
 from jearless import retro as retro_mod
@@ -80,6 +81,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("find", help="search across the eternal registry (task tooling/35)")
     p.add_argument("query", help="case-insensitive substring: summaries and descriptions")
+
+    p = sub.add_parser(
+        "reject", help="withdraw a task with a mandatory cause (task tooling/38)"
+    )
+    p.add_argument("project", help="project key, e.g. tooling")
+    p.add_argument("id", type=int, help="task id")
+    p.add_argument("cause", help="the withdrawal cause — required, non-empty")
 
     p = sub.add_parser("board", help="the kanban view over the canonical states (task tooling/25)")
     p.add_argument("--plan", default=None, metavar="FILE", help="board a specific sprint plan")
@@ -178,6 +186,8 @@ def main(argv: list[str] | None = None) -> int:
             return log_mod.run(cwd, args.project, args.id, remote=args.remote)
         if args.command == "find":
             return find_mod.run(cwd, args.query)
+        if args.command == "reject":
+            return reject_mod.run(cwd, args.project, args.id, args.cause)
         if args.command == "board":
             return board_mod.run(cwd, plan_path=args.plan, show_all=args.all, limit=args.limit)
         if args.command == "burndown":

@@ -24,7 +24,8 @@ from jearless import config, gitwrap, registry, state
 from jearless import plan as plan_mod
 from jearless.errors import JearlessError
 
-_SECTION_ORDER = (state.IN_PROGRESS, state.AVAILABLE, state.DONE)
+# REJECTED last (tooling/38): terminal, past the working set
+_SECTION_ORDER = (state.IN_PROGRESS, state.AVAILABLE, state.DONE, state.REJECTED)
 
 _DATE = "%Y-%m-%dT%H:%M:%S"
 _UTC = {"TZ": "UTC"}
@@ -48,6 +49,8 @@ def _print_terminal(view: state.SprintView) -> None:
                 line += "  after " + ", ".join(f"{p}/{n}" for p, n in tv.task.depends_on)
             if tv.branch:
                 line += f"  [{tv.branch}]"
+            if tv.task.rejected:
+                line += f"  [rejected: {tv.task.rejected}]"
             print(line)
     if view.unknown_branches:
         print(f"branches without a registry task ({len(view.unknown_branches)}):")
@@ -78,6 +81,8 @@ def _markdown_block(view: state.SprintView, cwd: Path) -> str:
                 item += " · after " + ", ".join(f"{p}/{n}" for p, n in tv.task.depends_on)
             if tv.branch:
                 item += f" · `{tv.branch}`"
+            if tv.task.rejected:
+                item += f" — ⛔ rejected: {tv.task.rejected}"
             lines.append(item)
     if view.unknown_branches:
         lines.append(f"### branches without a registry task ({len(view.unknown_branches)})")

@@ -27,6 +27,7 @@ def run(cwd: Path, query: str) -> int:
         return 0
     for project, task in sorted(matches, key=lambda m: (m[0], m[1].id)):
         pts = f" ({task.story_points} pt)" if task.story_points is not None else ""
-        print(f"{project}/{task.id}{pts}  {task.summary}")
+        marker = f"  [rejected: {task.rejected}]" if task.rejected else ""
+        print(f"{project}/{task.id}{pts}  {task.summary}{marker}")
     print(f"{len(matches)} match(es)")
     return 0

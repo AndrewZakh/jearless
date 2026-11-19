@@ -23,6 +23,7 @@ _COLUMNS = (
     (state.AVAILABLE, "Available"),
     (state.IN_PROGRESS, "In progress"),
     (state.DONE, "Done"),
+    (state.REJECTED, "Rejected"),  # tooling/38 — terminal, past the working set
 )
 
 
