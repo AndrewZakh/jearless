@@ -1,0 +1,10 @@
+plan:
+  goal: light sprint — the command-surface dig (log, find, acknowledge, housekeeping, rejected) + the logo; cut POST-FACTUM on 2026-11-19 — the ceremony slipped, the tasks lived conversationally; the birth is honest
+  tasks:
+    - task: tooling/34
+    - task: tooling/35
+    - task: tooling/36
+    - task: tooling/37
+    - task: tooling/38
+    - task: tooling/24
+      planned: {start: 2026-11-18, end: 2026-11-19}
