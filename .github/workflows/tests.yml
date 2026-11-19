@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # doctor audits the full first-parent chain (task tooling/37)
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -26,3 +28,5 @@ jobs:
         run: ruff check src tests
       - name: pytest
         run: pytest -q
+      - name: doctor — the provenance gate (exit 0 since the scar ledger, task tooling/28+37)
+        run: jear doctor

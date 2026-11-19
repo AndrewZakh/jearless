@@ -220,3 +220,6 @@ __marimo__/
 .streamlit/secrets.toml
 *.swp
 .DS_Store
+
+# The GIMP source stays untracked by the owner's decision (task tooling/37)
+*.xcf

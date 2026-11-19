@@ -120,3 +120,23 @@ def test_take_done_task_with_fix_kind_proceeds(work):
     branch = take_mod.take(clone, "tooling", 1, kind="fix")
     assert branch == "fix/tooling/1-add-a-task-to-the-registry"
     assert branch in gitwrap.remote_heads(clone)  # the re-take is declared on origin
+
+
+def test_take_warns_on_undone_dependency(work, capsys):
+    """task tooling/37: the blocked-warning — a warning on stderr, never a refusal."""
+    _, clone = work
+    reg_path = clone / "tasks.yml"
+    text = reg_path.read_text(encoding="utf-8")
+    text = text.replace(
+        "    - id: 2\n      summary: Claim a task with a single push\n",
+        "    - id: 2\n      summary: Claim a task with a single push\n"
+        "      depends_on: 1\n",
+    )
+    reg_path.write_text(text, encoding="utf-8")
+    gitwrap.run(["add", "tasks.yml"], clone)
+    gitwrap.run(["commit", "-q", "-m", "dependency"], clone)
+    gitwrap.run(["push", "-q", "origin", "main"], clone)
+    branch = take_mod.take(clone, "tooling", 2)  # tooling/1 is NOT done — warn, proceed
+    assert branch == "feature/tooling/2-claim-a-task-with-a-single-push"
+    err = capsys.readouterr().err
+    assert "blocked by tooling/1 (available)" in err
