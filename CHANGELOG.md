@@ -1,4 +1,11 @@
 # Changelog
+## v0.37.10 (2026-11-19)
+### Added
+- tooling-35: find — search across the eternal registry
+- tooling-38: rejected — the fourth derived state and the reject command
+- tooling-39: storefront polish — plan, EngineerOps in English, cookbook rename
+# 1 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v0.34.9 (2026-11-18)
 ### Added
 - tooling-32: integration_ref — the GitFlow mode for done-detection and live views
