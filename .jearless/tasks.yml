@@ -387,3 +387,26 @@ tasks:
         (c) take warns when a task's depends_on has an undone target — not a
         refusal, one state.compute line, the RAG already knows.
       story_points: 1
+    - id: 38
+      summary: rejected — the fourth derived state and the reject command
+      description: |
+        The fourth derived state: a recorded task whose intent was withdrawn.
+        Field: rejected: "cause" in the entry — an AUTHORIAL decision fact
+        (the same class as planned dates), not live state; it changes only
+        at decision moments, human-committed. Loader validation: the field
+        present -> the cause must be a non-empty string (a bare rejection
+        is invisible debt). state.py derives the fourth state REJECTED =
+        present AND rejected field — it wins over done (a human's latest
+        declaration about the future, not a rewrite of the past: the merge
+        stays in history). board: a fourth column; sprint: a rejected
+        section; find: the marker. `jear reject <project> <id> <cause...>`
+        — the mirror of doctor --acknowledge (36): validates the task
+        exists, is not already rejected, the cause is non-empty, writes the
+        field. Revival is reversible: remove the field -> available; git
+        remembers the whole story. Points stay untouched: velocity excludes
+        rejected naturally (no merge -> no first arrival -> no count).
+        Boundaries: the system does not judge WHETHER the rejection was
+        right (L4 Outcome, the external world); quality of teaching
+        analogue: preparation and provenance are measured, effectiveness
+        is not.
+      story_points: 2
