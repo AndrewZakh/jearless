@@ -63,7 +63,7 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 - **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join.
 - **`jear doctor`** audits main: unattributed commits (squash/fast-forward scars) are loud; acknowledged scars live in the `.jearless/doctor_ignore` ledger, counted aloud.
 
-Ad-hoc questions (total effort, per-project sums, dependencies) answer by one-liners — the query cookbook: [tasks_query.md](tasks_query.md).
+Ad-hoc questions (total effort, per-project sums, dependencies) answer by one-liners — the query cookbook: [COOKBOOK.md](COOKBOOK.md).
 
 The philosophy behind it — EngineerOps, the engineer-first artifact model — lives in [ENGINEEROPS.md](ENGINEEROPS.md) (Concept 0.1).
 

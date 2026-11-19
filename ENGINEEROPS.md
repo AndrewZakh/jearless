@@ -1,80 +1,81 @@
 # EngineerOps — Concept 0.1
 
-> Статус: Concept. Философия, из которой вырос jearless — и которая шире него.
-> Не спецификация и не roadmap: превращать концепт в жёсткую систему
-> преждевременно.
+> Status: Concept. The philosophy jearless grew out of — and one that is
+> wider than the tool. Not a specification and not a roadmap: hardening the
+> concept into a rigid system would be premature.
 
-## Тезис
+## The thesis
 
-**Задача — это намерение потратить ресурсы на изменение реальности.
-Отчётность — способ объяснить, почему эти ресурсы были потрачены и что
-организация получила взамен.**
+**A task is an intent to spend resources on changing reality. Reporting is
+the way to explain why those resources were spent and what the organization
+received in return.**
 
-Традиционный подход путает эти две вещи: система управления становится
-системой отчётности. EngineerOps разделяет их.
+The traditional approach confuses the two: the management system becomes the
+reporting system. EngineerOps separates them.
 
-## Главная цель
+## The main goal
 
-Позволить инженеру тратить больше времени на создание инженерных результатов —
-и меньше на объяснение того, как он их создаёт.
+Let the engineer spend more time creating engineering outcomes — and less
+time explaining how those outcomes are created.
 
-## Принципы
+## Principles
 
-- **Первичен инженер.**
-- **Основа процесса — артефакты**, а не формы и не статусы.
-- **История деятельности сохраняется** тем же механизмом, что и её результаты.
-- **Прослеживаемое происхождение (provenance)** — у каждого результата.
-- **Отчётность формируется автоматически** там, где это возможно — из
-  артефактов, а не из форм.
-- **AI помогает превращать неструктурированную деятельность в
-  структурированное знание.**
-- **Аналитика строится на реальных свидетельствах.**
-- **Оценка человека остаётся за человеком.**
+- **The engineer comes first.**
+- **The process rests on artifacts**, not on forms and not on statuses.
+- **The history of the work is preserved** by the same mechanism that
+  preserves its results.
+- **Traceable provenance** — for every outcome.
+- **Reporting is assembled automatically** wherever possible — from
+  artifacts, not from forms.
+- **AI helps turn unstructured activity into structured knowledge.**
+- **Analytics rests on real evidence.**
+- **Judging a person remains a human's job.**
 
-## Модель артефактов L1–L4
+## The artifact model L1–L4
 
-Уровни — не типы файлов и не обязательные стадии жизненного цикла. Это уровни
-зрелости и практической оформленности результата.
+The levels are not file types and not mandatory lifecycle stages. They are
+levels of maturity and practical completeness of an outcome.
 
-| Уровень | Смысл | Примеры |
+| Level | Meaning | Examples |
 |---------|-------|---------|
-| L1 — Activity | Зафиксированная деятельность | Диалог, наблюдение, идея, эксперимент |
-| L2 — Knowledge | Полученное знание | Исследование, гипотеза, спецификация |
-| L3 — Engineering | Созданное решение | Код, модель, расчёт, проект, прототип |
-| L4 — Outcome | Практический результат | Внедрение, релиз, производство, принятый результат |
+| L1 — Activity | Recorded activity | A dialogue, an observation, an idea, an experiment |
+| L2 — Knowledge | Knowledge gained | A study, a hypothesis, a specification |
+| L3 — Engineering | A solution built | Code, a model, a calculation, a design, a prototype |
+| L4 — Outcome | A practical result | An adoption, a release, production, an accepted result |
 
-Общие свойства артефакта: `id`, происхождение (provenance), связи.
+Common artifact properties: `id`, provenance, links.
 
-## Git — механизм, не основа
+## Git — a mechanism, not the foundation
 
-Git — отличный механизм реализации одной из областей EngineerOps. Инженерные
-артефакты шире: диалоги, наблюдения, исследования, расчёты, производственные
-результаты. Философия не обязывает хранить всё в гите — она обязывает
-сохранять provenance. jearless — git-native реализация инженерного контура;
-широкие области EngineerOps — другие инструменты и другие носители, связанные
-provenance.
+Git is an excellent mechanism for one region of EngineerOps. Engineering
+artifacts are wider: dialogues, observations, studies, calculations,
+production results. The philosophy does not demand everything be stored in
+git — it demands provenance be preserved. jearless is the git-native
+implementation of the engineering contour of this philosophy; the wider
+regions of EngineerOps belong to other tools and other carriers, connected
+by provenance.
 
-## Границы и хаос
+## Boundaries and chaos
 
-- **Люди важнее процессов** («Individuals and interactions over processes and
-  tools» — унаследовано).
-- **Хаос — это данные, а не нарушение.** Внеплановая задача показывается
-  ретроспективой, считается отчётом, поглощается реестром. Дисциплина лежит
-  в видимости, не в запрете.
-- **Отчётность отвечает на «что», ретроспектива — на «почему».** Git знает
-  факты; люди знают причины.
-- **Оценка человека остаётся за человеком.** AI не оценивает — он превращает
-  неструктурированную деятельность в структурированное знание.
+- **People matter more than processes** ("Individuals and interactions over
+  processes and tools" — inherited).
+- **Chaos is data, not a violation.** An unplanned task is shown by the
+  retrospective, counted by the report, absorbed by the registry. Discipline
+  lives in visibility, not in prohibition.
+- **Reporting answers "what"; the retrospective answers "why".** Git knows
+  the facts; people know the reasons.
+- **Judging a person remains a human's job.** AI does not judge — it turns
+  unstructured activity into structured knowledge.
 
-## Слоганы
+## Slogans
 
 - Engineering without Reporting.
 - Engine without J(G)ears.
-- Инженерия без лишнего жира.
+- Engineering without the excess fat.
 
-## Связь с jearless
+## The link to jearless
 
-[jearless](README.md) — git-native реализация инженерного контура этой
-философии: задачи, состояние из истории, отчётность из слияний, аудит
-происхождения. Философия шире инструмента намеренно: инструмент обязан
-оставаться узким.
+[jearless](README.md) is the git-native implementation of the engineering
+contour of this philosophy: tasks, state derived from history, reporting
+assembled from merges, the provenance audit. The philosophy is deliberately
+wider than the tool: the tool is obliged to stay narrow.
