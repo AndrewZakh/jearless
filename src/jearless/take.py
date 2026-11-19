@@ -7,6 +7,7 @@ derived by the report, not baked into an immutable name (the auto-hotfix
 hypothesis, rejected).
 """
 
+import sys
 from pathlib import Path
 
 from jearless import config, gitwrap, registry, slug, state
@@ -67,6 +68,17 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = 
     tv = next((tv for tv in view.tasks if (tv.task.project, tv.task.id) == (project, num)), None)
     if tv is not None and tv.state == state.DONE and kind != "fix":
         raise JearlessError(f"task {project}/{num} is done — re-take requires --type fix")
+
+    # blocked-warning (task tooling/37): not a refusal — the RAG already knows;
+    # stderr: a warning must never pollute rendered output (the registry-nudge rule)
+    if task.depends_on:
+        by_key = {(t.task.project, t.task.id): t for t in view.tasks}
+        for dep_p, dep_n in task.depends_on:
+            dep = by_key.get((dep_p, dep_n))
+            if dep is None or dep.state != state.DONE:
+                dep_state = dep.state if dep else "unknown"
+                print(f"warning: {project}/{num} is blocked by {dep_p}/{dep_n} ({dep_state})",
+                      file=sys.stderr)
 
     branch = f"{kind}/{project}/{num}-{slug.slugify(task.summary)}"
     previous = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)
