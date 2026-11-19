@@ -1,0 +1,9 @@
+plan:
+  goal: the carry-over sprint — the laggard finishes the logo, the two ratified-but-never-taken dig findings get built
+  tasks:
+    - task: tooling/24
+      planned: {start: 2026-11-19, end: 2026-11-20}
+    - task: tooling/36
+      planned: {start: 2026-11-19, end: 2026-11-20}
+    - task: tooling/37
+      planned: {start: 2026-11-20, end: 2026-11-21}
