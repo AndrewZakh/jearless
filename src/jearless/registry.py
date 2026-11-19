@@ -36,6 +36,7 @@ class Task:
     description: str = ""
     story_points: int | None = None
     depends_on: tuple[tuple[str, int], ...] = ()
+    rejected: str | None = None  # the withdrawal cause — an authorial decision fact (tooling/38)
 
 
 @dataclass
@@ -142,6 +143,13 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
     points = entry.get("story_points")
     if points is not None and not isinstance(points, int):
         raise RegistryError(f"{where}: 'story_points' must be an integer")
+    rejected = entry.get("rejected")
+    # key presence, not value: a bare `rejected:` (null) is also invisible debt
+    if "rejected" in entry and (not isinstance(rejected, str) or not rejected.strip()):
+        raise RegistryError(
+            f"{where}: 'rejected' present requires a non-empty cause — "
+            "a bare rejection is invisible debt"
+        )
     return Task(
         project=project,
         id=entry["id"],
@@ -149,6 +157,7 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
         description=description,
         story_points=points,
         depends_on=_parse_depends(project, entry, where),
+        rejected=rejected if isinstance(rejected, str) else None,
     )
 
 

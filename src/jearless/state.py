@@ -19,6 +19,7 @@ from jearless.gitwrap import GitError
 AVAILABLE = "available"
 IN_PROGRESS = "in_progress"
 DONE = "done"
+REJECTED = "rejected"  # task tooling/38 — the fourth derived state
 
 # Both merge message forms (README): local merges and forge "Create a merge commit".
 # The owner segment carries no slashes; the branch name after it may (feature/p/1-x).
@@ -103,6 +104,12 @@ def compute(
     for task in reg.all():
         key = (task.project, task.id)
         branches = live.get(key, [])
+        if task.rejected:
+            # REJECTED wins over everything (tooling/38): the human's latest
+            # declaration about the future, not a rewrite of the past — the
+            # merge, if any, stays in history
+            views.append(TaskView(task, REJECTED))
+            continue
         if key in done:
             # done overrides stale branches — but a branch forked at-or-after
             # the done-merge reopens the task (rework under way, tooling/26)
