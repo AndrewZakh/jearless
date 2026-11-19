@@ -1,8 +1,8 @@
-# tasks_query.md — the query cookbook
+# COOKBOOK.md — the query cookbook
 
 The registry is data — the questions answer by one-liners, not by reading
 docs. Every query here is verified against this repository's registry
-(2026-11-18: 24 tasks, 46 pt).
+(re-verified 2026-11-19: 30 live tasks, 55 pt).
 
 ## The stack
 

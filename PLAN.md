@@ -1,6 +1,13 @@
 # Implementation plan
 
-Date: 2026-11-06. The design lives in README.md (the project constitution — argued and proven). This file is how we build it. The name is settled: **jearless**. Package `jearless`, console command `jear` (alias `jearless`), config `.jearless.toml`. Slogan: "Fearless. Jearless. Bare git is enough — for small teams."
+Date: 2026-11-06; actualized 2026-11-19 (task tooling/39). The four-phase build plan
+became history in three days (v0.1.0 → the first release v0.9.4); this file now maps
+the technical decisions and the shipped CLI surface. Development runs on jearless
+itself — sprints live in `.jearless/plans/`, the tool builds itself (see the tag
+history). The design lives in README.md (the project constitution — argued and
+proven). The name is settled: **jearless**. Package `jearless`, console command
+`jear` (alias `jearless`), config `.jearless.toml`. Slogan: "Fearless. Jearless.
+Bare git is enough — for small teams."
 
 ## Technical decisions (and why)
 
@@ -10,44 +17,56 @@ Date: 2026-11-06. The design lives in README.md (the project constitution — ar
 - **CLI on argparse.** The tool preaches minimalism — let the framework count be zero.
 - **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
 - **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
-- **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping.
-- **Artifacts live under `.jearless/`** (task tooling/15): the registry, archives, plans, reports; the public face stays at the root (README, CHANGELOG.md, sprint.md). Resolution order `.jearless/` → root → birth in `.jearless/`; both existing = refuse — two live registries are the drift disease.
+- **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping, GitFlow mode (`[git] trunk_ref` + `integration_ref` with the `{n}` plan-number template).
+- **Artifacts live under `.jearless/`** (task tooling/15): the registry, archives, plans, reports, snapshots; the public face stays at the root (README, CHANGELOG.md). Resolution order `.jearless/` → root → birth in `.jearless/`; both existing = refuse — two live registries are the drift disease.
 - **Planning follows the README manifest** (tooling 15–19): the plan file is the only authored artifact about the future; priority, blocked_by and parent are deliberate refusals with recorded reasons; kind is declared at take, membership is derived from the plan.
-- **The MR dashboard is a forge comment, not a tree file** (task tooling/14): a `pull_request` Action installs the PR's own jearless, renders the live timeline (mermaid renders right in GitHub comments) plus the board, and maintains one sticky comment per MR. No ref moves — the charter invariant is untouched; sprint.md stays human-run.
+- **The MR dashboard is a forge comment, not a tree file** (task tooling/14, shipped as `sprint-comment.yml`): a `pull_request` Action installs the PR's own jearless, renders the live timeline plus the board, and maintains one sticky comment per MR. No ref moves — the charter invariant is untouched; sprint.md stays human-run.
 
-## The CLI surface (mapped to the README)
+## The CLI surface (all shipped unless noted)
 
-| Command | Mechanics | Phase |
-|---|---|---|
-| `add <project> "summary" [--points N] [--yes]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches; the duplicate guard warns on keyword overlap and asks `y/N` (non-TTY declines, `--yes` skips) | 1 |
-| `take <project> <id> [--type fix\|chore\|feature]` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `<type>/<project>/<id>-<slug>` (default feature — the declared kind); push. The server arbitrates the race | 1 |
-| `find <query>` | case-insensitive substring search across summaries/descriptions of the live registry — the eternal registry grows, finding must not be a grep | — |
-| `sprint [--write [PATH]]` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done. Bare = pure print. `--write` refreshes a markdown dashboard (default `./sprint.md`): create-with-markers / replace-chunk / refuse a human file; a generated-at · git@sha stamp makes staleness visible; *.md-only commits are sanctioned as docs bookkeeping | 1 |
-| `changelog --from <tag> --to <tag> --dry-run` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives) | 2 |
-| `doctor` | unattributed commits on main (neither merges nor registry edits) — the visible hole; branch naming violations; an invalid registry | 2 |
-| `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact | 3 |
-| `retro <plan.yml>` | join the authored sprint contract (plan/sprint_N.yml) with first-arrival merges: dated windows report the drift, undated join by membership; merged-but-unplanned work is the visible hole | 3 |
-| `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); available/in_progress always live in tasks.yml, identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen | 4 |
-| `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity (union points, first-arrival), scope creep (plan-birth derivation), cycle time (median + p85, client-clock disclaimer), rework rate (prefixes), attribution (derived) | — |
-| `plan <file> [--gantt]` | validate the authored sprint contract (`plan/sprint_N.yml` in `.jearless/plans/`): ids vs the union, duplicates, dates; the file's git birth is the sprint start; the order of ids is the sprint priority; `--gantt` renders the derived plan gantt | — |
-| `burndown [plan] [--trend]` | sprint burn-down (stepped ideal at planned ends vs first-arrival actual, window = plan birth → last planned end, extended honestly past it) and the cross-sprint velocity trend — xychart-beta, portable text | — |
-| `sprint --rag <plan>` | red-yellow-green over plan × state × depends_on, on demand, never stored; aging N in `[rag]` | — |
-| `release [--tag TAG]` | tag + changelog section + timeline snapshot + PM report in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them; ends with the publish reminder (`uv build && uv publish` — the README carries the full checklist) | — |
-| `graph` | mermaid flowchart of the registry's `depends_on` links — the plan-side dependency view (gantt cannot draw arrows); refuses unknown targets and cycles, doctor reports them as findings | — |
+| Command | Mechanics |
+|---|---|
+| `add <project> "summary" [--points N] [--depends ...] [--yes]` | append a task to the registry (comments survive); next id = max over registry ∧ archives ∧ branches; the duplicate guard warns on keyword overlap and asks `y/N` (non-TTY declines, `--yes` skips) |
+| `take <project> <id> [--type fix\|chore\|feature]` | registry → slug; check origin (ls-remote — the truth, not the cache); branch `<type>/<project>/<id>-<slug>` (default feature — the declared kind); push. The server arbitrates the race |
+| `retake <project> <id> --type fix` | reopen a done task: the fork is derived by SHA (an ancestor check against the done-merge), never by clocks — same-second traps are impossible |
+| `find <query>` | case-insensitive substring search across summaries/descriptions; rejected tasks carry the `[rejected: …]` marker |
+| `sprint [--write [PATH]] [--rag <plan>]` | fetch --prune; the join registry × origin branches × merge log; states available / in_progress / done / rejected. Bare = pure print. `--write` refreshes a markdown dashboard (create-with-markers / replace-chunk / refuse a human file; a generated-at · git@sha stamp makes staleness visible) |
+| `board [--all] [--limit N]` | mermaid kanban over the canonical states; plan-first: the planned cards in the plan's own order, unplanned in-progress work still shows (hiding it would be a lie) |
+| `log <project> <id>` | the per-task journal: every branch of the task, own commits, merge dates — the retake story in one screen |
+| `reject <project> <id> <cause>` | withdraw a task with a mandatory cause ("a bare rejection is invisible debt"); REJECTED is the fourth derived state and wins over everything; revival = remove the field, git remembers |
+| `changelog --from <tag> --to <tag>` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives); the dry-run mindset — printed, never stored (storing is the release step) |
+| `doctor [--acknowledge <sha> "cause"]` | unattributed commits on main (the first-parent audit), branch-naming violations, an invalid registry; the scar ledger `.jearless/doctor_ignore` keeps acknowledged holes visible; exit code counts live findings only — gate-able. `--acknowledge` is the ledger UX command (planned, sprint_5) |
+| `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact |
+| `retro <plan.yml>` | join the authored sprint contract with first-arrival merges: dated windows report the drift, undated join by membership; merged-but-unplanned work is the visible hole |
+| `plan <file> [--gantt]` | validate the authored sprint contract (`.jearless/plans/`): ids vs the union, duplicates, dates; the file's git birth is the sprint start; the order of ids is the sprint priority |
+| `burndown [plan] [--trend]` | sprint burn-down (stepped ideal at planned ends vs first-arrival actual, window = plan birth → last planned end, extended honestly) and the cross-sprint velocity trend |
+| `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen |
+| `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity, scope creep, cycle time (median + p85, client-clock disclaimer), rework rate, attribution |
+| `release [--tag TAG]` | tag + changelog section + timeline snapshot + PM report in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them; ends with the publish reminder |
+| `graph` | mermaid flowchart of the registry's `depends_on` links; refuses unknown targets and cycles, doctor reports them as findings |
 
-## Phases and Definitions of Done
+## The phases — all shipped
 
-- **Phase 0. Skeleton:** pyproject, the CLI frame, the config schema, the git wrapper (subprocess), lint. DoD: `--help` works; empty states (no tags, no branches, an empty registry) do not crash commands.
-- **Phase 1. The core loop:** add + take + sprint. DoD: a task is taken with a single push; the sprint is assembled from three sources; the race test — two takes from two clones against one remote, the second one gets "taken"; deleting a branch returns the task to available.
-- **Phase 2. The journal:** changelog + doctor. DoD: golden tests on a factory repository with both merge message forms ("Merge branch …" and "Merge pull request …"); a squash commit is highlighted by doctor; dry-run is the default mode.
-- **Phase 3. Time:** timeline live/snapshot + retro. DoD: the snapshot carries the author date of the branch's first commit and the committer date of the merge; a plan with task ids joins with the facts.
-- **Phase 4. Deferred (on trigger):** archive, velocity analytics over the union of the registry and the archives.
+- **Phase 0. Skeleton** — shipped 2026-11-06: empty states never crash.
+- **Phase 1. The core loop** — shipped 2026-11-06: the race test (two takes, one remote) passes; deleting a branch returns the task to available.
+- **Phase 2. The journal** — shipped 2026-11-06: both merge message forms, the first-parent audit, doctor catches unattributed commits.
+- **Phase 3. Time** — shipped 2026-11-06: live/snapshot timeline, the retro join.
+- **Phase 4 (on trigger)** — archive shipped with release v0.9.4; the ergonomics trigger for mass archival never fired (the benchmark: a one-minute query needs millions of tasks).
+
+Since then the development is sprint-based and dogfooded: the tool tracks,
+dashboards, burns down, retros and releases itself. The scars are on the
+ledger (`.jearless/doctor_ignore`) — direct-to-main slips are acknowledged
+aloud, never hidden.
 
 ## What is deliberately absent (and that is a feature)
 
-Statuses and assignees (derived, not stored), CI integrations, a web UI, daemons, hooks, notifications. The moment those are needed — time to leave for Issues / git-bug / Backlog.md, not to build them in here.
+Statuses and assignees (derived, not stored), CI integrations beyond the
+test gate and the PR dashboard, a web UI, daemons, hooks, notifications. The
+moment those are needed — time to leave for Issues / git-bug / Backlog.md,
+not to build them in here.
 
 ## Open implementation questions
 
-- `take` for a task missing from the registry: refuse, or an `--adhoc` flag — this would also settle the "branches off the regex" question.
-- Detecting a fast-forward retroactively is impossible (it leaves no trace) — doctor catches only unattributed commits.
+- `take` for a task missing from the registry: **settled** — it refuses; ad-hoc work gets a registry entry or a non-taxonomy branch (shown aloud as the visible hole).
+- Detecting a fast-forward retroactively is impossible (it leaves no trace) — doctor catches only unattributed commits. Standing rule: the scars go on the ledger, the shishki stay visible.
+- Branch protection (mechanics vs culture fork) and the xcf→Git-LFS question: open, on the owner's desk.
