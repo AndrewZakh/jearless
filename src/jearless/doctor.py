@@ -18,10 +18,18 @@ ledger"); the exit code counts only live findings, so doctor is gate-able.
 from pathlib import Path
 
 from jearless import config, gitwrap, registry
+from jearless.errors import JearlessError
 from jearless.gitwrap import GitError
 from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
 
 LEDGER_NAME = "doctor_ignore"
+
+# The covenant a newborn ledger is born with (the living ledger carries the same lines).
+LEDGER_HEADER = (
+    "# The scar ledger: accepted holes on main's first-parent chain (task tooling/31).\n"
+    "# One sha per line, with the cause. Doctor counts them in the summary instead\n"
+    "# of nagging; new sins still scream.\n"
+)
 
 
 def _check_registry(cwd: Path, findings: list[str]) -> None:
@@ -137,3 +145,38 @@ def run(cwd: Path, remote: str = "origin") -> int:
         print(f"{suppressed} accepted scar(s) on the ledger ({HOMEDIR}/{LEDGER_NAME})")
     print(f"doctor: {len(findings)} finding(s)")
     return 1 if findings else 0
+
+
+def acknowledge(cwd: Path, sha: str, cause: str, remote: str = "origin") -> int:
+    """The ledger UX (task tooling/36): validate, require the cause, append, stage.
+
+    The mirror of `reject` (38): a bare acknowledgment is invisible debt. The
+    sha must exist on the trunk's first-parent chain — the ledger can only
+    acknowledge real commits, never hypothetical ones. The tool edits and
+    stages; the human commits (the charter holds).
+    """
+    cause = cause.strip()
+    if not cause:
+        raise JearlessError("the cause is required — a bare acknowledgment is invisible debt")
+    cfg = config.load(cwd)
+    ref = f"{remote}/{cfg.trunk_ref}"
+    try:
+        chain = gitwrap.out(["log", "--first-parent", ref, "--format=%H"], cwd).split()
+    except GitError as exc:
+        raise JearlessError(f"no {ref} — nothing to acknowledge against") from exc
+    full = next((h for h in chain if h.startswith(sha.strip())), None)
+    if full is None:
+        raise JearlessError(f"{sha.strip()[:7]}: no such commit on the {ref} first-parent chain")
+    ledger_path = cwd / HOMEDIR / LEDGER_NAME
+    if any(full.startswith(entry) for entry in _ledger(cwd)):
+        raise JearlessError(f"{full[:7]}: already acknowledged")
+    if not ledger_path.exists():
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_text(LEDGER_HEADER, encoding="utf-8")
+    with ledger_path.open("a", encoding="utf-8") as fh:
+        fh.write(f"{full[:7]}  # {cause}\n")
+    gitwrap.run(["add", str(ledger_path)], cwd)
+    print(f"acknowledged: {full[:7]} — {cause}")
+    print(f"ledger: {len(_ledger(cwd))} scar(s) in {HOMEDIR}/{LEDGER_NAME}")
+    print("the ledger edit is staged; commit it to main to make it permanent")
+    return 0

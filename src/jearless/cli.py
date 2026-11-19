@@ -123,7 +123,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--to", dest="to_tag", default=None, metavar="TAG")
     p.add_argument("--dry-run", action="store_true", help="accepted for symmetry; always dry")
 
-    sub.add_parser("doctor", help="diagnostics: unattributed commits etc. (Phase 2)")
+    p = sub.add_parser("doctor", help="diagnostics: unattributed commits etc. (Phase 2)")
+    p.add_argument(
+        "--acknowledge",
+        nargs=2,
+        metavar=("SHA", "CAUSE"),
+        help="append a scar to the ledger — the sha must be on the trunk chain (task tooling/36)",
+    )
 
     sub.add_parser("graph", help="mermaid flowchart of the registry's task links")
 
@@ -173,6 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "changelog":
             return changelog_mod.run(cwd, from_tag=args.from_tag, to_tag=args.to_tag)
         if args.command == "doctor":
+            if args.acknowledge:
+                return doctor_mod.acknowledge(cwd, args.acknowledge[0], args.acknowledge[1])
             return doctor_mod.run(cwd)
         if args.command == "timeline":
             return timeline_mod.run(cwd, snapshot=args.snapshot)
