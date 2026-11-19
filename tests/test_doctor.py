@@ -166,3 +166,59 @@ def test_ledger_ignores_comments_and_blanks(repo, capsys):
     ledger.parent.mkdir(exist_ok=True)
     ledger.write_text(f"# header\n\n{sha[:7]}  # cause\n\n# tail\n", encoding="utf-8")
     assert doctor_mod.run(repo) == 0
+
+
+def test_acknowledge_appends_and_stages(repo, capsys):
+    """task tooling/36: the ledger UX — validate, require the cause, append, stage."""
+    (repo / "code.py").write_text("x", encoding="utf-8")
+    gitwrap.run(["add", "code.py"], repo)
+    gitwrap.run(["commit", "-q", "-m", "the slip itself"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    assert doctor_mod.acknowledge(repo, sha, "the honest mistake, acknowledged") == 0
+    out = capsys.readouterr().out
+    assert f"acknowledged: {sha} — the honest mistake, acknowledged" in out
+    assert "staged" in out
+    ledger = (repo / ".jearless" / "doctor_ignore").read_text(encoding="utf-8")
+    assert f"{sha}  # the honest mistake, acknowledged" in ledger
+    staged = gitwrap.out(["status", "--porcelain"], repo)
+    assert "jearless/doctor_ignore" in staged  # staged (A or M), never committed — the charter
+
+
+def test_acknowledge_then_doctor_is_clean(repo, capsys):
+    (repo / "code.py").write_text("x", encoding="utf-8")
+    gitwrap.run(["add", "code.py"], repo)
+    gitwrap.run(["commit", "-q", "-m", "slip"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    doctor_mod.acknowledge(repo, sha, "the scar stays visible")
+    capsys.readouterr()
+    assert doctor_mod.run(repo) == 0
+    assert "1 accepted scar(s) on the ledger" in capsys.readouterr().out
+
+
+def test_acknowledge_unknown_sha_refused(repo):
+    with pytest.raises(Exception, match="no such commit on the origin/main"):
+        doctor_mod.acknowledge(repo, "deadbee", "cause")
+
+
+def test_acknowledge_duplicate_refused(repo, capsys):
+    (repo / "code.py").write_text("x", encoding="utf-8")
+    gitwrap.run(["add", "code.py"], repo)
+    gitwrap.run(["commit", "-q", "-m", "slip"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    doctor_mod.acknowledge(repo, sha, "first verdict")
+    with pytest.raises(Exception, match="already acknowledged"):
+        doctor_mod.acknowledge(repo, sha, "second verdict")
+
+
+def test_acknowledge_empty_cause_refused(repo, capsys):
+    (repo / "code.py").write_text("x", encoding="utf-8")
+    gitwrap.run(["add", "code.py"], repo)
+    gitwrap.run(["commit", "-q", "-m", "slip"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    with pytest.raises(Exception, match="cause is required"):
+        doctor_mod.acknowledge(repo, sha, "   ")
+    assert not (repo / ".jearless" / "doctor_ignore").exists()  # nothing written on a bare pass
