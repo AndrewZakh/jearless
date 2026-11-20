@@ -33,8 +33,8 @@ jear-dashboard:
           echo '```mermaid'; jear timeline --live; echo '```'
         fi
         echo; echo "### The board"
-        # the public dashboard shows the WHOLE working set (task tooling/50, round 2)
-        BOARD=$(jear board --all)
+        # the sprint view (plan-mode); unplanned live work still shows (the manifest rule)
+        BOARD=$(jear board)
         echo '```mermaid'
         # quote card labels: parens like (2 pt) break the kanban lexer
         printf '%s\n' "$BOARD" | python3 examples/quote_mermaid_labels.py
