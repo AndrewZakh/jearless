@@ -145,6 +145,11 @@ def build_parser() -> argparse.ArgumentParser:
         "release", help="tag + changelog + timeline snapshot in one move (task tooling/9)"
     )
     p.add_argument("--tag", default=None, metavar="TAG")
+    p.add_argument(
+        "--finalize",
+        metavar="TAG",
+        help="phase 2: after the release PR merges, tag the merge commit (task tooling/51)",
+    )
 
     p = sub.add_parser(
         "plan", help="validate a sprint plan contract and show it (task tooling/16)"
@@ -187,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "retro":
             return retro_mod.run(cwd, Path(args.plan))
         if args.command == "release":
+            if args.finalize:
+                return release_mod.finalize(cwd, args.finalize)
             return release_mod.run(cwd, tag=args.tag)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)

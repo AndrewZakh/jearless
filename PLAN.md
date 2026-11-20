@@ -42,7 +42,7 @@ Bare git is enough — for small teams."
 | `burndown [plan] [--trend]` | sprint burn-down (stepped ideal at planned ends vs first-arrival actual, window = plan birth → last planned end, extended honestly) and the cross-sprint velocity trend |
 | `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen |
 | `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity, scope creep, cycle time (median + p85, client-clock disclaimer), rework rate, attribution |
-| `release [--tag TAG]` | tag + changelog section + timeline snapshot + PM report in one human-run move; the tag defaults to the env.yml flow version; artifacts are committed and the annotated tag lands on them; ends with the publish reminder |
+| `release [--tag TAG] [--finalize TAG]` | two phases, nothing writes main: PREPARE commits the artifacts (changelog, snapshot, report) on release/<tag> and opens the PR; FINALIZE lands the annotated tag on the merge commit after the PR merges (task tooling/51); ends with the publish reminder |
 | `graph` | mermaid flowchart of the registry's `depends_on` links; refuses unknown targets and cycles, doctor reports them as findings |
 
 ## The phases — all shipped

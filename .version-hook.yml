@@ -43,6 +43,11 @@ branch_flow:
     target: main
     policy: ignore
 
+  - name: release
+    regex: '^release/' # release/v<ver> — the artifacts commit is version-neutral (tooling/51)
+    target: main
+    policy: ignore
+
 hooks:
   auto_stage: true
   on_error: fail

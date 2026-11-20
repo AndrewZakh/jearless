@@ -1,5 +1,8 @@
-# Release checklist (printed by every release)
+# Release checklist (printed at finalize — task tooling/51)
 
+0. The flow: `jear release` prepared release/<tag> (the artifacts branch) →
+   its PR merged → `jear release --finalize <tag>` landed the tag on the
+   merge commit.
 1. The tag is pushed — but the release is LOCAL until published:
    `uv build && uv publish`
 2. Metadata (pyproject classifiers/urls) changed since the last release?
