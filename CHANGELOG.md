@@ -1,4 +1,8 @@
 # Changelog
+## v0.51.12 (2026-11-20)
+### Added
+- tooling-51: release two-phase — the artifacts ride a PR
+
 ## v0.50.12 (2026-11-20)
 ### Added
 - tooling-46: next-ID allocation over the union — add collides with archived ids
