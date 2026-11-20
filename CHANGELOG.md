@@ -1,4 +1,12 @@
 # Changelog
+## v1.0.0 (2026-11-20)
+### Added
+- tooling-52: registry mutations ride PRs — add, reject, archive
+- tooling-53: auto-PR via the forge API — labels on, self-opening
+- tooling-54: the constitution amendment — PR-only main, the 1.0 ceremony
+# 3 off-taxonomy merge(s) skipped — the visible hole (README)
+# 1 re-merge(s) collapsed — a task ships in the version of its first merge
+
 ## v0.51.12 (2026-11-20)
 ### Added
 - tooling-51: release two-phase — the artifacts ride a PR
