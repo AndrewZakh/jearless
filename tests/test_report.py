@@ -71,11 +71,16 @@ def test_report_velocity_cycle_rework_attribution(repo, capsys):
     # cycle time: p/3 lived exactly 24h
     assert "median 24.0h" in out and "p85 24.0h" in out
     assert "client clocks" in out
-    # rework: the ad-hoc fix merge counts — 1 fix / 2 merges
+    # fix share: the ad-hoc fix merge counts — 1 fix / 2 merges (precise name, task tooling/43)
+    assert "## Fix share (fix/-prefix merges / all merges in the range)" in out
     assert "1 fix / 2 merges (50%)" in out
-    # scope creep: p/3 born after the plan's birth; p/1, p/2 were born before
+    # return rate: no same-ID re-merges in this range
+    assert "0 return(s) across 1 merged task(s) (0%)" in out
+    # backlog growth (the review renamed scope creep): p/3 born after the plan's birth
+    assert "## Backlog growth" in out
     assert "p/3  crash fix" in out and "born 2026-11" in out
-    assert "p/1" not in out.split("## Scope creep")[1].split("##")[0]
+    assert "p/1" not in out.split("## Backlog growth")[1].split("##")[0]
+    assert "actual-only" in out  # the unplanned-merged signal is referenced, not duplicated
     # attribution: p/3's branch had only Alice's commits
     assert "p/3 — Alice" in out
 
@@ -118,3 +123,20 @@ def test_mailmap_normalizes_identity(repo, capsys):
     out = capsys.readouterr().out
     assert "p/1 — Alice" in out and "p/2 — Alice" in out  # one person, one name
     assert "Alice Old" not in out
+
+
+def test_return_rate_counts_re_merges(repo, capsys):
+    """task tooling/43: a same-ID re-merge is a return — counted, listed, named."""
+    _merge_branch(repo, "feature/p/1-a", "Alice", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    _merge_branch(repo, "fix/p/1-a", "Alice", "2026-11-05T10:00:00", "2026-11-05T12:00:00")
+    _merge_branch(repo, "feature/p/2-b", "Bob", "2026-11-06T10:00:00", "2026-11-06T12:00:00")
+    gitwrap.run(["tag", "v0.2.0"], repo)
+    assert report_mod.run(repo, "v0.2.0") == 0
+    out = capsys.readouterr().out
+    assert "## Return rate (same-ID re-merges" in out
+    # the return bar is in the window; the denominator counts both merged keys
+    assert "1 return(s) across 2 merged task(s) (50%)" in out
+    assert "p/1  first task" in out.split("## Return rate")[1].split("##")[0]
+    # velocity keeps first-arrival: p/1 shipped before v0.1.0, only p/2 counts
+    assert "p: 3 pt" in out
