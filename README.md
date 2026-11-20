@@ -59,7 +59,9 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 | done | a merge commit naming the task, in main |
 
 - **The eternal registry** (`.jearless/tasks.yml`): frozen facts only — id, summary, description, story_points, `depends_on`. Tasks are never deleted. No status fields: git knows the state.
-- **Taking a task = pushing a branch**: `jear take door 1` verifies occupancy via the remote and lets the server arbitrate races (a second push is rejected).
+- **Taking a task = pushing a branch**: `jear take door 1` checks occupancy via the remote first (advisory — `ls-remote`), and the push itself arbitrates the race for identical branch names (a second push is rejected). Exclusive ownership is not required: two engineers on one task are both visible on the board.
+- **Two engineers, one task — the Vasya and Masha model**: the first merge is the `done` signal. If the contract check finds gaps, Vasya re-takes the task (`jear take --type fix`) and the board shows the rework; the full story lives in `jear log`. Whether front-end and database work deserve separate tasks is the team's own call — the same ID means the same task.
+- **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join. The report carries velocity, cycle time (client-clock disclaimer), fix share, return rate (same-ID re-merges), backlog growth and attribution — the name is the task branch's most frequent committer, enough to find the first person to talk to.
 - **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join.
 - **`jear doctor`** audits main: unattributed commits (squash/fast-forward scars) are loud; acknowledged scars live in the `.jearless/doctor_ignore` ledger, counted aloud.
 
