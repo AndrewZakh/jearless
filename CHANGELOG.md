@@ -1,4 +1,15 @@
 # Changelog
+## v0.50.12 (2026-11-20)
+### Added
+- tooling-46: next-ID allocation over the union — add collides with archived ids
+- tooling-47: report first-arrival by history order — the fix merges first, the swap
+- tooling-48: retro plan stamp — name the version actually read
+- tooling-49: local polish — pre-commit dup check, README take wording, tag recovery
+- tooling-50: sprint-scoped CI dashboards — GitLab analog and examples
+### Fixed
+- tooling-50: sprint-scoped CI dashboards — GitLab analog and examples
+# 1 re-merge(s) collapsed — a task ships in the version of its first merge
+
 ## v0.45.10 (2026-11-20)
 ### Added
 - tooling-24: logo — vector redraw of the mascot
