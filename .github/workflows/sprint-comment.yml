@@ -67,7 +67,8 @@ jobs:
             echo "### The board"
             echo ""
             echo '```mermaid'
-            jear board
+            # quote card labels: parens like (2 pt) break GitHub's kanban lexer
+            jear board | sed -E 's/^([[:space:]]{8})([A-Za-z0-9_]+)\[([^\]]+)\]$/\1\2["\3"]/'
             echo '```'
             echo ""
             echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — release-time slices live in .jearless/reports/_"
