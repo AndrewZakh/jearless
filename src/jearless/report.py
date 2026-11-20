@@ -25,9 +25,10 @@ def _prev_tag(cwd: Path, tag: str) -> str | None:
 
 
 def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: str):
-    """First-arrival merge sha per task key in the range (re-merges collapse),
-    plus merge totals for the rework rate — off-taxonomy merges count in the
-    denominator only: they are work, even when they are not tasks."""
+    """First-arrival merge sha per task key in the range, plus the return bars
+    (tooling/43): a merge under a key whose first arrival predates the bar is a
+    RETURN — same-ID rework, counted each. Off-taxonomy merges count in the
+    fix-share denominator only: they are work, even when they are not tasks."""
     shipped_before: set[tuple[str, int]] = set()
     if from_tag:
         for subject in gitwrap.lines(["log", from_tag, "--merges", "--format=%s"], cwd):
@@ -37,6 +38,7 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
                 shipped_before.add((m.group("project"), int(m.group("num"))))
     rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
     first: dict[tuple[str, int], str] = {}
+    returns: list[tuple[tuple[str, int], str]] = []
     total_merges = 0
     fix_merges = 0
     for line in gitwrap.lines(["log", rev_range, "--merges", "--format=%H%x1f%s"], cwd):
@@ -50,9 +52,10 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
             continue
         key = (m.group("project"), int(m.group("num")))
         if key in shipped_before or key in first:
-            continue  # a re-merge is an artifact: the first arrival shipped it
+            returns.append((key, sha))
+            continue
         first[key] = sha
-    return first, total_merges, fix_merges
+    return first, returns, total_merges, fix_merges
 
 
 def _task_births(cwd: Path, reg_path: Path) -> dict[tuple[str, int], str]:
@@ -102,7 +105,7 @@ def _percentile(values: list[float], pct: int) -> float:
 def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None = None) -> str:
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
-    first, total_merges, fix_merges = _task_merges(cwd, cfg, from_tag, to_ref or tag)
+    first, returns, total_merges, fix_merges = _task_merges(cwd, cfg, from_tag, to_ref or tag)
     tasks_by_key = {(t.project, t.id): t for t in reg.all()}
 
     lines = [f"# Report {tag}", ""]
@@ -140,9 +143,25 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
         lines.append("- no measurable task in the range")
     lines.append("")
 
-    lines.append("## Rework rate (fix-prefix merges / all merges)")
+    lines.append("## Fix share (fix/-prefix merges / all merges in the range)")
     if total_merges:
         lines.append(f"- {fix_merges} fix / {total_merges} merges ({round(100 * fix_merges / total_merges)}%)")
+    else:
+        lines.append("- no merges in the range")
+    lines.append("")
+
+    # task tooling/43: the review split rework into two honest numbers — the
+    # fix share above (testing's signal) and the return rate (setup's signal)
+    lines.append("## Return rate (same-ID re-merges — a retake is rework; the cause is retro business)")
+    merged_keys = set(first) | {k for k, _ in returns}
+    if merged_keys:
+        lines.append(
+            f"- {len(returns)} return(s) across {len(merged_keys)} merged task(s)"
+            f" ({round(100 * len(returns) / len(merged_keys))}%)"
+        )
+        for key, sha in returns:
+            task = tasks_by_key.get(key)
+            lines.append(f"  - {key[0]}/{key[1]}  {task.summary if task else '(unlisted)'}  [{sha[:7]}]")
     else:
         lines.append("- no merges in the range")
     lines.append("")
@@ -150,7 +169,7 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
     plan_path = plan.latest_plan(cwd)
     plan_birth = plan.birth_date(cwd, plan_path) if plan_path else None
     lines.append(
-        "## Scope creep (tasks born after the plan's birth,"
+        "## Backlog growth (tasks born after the plan's birth,"
         f" {plan_birth or 'no plan committed'})"
     )
     creep = []
@@ -162,7 +181,8 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
                 if births[key] > plan_birth:
                     creep.append(f"- {key[0]}/{key[1]}  {tasks_by_key[key].summary}"
                                  f"  (born {births[key]})")
-    lines.extend(creep or ["- none — the scope held"])
+    lines.extend(creep or ["- none — nothing born after the plan"])
+    lines.append("- unplanned work that actually merged is the retro's actual-only (`jear retro`) — not duplicated here")
     lines.append("")
 
     lines.append("## Attribution (derived: most commits per task branch)")
