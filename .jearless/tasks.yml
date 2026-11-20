@@ -4,55 +4,59 @@
 # transliteration is only a fallback inside `take`.
 tasks:
   tooling:
-    - id: 34
-      summary: log — the per-task journal across branches and merges
-      description: |
-        The task lifecycle is scattered across branches: the feature branch,
-        fix re-take branches, the merges into the trunk naming them, the
-        dates. `jear log <project> <id>` — one command, the full journal:
-        every branch of the task (any kind), its own commits, the merge dates
-        into the trunk, sorted oldest first. A retake story reads top to
-        bottom: shipped, then the fix branch, then that merge. Source: local
-        branches + origin branches + trunk merges filtered by
-        `<project>/<id>-`. No state semantics — pure provenance view.
-      story_points: 2
-    - id: 45
-      summary: xcf to Git LFS — version the GIMP logo source
-      description: |
-        The open fork from the sprint_4 dig: the GIMP working file (layers,
-        masks — the true source behind the svg/png exports) lived untracked,
-        so the project's face had provenance for its exports but not for its
-        source. Options weighed: Git LFS (versioned in-repo; free-tier quota
-        holds years for a ~1-2 MB file; clean adoption window while never
-        committed), a separate asset repo, or local-only acceptance.
-      story_points: 1
-      rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
-    - id: 52
-      summary: registry mutations ride PRs — add, reject, archive
-      description: |
-        add/reject/archive keep staging the edit (the tool never commits) but the
-        printed guidance changes: the human opens a PR, not a direct commit. The
-        one-sanctioned-direct-write charter clause retires with dignity — its death
-        is witnessed by the scar ledger: five of five scars were direct-to-main sins.
-      story_points: 1
-    - id: 53
-      summary: auto-PR via the forge API — labels on, self-opening
-      description: |
-        The killer feature the owner asked to think through: jear speaks the forge
-        natively — gh pr create (GitHub) and the GitLab MR API (curl) open the PR/MR
-        themselves, with the right labels (registry, release, sprint) and titles.
-        Tokens come from the ambient CLI session or CI variables — never from the
-        repo. Fallbacks stay manual: no token, no forge — the hint prints instead.
-      story_points: 2
-    - id: 54
-      summary: the constitution amendment — PR-only main, the 1.0 ceremony
-      description: |
-        The charter retires the sanctioned-direct-commits clause; the ledger's five
-        scars are the witness (blood written by ourselves). The emergency admin-
-        bypass valve stays explicit: every use becomes a ledger scar. Platform
-        recipes ship as docs: GitHub ruleset (no force-push, no delete, PR-only,
-        required checks, merge-commit only) and GitLab (protected branch, MR-only).
-        Positioning line lands in the README: jearless works on PURE git — fit for
-        embedded and autonomous systems where no human operator exists. Closing
-        ceremony: the v1.0.0 tag.
-      story_points: 1
+  - id: 34
+    summary: log — the per-task journal across branches and merges
+    description: |
+      The task lifecycle is scattered across branches: the feature branch,
+      fix re-take branches, the merges into the trunk naming them, the
+      dates. `jear log <project> <id>` — one command, the full journal:
+      every branch of the task (any kind), its own commits, the merge dates
+      into the trunk, sorted oldest first. A retake story reads top to
+      bottom: shipped, then the fix branch, then that merge. Source: local
+      branches + origin branches + trunk merges filtered by
+      `<project>/<id>-`. No state semantics — pure provenance view.
+    story_points: 2
+    rejected: the work landed direct-to-main (scar f98484d, in the ledger) — 
+      shipped, scarred, closed; in_progress was the board's lie
+  - id: 45
+    summary: xcf to Git LFS — version the GIMP logo source
+    description: |
+      The open fork from the sprint_4 dig: the GIMP working file (layers,
+      masks — the true source behind the svg/png exports) lived untracked,
+      so the project's face had provenance for its exports but not for its
+      source. Options weighed: Git LFS (versioned in-repo; free-tier quota
+      holds years for a ~1-2 MB file; clean adoption window while never
+      committed), a separate asset repo, or local-only acceptance.
+    story_points: 1
+    rejected: the hand-authored svg superseded the GIMP source — the xcf is a 
+      sketchpad (L1), the system stores results (L3); revisit only if a live 
+      GIMP pipeline ever returns
+  - id: 52
+    summary: registry mutations ride PRs — add, reject, archive
+    description: |
+      add/reject/archive keep staging the edit (the tool never commits) but the
+      printed guidance changes: the human opens a PR, not a direct commit. The
+      one-sanctioned-direct-write charter clause retires with dignity — its death
+      is witnessed by the scar ledger: five of five scars were direct-to-main sins.
+    story_points: 1
+  - id: 53
+    summary: auto-PR via the forge API — labels on, self-opening
+    description: |
+      The killer feature the owner asked to think through: jear speaks the forge
+      natively — gh pr create (GitHub) and the GitLab MR API (curl) open the PR/MR
+      themselves, with the right labels (registry, release, sprint) and titles.
+      Tokens come from the ambient CLI session or CI variables — never from the
+      repo. Fallbacks stay manual: no token, no forge — the hint prints instead.
+    story_points: 2
+  - id: 54
+    summary: the constitution amendment — PR-only main, the 1.0 ceremony
+    description: |
+      The charter retires the sanctioned-direct-commits clause; the ledger's five
+      scars are the witness (blood written by ourselves). The emergency admin-
+      bypass valve stays explicit: every use becomes a ledger scar. Platform
+      recipes ship as docs: GitHub ruleset (no force-push, no delete, PR-only,
+      required checks, merge-commit only) and GitLab (protected branch, MR-only).
+      Positioning line lands in the README: jearless works on PURE git — fit for
+      embedded and autonomous systems where no human operator exists. Closing
+      ceremony: the v1.0.0 tag.
+    story_points: 1
