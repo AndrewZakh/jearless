@@ -3,3 +3,12 @@ repos:
     rev: v1.1.0
     hooks:
       - id: auto-version
+  # the loader itself is the validator (task tooling/41): a duplicate key
+  # refuses the commit five seconds before the CI doctor would (tooling/49)
+  - repo: local
+    hooks:
+      - id: jear-registry-union
+        name: jear registry union (duplicate keys refuse)
+        entry: .venv/bin/python -c "from pathlib import Path; from jearless import registry; registry.load_all(Path.cwd())"
+        language: system
+        files: ^(tasks\.yml|\.jearless/(tasks\.yml|archive_.*\.yml)|archive_.*\.yml)$

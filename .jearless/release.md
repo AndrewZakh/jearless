@@ -9,6 +9,7 @@
    a fresh install may need `--refresh` while uv's index cache catches up.
 4. The dashboard is on demand (`jear sprint`) — nothing to refresh.
 5. Recovery, the rare case: the artifacts commit reached the server but the
-   tag push failed? Tag that commit by hand — `git tag <tag> <sha> && git
-   push origin <tag>` — the tag must land on the artifacts commit; the
-   release step does not need a rerun.
+   tag push failed? The local tag usually already exists (the release step
+   created it): push it — `git push origin refs/tags/<tag>`. Only when the
+   local tag is missing too, create it on the release commit's SHA and push.
+   The release step does not need a rerun.
