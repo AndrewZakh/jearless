@@ -65,6 +65,13 @@ branch_flow:
     target: main
     policy: ignore
 
+  - name: major
+    regex: '^major/' # the major-bump ceremony branch (the 1.0.0 tag)
+    target: main
+    policy: increment
+    bump: major
+    reset_lower_parts: true
+
 hooks:
   auto_stage: true
   on_error: fail
