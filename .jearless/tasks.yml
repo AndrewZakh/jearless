@@ -27,16 +27,6 @@ tasks:
         committed), a separate asset repo, or local-only acceptance.
       story_points: 1
       rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
-    - id: 51
-      summary: release two-phase — the artifacts ride a PR
-      description: |
-        The release step stops writing to main even as a sanctioned human-run commit.
-        PREPARE: jear release cuts a release/v<ver> branch with the artifacts commit
-        (changelog section, snapshot, report), pushes it and opens a PR with hints.
-        FINALIZE: after the PR merges, the tag lands on the merge commit (jear release
-        --finalize <ver> reads the origin tip). Nothing automatic writes main — now
-        without a single exception. The tag-recovery checklist line survives.
-      story_points: 3
     - id: 52
       summary: registry mutations ride PRs — add, reject, archive
       description: |
