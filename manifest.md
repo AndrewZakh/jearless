@@ -15,6 +15,17 @@ drift apart.
 - **The report answers facts, not reasons.** A displaced task shows as "not merged"; why it was displaced is the retrospective's human job. Git knows facts; people know reasons.
 - **Hours and money are honestly unanswered.** Commit dates are client clocks, and a system built on client clocks must not pretend to measure hours. Saying "no" here is the source of trust in every number the system does show.
 
+## The pilot criterion
+
+The number that decides whether the idea works: **how many times did an
+engineer interrupt their work for a status that git and the sprint plan
+could already assemble?** The goal is zero manual status updates and zero
+status questions wherever the join suffices. A hand-written report costs
+more than the time it takes to write: two context switches break the
+thought, and a connection the engineer almost caught before the pause is
+sometimes gone for good. A pilot on a team with different habits will show
+how much routine the tool really lifts. (Review, 2026-11-19.)
+
 ## The charter
 
 - **main moves only by merge commits** — `--no-ff`, no squash, no rebase-merge. Rebase inside your own unmerged branch is harmless and free. Merge commits carrying the branch name are the only carrier of "this task shipped".

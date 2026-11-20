@@ -420,3 +420,52 @@ tasks:
         logo.png rides along here (the storefront hero) — tooling/24's vector redraw
         stays open on its own branch.
       story_points: 2
+    - id: 40
+      summary: archive-aware identity — take and sprint over the union
+      description: |
+        The review P1: take and state.compute read only the live registry, so archiving
+        makes a task un-retakeable and its fix branches invisible. take finds tasks via
+        load_all (retake by the same ID after archiving); an archived task is done by
+        construction, so feature-kind retake refuses with --type fix required;
+        state/sprint/board surface an archived task ONLY when it carries a live branch —
+        quiet archives stay off the working set. E2E: merge, tag, archive, take --type
+        fix, in_progress on the board.
+      story_points: 2
+    - id: 41
+      summary: duplicate keys — the loader refuses project/id collisions
+      description: |
+        The review P1: a manual merge can silently keep two entries under one project/id,
+        making branch and plan references ambiguous. from_data refuses duplicates within
+        a file; load_all refuses live-vs-archive collisions; the error names the key and
+        both entries. Doctor reports it as an invalid registry and the CI doctor step
+        guards the merge result — one mechanism instead of separate pre-commit and CI
+        plumbing.
+      story_points: 1
+    - id: 42
+      summary: retro sprint window — birth(N) to birth(N+1)
+      description: |
+        The review P2: actual-only is filtered only from below (>= birth), so recomputing
+        an old retro picks up the next sprint's unplanned merges. Definition: sprint N
+        lives from its plan's birth to the next plan's birth; the latest plan lives to
+        now. The retro also prints the plan revision (sha) and the HEAD slice so a
+        recomputed retro is reproducible.
+      story_points: 2
+    - id: 43
+      summary: honest metrics — fix share, return rate, backlog growth
+      description: |
+        The review P2: fix share keeps its precise name; NEW return rate = tasks with
+        more than one merge bar / distinct merged tasks per report window, multi-returns
+        counted each (a retake is rework; the cause is retro business). Scope creep
+        renamed to backlog growth (created after the plan's birth); the true
+        unplanned-merged signal stays in the retro — referenced, not duplicated.
+      story_points: 2
+    - id: 44
+      summary: docs pack — the review round
+      description: |
+        Vasya and Masha: first merge = done signal, rework = retake, separate FE/DB
+        tasks are the team's call. README reconciled with take: the ls-remote check is
+        advisory, the push arbitrates only identical names, exclusive ownership is not
+        required. Release checklist line: artifacts commit pushed but the tag push
+        failed -> tag that SHA by hand. Attribution footnote: the name is the most
+        committer.
+      story_points: 1
