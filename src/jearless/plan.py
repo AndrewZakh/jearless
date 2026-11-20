@@ -152,6 +152,40 @@ def birth_date(cwd: Path, path: Path) -> str | None:
     return lines[-1] if lines else None  # the oldest add wins
 
 
+def birth_commit(cwd: Path, path: Path) -> str | None:
+    """The commit that birthed the plan file — the plan revision (task tooling/42)."""
+    try:
+        lines = gitwrap.lines(
+            ["log", "--follow", "--diff-filter=A", "--format=%H", "--", str(path)],
+            cwd,
+        )
+    except gitwrap.GitError:
+        return None
+    return lines[-1] if lines else None
+
+
+def window_end(cwd: Path, path: Path) -> str | None:
+    """The sprint's upper bound: the earliest birth among later-born plans (task tooling/42).
+
+    Sprint N lives from its birth to the next plan's birth — numbering is not
+    trusted (a post-factum sprint_4 was born after sprint_5 in our own
+    history). The latest plan has no upper bound: it lives to now. An unborn
+    plan has no window. Same-second births are mutually unbounding — the
+    ambiguity shows as two open windows, not as a silent cut.
+    """
+    birth = birth_date(cwd, path)
+    if birth is None:
+        return None
+    upper: str | None = None
+    for sibling in sorted(plans_dir(cwd).glob("*.yml")):
+        if sibling.resolve() == path.resolve():
+            continue
+        other = birth_date(cwd, sibling)
+        if other is not None and other > birth and (upper is None or other < upper):
+            upper = other
+    return upper
+
+
 def _plan_gantt(plan: Plan, reg: registry.Registry) -> str:
     """The derived gantt-of-the-plan: dated windows only, undated tasks listed in a comment."""
     labels = {(t.project, t.id): t.summary for t in reg.all()}

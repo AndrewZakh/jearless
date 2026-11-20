@@ -146,3 +146,47 @@ def test_retro_fix_bar_does_not_overwrite_the_join(repo, capsys):
     assert out.count("p/1:") == 1
     # the join keeps the feature bar: on time; the fix bar is not the planned completion
     assert "p/1: planned 11-01→11-02, actual 11-01→11-02, on time" in out
+
+
+def test_window_closes_at_next_plan_birth(repo, capsys):
+    """task tooling/42: an old retro never picks up the next sprint's unplanned work."""
+    (repo / "sprint_1.yml").write_text(PLAN, encoding="utf-8")
+    gitwrap.run(["add", "sprint_1.yml"], repo)
+    gitwrap.run(
+        ["commit", "-q", "-m", "the contract"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-03T08:00:00"},
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    _merge_branch(repo, "feature/p/1-first", "2026-11-04T10:00:00", "2026-11-04T12:00:00")
+    _merge_branch(repo, "feature/p/3-third", "2026-11-05T10:00:00", "2026-11-05T12:00:00")
+    # sprint_2 is born AFTER the unplanned-in-1 merge (p/2 lands next): the boundary
+    plans = repo / ".jearless" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "sprint_2.yml").write_text(
+        "plan:\n  goal: next\n  tasks:\n    - task: p/2\n      planned: {start: 2026-11-07, end: 2026-11-08}\n",
+        encoding="utf-8",
+    )
+    gitwrap.run(["add", ".jearless/plans/sprint_2.yml"], repo)
+    gitwrap.run(
+        ["commit", "-q", "-m", "sprint_2 born"],
+        repo,
+        env={"GIT_COMMITTER_DATE": "2026-11-06T08:00:00"},
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    _merge_branch(repo, "feature/p/2-second", "2026-11-07T10:00:00", "2026-11-07T12:00:00")
+
+    # sprint_1: p/2 merged at 11-07 — AFTER sprint_2's birth, out of the window
+    assert retro_mod.run(repo, repo / "sprint_1.yml") == 0
+    out = capsys.readouterr().out
+    assert "window: closes at the next plan's birth (2026-11-06T08:00:00)" in out
+    assert "plan@" in out and "history@" in out  # the recount is reproducible
+    assert "actual-only: p/2" not in out  # the leak the review caught
+    assert "actual-only: none — the scope held inside the plan's lifetime" in out
+
+    # sprint_2 (the latest): window open; its unplanned-in-2 pre-birth work stays out
+    assert retro_mod.run(repo, plans / "sprint_2.yml") == 0
+    out = capsys.readouterr().out
+    assert "window: open — the latest plan" in out
+    assert "p/2: planned 11-07" in out  # joined as planned (it owns the window's task)
+    assert "actual-only: p/3" not in out  # pre-birth work is not a hole in sprint_2 either

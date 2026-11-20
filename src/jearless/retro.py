@@ -9,7 +9,7 @@ the visible hole. Exit 0 — a retro is information, not a gate.
 from datetime import datetime
 from pathlib import Path
 
-from jearless import config, plan, registry, timeline
+from jearless import config, gitwrap, plan, registry, timeline
 
 
 def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
@@ -23,9 +23,20 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
         actual.setdefault((bar.project, bar.num), bar)
     planned = {entry.task: entry for entry in plan_obj.entries}
     birth = plan.birth_date(cwd, plan_path)  # full timestamp; None = unborn
+    upper = plan.window_end(cwd, plan_path)  # the next plan's birth closes the window (tooling/42)
+    revision = plan.birth_commit(cwd, plan_path)
+    try:
+        head = gitwrap.out(["rev-parse", "--short=7", ref], cwd)
+    except gitwrap.GitError:
+        head = "?"
 
     joined = [entry for entry in plan_obj.entries if entry.task in actual]
-    print(f"retro: {plan_path.name} vs actual ({len(joined)} joined)")
+    window = "open — the latest plan" if upper is None else f"closes at the next plan's birth ({upper})"
+    revision_note = f" · plan@{revision[:7]}" if revision else ""
+    print(
+        f"retro: {plan_path.name} vs actual ({len(joined)} joined)"
+        f" · history@{head}{revision_note} · window: {window}"
+    )
     for entry in joined:  # the plan's own order: top-down is the sprint priority
         bar = actual[entry.task]
         spec = f"{entry.task[0]}/{entry.task[1]}"
@@ -50,10 +61,13 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
     # merges pass as "in window".
     if birth:
         birth_dt = datetime.fromisoformat(birth)
+        upper_dt = datetime.fromisoformat(upper) if upper else None
         in_window = [
             key
             for key in sorted(set(actual) - set(planned))
-            if datetime.fromisoformat(actual[key].end) >= birth_dt
+            if birth_dt
+            <= datetime.fromisoformat(actual[key].end)
+            and (upper_dt is None or datetime.fromisoformat(actual[key].end) < upper_dt)
         ]
         for key in in_window:
             print(f"  actual-only: {key[0]}/{key[1]} — the work nobody planned")

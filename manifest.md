@@ -61,6 +61,11 @@ tell the truth about both. Verified live (2026-11-17).
   what is still open — the system refuses to issue credit for the past, the
   same way it refuses to increment points. A late plan shows as late; the
   retro explains why.
+- **The window closes.** Sprint N lives from its plan's birth to the next
+  plan's birth (the latest lives to now): a recomputed old retro never picks
+  up the next sprint's unplanned work, and numbering is not trusted — the
+  boundary is birth order, not the N. The retro prints its plan revision and
+  the history slice, so a recount is reproducible. (Task tooling/42.)
 
 ## The decision history (cause → rule)
 
