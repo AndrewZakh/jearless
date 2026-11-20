@@ -1,8 +1,9 @@
-# The MR dashboard (task tooling/14): the board rides the forge, not the tree.
-# The workflow installs the PR's own jearless, renders the live timeline
-# (mermaid renders right in GitHub comments) plus the sprint board, and keeps
-# ONE sticky comment per MR. Discussion surface only — no ref moves, so the
-# "main moves only by merges" invariant is untouched; sprint.md stays human-run.
+# The MR dashboard (task tooling/14, sprint-scoped by tooling/50): the board
+# rides the forge, not the tree. The workflow installs the PR's own jearless
+# and renders the CURRENT SPRINT's gantt, burn-down and kanban board — mermaid
+# renders right in GitHub comments — and keeps ONE sticky comment per MR.
+# Discussion surface only — no ref moves, so the "main moves only by merges"
+# invariant is untouched; sprint.md stays human-run.
 
 name: sprint dashboard
 
@@ -35,21 +36,41 @@ jobs:
 
       - name: render the dashboard
         run: |
+          PLAN=$(ls .jearless/plans/sprint_*.yml 2>/dev/null | sort -V | tail -1 || true)
           {
             echo "<!-- jear:sprint-dashboard -->"
-            echo "## 🐭 jearless — the actual timeline"
+            echo "## 🐭 jearless — sprint dashboard"
+            if [ -n "$PLAN" ]; then
+              echo ""
+              echo "### The sprint gantt ($(basename "$PLAN"))"
+              echo ""
+              echo '```mermaid'
+              GANTT_RAW=$(jear plan "$PLAN" --gantt)
+              GANTT=$(printf '%s\n' "$GANTT_RAW" | sed -n '/^%%{init/,$p')
+              echo "${GANTT:-$GANTT_RAW}"
+              echo '```'
+              echo ""
+              echo "### The burn-down"
+              echo ""
+              echo '```mermaid'
+              jear burndown "$PLAN" || echo "(nothing to burn yet)"
+              echo '```'
+            else
+              echo ""
+              echo "_no sprint plan committed — the whole-project timeline_"
+              echo ""
+              echo '```mermaid'
+              jear timeline --live
+              echo '```'
+            fi
+            echo ""
+            echo "### The board"
             echo ""
             echo '```mermaid'
-            jear timeline --live
+            jear board
             echo '```'
             echo ""
-            echo "## The board"
-            echo ""
-            echo '```'
-            jear sprint
-            echo '```'
-            echo ""
-            echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — the frozen copy lives in sprint.md (jear sprint --write)_"
+            echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — release-time slices live in .jearless/reports/_"
           } > dashboard.md
 
       - name: post the sticky comment

@@ -1,0 +1,50 @@
+# The GitLab analog of .github/workflows/sprint-comment.yml (task tooling/50):
+# the sprint dashboard rides the MR as ONE sticky note — search-and-update,
+# never a ref move. Reports ride the forge; nothing automatic writes to main.
+# Needs a CI/CD variable GL_TOKEN (project access token, api scope).
+# Drop this into the repo's .gitlab-ci.yml.
+
+jear-dashboard:
+  image: python:3.12-slim
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    GIT_DEPTH: "0" # the join reads the full merge history
+  before_script:
+    - apt-get update -qq && apt-get -y install curl >/dev/null
+    - pip install --quiet jearless
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+  script:
+    - git fetch --prune origin
+    - PLAN=$(ls .jearless/plans/sprint_*.yml 2>/dev/null | sort -V | tail -1 || true)
+    - |
+      {
+        echo "<!-- jear:sprint-dashboard -->"
+        echo "## 🐭 jearless — sprint dashboard"
+        if [ -n "$PLAN" ]; then
+          echo; echo "### The sprint gantt ($(basename "$PLAN"))"
+          GANTT_RAW=$(jear plan "$PLAN" --gantt)
+          GANTT=$(printf '%s\n' "$GANTT_RAW" | sed -n '/^%%{init/,$p')
+          echo '```mermaid'; echo "${GANTT:-$GANTT_RAW}"; echo '```'
+          echo; echo "### The burn-down"
+          echo '```mermaid'; jear burndown "$PLAN" || true; echo '```'
+        else
+          echo; echo "_no sprint plan committed — the whole-project timeline_"
+          echo '```mermaid'; jear timeline --live; echo '```'
+        fi
+        echo; echo "### The board"
+        echo '```mermaid'; jear board; echo '```'
+        echo; echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${CI_COMMIT_SHORT_SHA}_"
+      } > dashboard.md
+    - |
+      NOTES=$(curl -s --header "PRIVATE-TOKEN: $GL_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes?per_page=100")
+      NOTE_ID=$(echo "$NOTES" | python3 -c "import sys,json;[print(n['id']) for n in json.load(sys.stdin) if 'jear:sprint-dashboard' in n.get('body','')]" | head -1)
+      BODY=$(python3 -c "import json;print(json.dumps({'body': open('dashboard.md').read()}))")
+      if [ -n "$NOTE_ID" ]; then
+        curl -s --request PUT --header "PRIVATE-TOKEN: $GL_TOKEN" --header "Content-Type: application/json" \
+          --data "$BODY" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes/$NOTE_ID" >/dev/null && echo "dashboard updated (note $NOTE_ID)"
+      else
+        curl -s --request POST --header "PRIVATE-TOKEN: $GL_TOKEN" --header "Content-Type: application/json" \
+          --data "$BODY" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes" >/dev/null && echo "dashboard posted"
+      fi
