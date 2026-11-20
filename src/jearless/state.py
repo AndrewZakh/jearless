@@ -108,18 +108,19 @@ def compute(
             # REJECTED wins over everything (tooling/38): the human's latest
             # declaration about the future, not a rewrite of the past — the
             # merge, if any, stays in history
-            views.append(TaskView(task, REJECTED))
-            continue
-        if key in done:
+            tv = TaskView(task, REJECTED)
+        elif key in done:
             # done overrides stale branches — but a branch forked at-or-after
             # the done-merge reopens the task (rework under way, tooling/26)
             reopened = next((b for b in branches if _reopened(b, done[key])), None)
-            if reopened:
-                views.append(TaskView(task, IN_PROGRESS, reopened))
-            else:
-                views.append(TaskView(task, DONE))
+            tv = TaskView(task, IN_PROGRESS, reopened) if reopened else TaskView(task, DONE)
         elif branches:
-            views.append(TaskView(task, IN_PROGRESS, branches[0]))
+            tv = TaskView(task, IN_PROGRESS, branches[0])
         else:
-            views.append(TaskView(task, AVAILABLE))
+            tv = TaskView(task, AVAILABLE)
+        if task.archived and tv.state != IN_PROGRESS:
+            # archived history is off the working set — only a live retake
+            # (rework in progress) brings an archived task back (task tooling/40)
+            continue
+        views.append(tv)
     return SprintView(views, sorted(unknown))

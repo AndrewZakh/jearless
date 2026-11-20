@@ -68,6 +68,9 @@ def test_root_archives_still_count(repo):
 
 def test_second_archive_same_tag_rejected(repo):
     _merge_branch(repo, "feature/p/1-a")
+    # the charter lifecycle: the merged branch is deleted — only then is the task quiet
+    gitwrap.run(["branch", "-q", "-D", "feature/p/1-a"], repo)
+    gitwrap.run(["push", "-q", "origin", "--delete", "feature/p/1-a"], repo)
     gitwrap.run(["tag", "v0.1.0"], repo)
     archive_mod.run(repo, "v0.1.0")
     with pytest.raises(JearlessError, match="frozen"):
@@ -100,6 +103,41 @@ def test_archived_done_tasks_leave_the_sprint(repo, capsys):
     assert "available (1):" in out and "p/3" in out
     assert "done (0):" in out  # the archived history left the board
     assert "p/1  first task" not in out and "p/2  second task" not in out
-    # their branches remain on origin: orphaned, listed as the visible holes
-    assert "branches without a registry task (2):" in out
-    assert "feature/p/1-a" in out and "feature/p/2-b" in out
+    # their stale branches remain on origin but are no longer "unknown":
+    # the union identity knows the archived tasks, so the branches are
+    # absorbed — loud orphans exist only for truly unknown taxonomy
+    # (task tooling/40; a retake creates a fresh branch and shows in_progress)
+    assert "branches without a registry task" not in out
+    assert "feature/p/1-a" not in out and "feature/p/2-b" not in out
+
+
+def test_retake_after_archive_shows_in_progress(repo, capsys):
+    """task tooling/40: the review's E2E — merge, tag, archive, take --type fix, on the board."""
+    from jearless import config as config_mod
+    from jearless import state as state_mod
+    from jearless import take as take_mod
+
+    _merge_branch(repo, "feature/p/1-a")
+    # the charter lifecycle: the merged branch is deleted — only then is the task quiet
+    gitwrap.run(["branch", "-q", "-D", "feature/p/1-a"], repo)
+    gitwrap.run(["push", "-q", "origin", "--delete", "feature/p/1-a"], repo)
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    gitwrap.run(["push", "-q", "origin", "v0.1.0"], repo)
+    assert archive_mod.run(repo, "v0.1.0") == 0
+    reg = registry.load(repo)
+    assert reg.tasks.get("p") and all(t.id != 1 for t in reg.tasks["p"])  # moved out
+
+    # a quiet archived task stays off the working set
+    view = state_mod.compute(repo, config_mod.load(repo), registry.load_all(repo))
+    assert all(tv.task.id != 1 for tv in view.tasks)
+
+    # feature-kind retake refuses: archived means shipped
+    with pytest.raises(JearlessError, match="archived .* --type fix"):
+        take_mod.take(repo, "p", 1)
+
+    # the declared rework takes it and the board shows it in progress
+    branch = take_mod.take(repo, "p", 1, kind="fix")
+    assert branch == "fix/p/1-first-task"
+    view = state_mod.compute(repo, config_mod.load(repo), registry.load_all(repo))
+    tv = next(tv for tv in view.tasks if tv.task.id == 1)
+    assert tv.state == state_mod.IN_PROGRESS and tv.task.archived
