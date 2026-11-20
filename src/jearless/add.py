@@ -29,10 +29,10 @@ tasks: {}
 
 
 def _max_from_archives(cwd: Path, project: str) -> int:
-    best = 0
-    for path in sorted(cwd.glob("archive_*.yml")):
-        best = max(best, registry.load_path(path).max_id(project))
-    return best
+    """Both homes — the registry split taught this the hard way (task tooling/46):
+    a root-only glob missed `.jearless/archive_*.yml` and allocated ids that
+    collided with archived tasks. The union is the one identity reader."""
+    return registry.load_all(cwd).max_id(project)
 
 
 def _max_from_branches(cwd: Path, cfg: config.Config, project: str, remote: str) -> int | None:
@@ -101,7 +101,7 @@ def add(
         candidates.append(from_branches)
     else:
         print(
-            f"jear: cannot reach '{remote}' — next id checked against the registry only",
+            f"jear: cannot reach '{remote}' — next id checked against the registry and archives only",
             file=sys.stderr,
         )
     next_id = max(candidates) + 1

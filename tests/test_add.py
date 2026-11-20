@@ -64,7 +64,7 @@ def test_offline_falls_back_to_registry(tmp_path: Path, capsys):
     )
     # not even a git repo: origin is unreachable, the warning goes to stderr
     assert add_mod.add(tmp_path, "p", "b") == 5
-    assert "registry only" in capsys.readouterr().err
+    assert "registry and archives only" in capsys.readouterr().err
 
 
 def test_invalid_project_rejected(tmp_path: Path):
@@ -153,3 +153,23 @@ def test_add_depends_self_rejected(tmp_path: Path):
     (tmp_path / "tasks.yml").write_text(DUP_REGISTRY, encoding="utf-8")
     with pytest.raises(JearlessError, match="cannot point at itself"):
         add_mod.add(tmp_path, "p", "ouroboros", depends=["2"])  # 2 is the next id
+
+
+def test_add_id_counts_archives_in_both_homes(origin_and_clone, capsys):
+    """task tooling/46: the allocator counts archives in BOTH homes — a root-only
+    glob allocated ids that collided with archived tasks."""
+    _, clone = origin_and_clone
+    home = clone / ".jearless"
+    home.mkdir()
+    (home / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 2\n      summary: a live task\n", encoding="utf-8"
+    )
+    (home / "archive_v1.yml").write_text(
+        "tasks:\n  p:\n    - id: 5\n      summary: an archived task\n", encoding="utf-8"
+    )
+    gitwrap.run(["add", ".jearless"], clone)
+    gitwrap.run(["commit", "-q", "-m", "registry + archive"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    add_mod.add(clone, "p", "a fresh task", None, yes=True)
+    text = (home / "tasks.yml").read_text(encoding="utf-8")
+    assert "- id: 6" in text  # union max 5 + 1; the root-only glob allocated 3
