@@ -68,7 +68,7 @@ jobs:
             echo ""
             echo '```mermaid'
             # quote card labels: parens like (2 pt) break GitHub's kanban lexer
-            jear board | sed -E 's/^([[:space:]]{8})([A-Za-z0-9_]+)\[([^\]]+)\]$/\1\2["\3"]/'
+            jear board | python3 examples/quote_mermaid_labels.py
             echo '```'
             echo ""
             echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — release-time slices live in .jearless/reports/_"

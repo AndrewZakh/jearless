@@ -34,7 +34,7 @@ jear-dashboard:
         fi
         echo; echo "### The board"
         # quote card labels: parens like (2 pt) break the kanban lexer
-        echo '```mermaid'; jear board | sed -E 's/^([[:space:]]{8})([A-Za-z0-9_]+)\[([^\]]+)\]$/\1\2["\3"]/'; echo '```'
+        echo '```mermaid'; jear board | python3 examples/quote_mermaid_labels.py; echo '```'
         echo; echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${CI_COMMIT_SHORT_SHA}_"
       } > dashboard.md
     - |
