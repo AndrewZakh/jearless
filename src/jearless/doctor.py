@@ -41,7 +41,12 @@ def _check_registry(cwd: Path, findings: list[str]) -> None:
 
 def _check_links(cwd: Path, findings: list[str]) -> None:
     try:
-        registry.check_links(registry.load_all(cwd))
+        reg = registry.load_all(cwd)
+    except RegistryError as exc:
+        findings.append(f"registry union: {exc}")  # a duplicate key refuses identity (tooling/41)
+        return
+    try:
+        registry.check_links(reg)
     except RegistryError as exc:
         findings.append(f"links: {exc}")
 

@@ -141,3 +141,42 @@ def test_retake_after_archive_shows_in_progress(repo, capsys):
     view = state_mod.compute(repo, config_mod.load(repo), registry.load_all(repo))
     tv = next(tv for tv in view.tasks if tv.task.id == 1)
     assert tv.state == state_mod.IN_PROGRESS and tv.task.archived
+
+
+def test_duplicate_id_in_one_file_refused():
+    """task tooling/41: the loader refuses one key, two records — loudly, with places."""
+    text = "tasks:\n  p:\n    - id: 9\n      summary: a\n    - id: 9\n      summary: b\n"
+    with pytest.raises(registry.RegistryError, match=r"duplicate task p/9 \(entries 0 and 1\)"):
+        registry.from_text(text, "tasks.yml")
+
+
+def test_live_archive_collision_refused(tmp_path):
+    """task tooling/41: the union cannot arbitrate identity when a key lives twice."""
+    home = tmp_path / ".jearless"
+    home.mkdir()
+    (home / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 5\n      summary: live\n", encoding="utf-8"
+    )
+    (home / "archive_v1.yml").write_text(
+        "tasks:\n  p:\n    - id: 5\n      summary: archived\n", encoding="utf-8"
+    )
+    with pytest.raises(
+        registry.RegistryError, match=r"duplicate task p/5: tasks.yml and archive_v1\.yml"
+    ):
+        registry.load_all(tmp_path)
+
+
+def test_duplicate_is_a_doctor_finding(tmp_path, capsys):
+    """task tooling/41: doctor reports the collision — the CI gate blocks the merge."""
+    from jearless import doctor as doctor_mod
+
+    home = tmp_path / ".jearless"
+    home.mkdir()
+    (home / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 5\n      summary: live\n", encoding="utf-8"
+    )
+    (home / "archive_v1.yml").write_text(
+        "tasks:\n  p:\n    - id: 5\n      summary: archived\n", encoding="utf-8"
+    )
+    assert doctor_mod.run(tmp_path) == 1
+    assert "duplicate task p/5: tasks.yml and archive_v1.yml" in capsys.readouterr().out

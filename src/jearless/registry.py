@@ -197,12 +197,27 @@ def load_all(cwd: Path) -> Registry:
 
     Archives are read from BOTH homes — frozen files stay where they were born.
     Archive-sourced tasks carry archived=True (task tooling/40): the union is
-    identity, but only the working set belongs to the live views.
+    identity, but only the working set belongs to the live views. The union
+    must be unambiguous: a key present twice (task tooling/41) refuses every
+    command that reads identity.
     """
     combined = load(cwd)
+    owner: dict[tuple[str, int], str] = {}
+    live_name = combined.path.name if combined.path else REGISTRY_NAME
+    for project, tasks in combined.tasks.items():
+        for t in tasks:
+            owner[(project, t.id)] = live_name
     home = cwd / HOMEDIR
     for path in sorted(set(cwd.glob("archive_*.yml")) | set(home.glob("archive_*.yml"))):
         for project, tasks in load_path(path).tasks.items():
+            for t in tasks:
+                key = (project, t.id)
+                if key in owner:
+                    raise RegistryError(
+                        f"duplicate task {key[0]}/{key[1]}: {owner[key]} and {path.name}"
+                        " — one key, two records; the union cannot arbitrate identity"
+                    )
+                owner[key] = path.name
             combined.tasks.setdefault(project, []).extend(
                 replace(t, archived=True) for t in tasks
             )
@@ -228,13 +243,22 @@ def from_data(data: object, source: str) -> Registry:
     if not isinstance(data, dict) or not isinstance(data.get("tasks", {}), dict):
         raise RegistryError(f"{source}: expected the structure 'tasks: <project>: [entries]'")
     registry = Registry()
+    seen: dict[tuple[str, int], int] = {}
     for project, entries in data.get("tasks", {}).items():
         if not isinstance(entries, list):
             raise RegistryError(f"{source}: project '{project}' — a list of tasks expected")
-        registry.tasks[str(project)] = [
-            _task_from_entry(str(project), entry, f"{source}: {project}[{i}]")
-            for i, entry in enumerate(entries)
-        ]
+        units = []
+        for i, entry in enumerate(entries):
+            task = _task_from_entry(str(project), entry, f"{source}: {project}[{i}]")
+            key = (task.project, task.id)
+            if key in seen:
+                raise RegistryError(
+                    f"{source}: duplicate task {task.project}/{task.id}"
+                    f" (entries {seen[key]} and {i}) — one key, two records"
+                )
+            seen[key] = i
+            units.append(task)
+        registry.tasks[str(project)] = units
     return registry
 
 
