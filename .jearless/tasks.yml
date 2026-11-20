@@ -4,15 +4,28 @@
 # transliteration is only a fallback inside `take`.
 tasks:
   tooling:
-    - id: 34
-      summary: log — the per-task journal across branches and merges
-      description: |
-        The task lifecycle is scattered across branches: the feature branch,
-        fix re-take branches, the merges into the trunk naming them, the
-        dates. `jear log <project> <id>` — one command, the full journal:
-        every branch of the task (any kind), its own commits, the merge dates
-        into the trunk, sorted oldest first. A retake story reads top to
-        bottom: shipped, then the fix branch, then that merge. Source: local
-        branches + origin branches + trunk merges filtered by
-        `<project>/<id>-`. No state semantics — pure provenance view.
-      story_points: 2
+  - id: 34
+    summary: log — the per-task journal across branches and merges
+    description: |
+      The task lifecycle is scattered across branches: the feature branch,
+      fix re-take branches, the merges into the trunk naming them, the
+      dates. `jear log <project> <id>` — one command, the full journal:
+      every branch of the task (any kind), its own commits, the merge dates
+      into the trunk, sorted oldest first. A retake story reads top to
+      bottom: shipped, then the fix branch, then that merge. Source: local
+      branches + origin branches + trunk merges filtered by
+      `<project>/<id>-`. No state semantics — pure provenance view.
+    story_points: 2
+  - id: 45
+    summary: xcf to Git LFS — version the GIMP logo source
+    description: |
+      The open fork from the sprint_4 dig: the GIMP working file (layers,
+      masks — the true source behind the svg/png exports) lived untracked,
+      so the project's face had provenance for its exports but not for its
+      source. Options weighed: Git LFS (versioned in-repo; free-tier quota
+      holds years for a ~1-2 MB file; clean adoption window while never
+      committed), a separate asset repo, or local-only acceptance.
+    story_points: 1
+    rejected: the hand-authored svg superseded the GIMP source — the xcf is a 
+      sketchpad (L1), the system stores results (L3); revisit only if a live 
+      GIMP pipeline ever returns
