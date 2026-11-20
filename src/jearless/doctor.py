@@ -17,8 +17,7 @@ ledger"); the exit code counts only live findings, so doctor is gate-able.
 
 from pathlib import Path
 
-from jearless import config, gitwrap, registry
-from jearless.add import GUIDANCE_HINT
+from jearless import config, forge, gitwrap, registry
 from jearless.errors import JearlessError
 from jearless.gitwrap import GitError
 from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
@@ -181,8 +180,16 @@ def acknowledge(cwd: Path, sha: str, cause: str, remote: str = "origin") -> int:
         ledger_path.write_text(LEDGER_HEADER, encoding="utf-8")
     with ledger_path.open("a", encoding="utf-8") as fh:
         fh.write(f"{full[:7]}  # {cause}\n")
-    gitwrap.run(["add", str(ledger_path)], cwd)
+    forge.registry_pr(
+        cwd,
+        files=[str(ledger_path)],
+        branch=f"ledger/{sha[:7]}",
+        title=f"doctor_ignore: {sha[:7]} — {cause[:60]}",
+        body=f"{sha[:7]} acknowledged: {cause}\n\n(the ledger mutation rides the forge — task tooling/53)",
+        label="ledger",
+        base=f"{remote}/{cfg.trunk_ref}",
+        trunk=cfg.trunk_ref,
+    )
     print(f"acknowledged: {full[:7]} — {cause}")
     print(f"ledger: {len(_ledger(cwd))} scar(s) in {HOMEDIR}/{LEDGER_NAME}")
-    print("the ledger edit is staged; " + GUIDANCE_HINT)
     return 0

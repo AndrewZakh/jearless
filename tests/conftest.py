@@ -3,6 +3,15 @@ from pathlib import Path
 
 import pytest
 
+from jearless import forge as _forge
+
+_REAL_REGISTRY_PR = _forge.registry_pr
+
+
+def real_registry_pr(cwd, **kwargs):
+    """The real ride — for tests that verify the forge flow itself."""
+    return _REAL_REGISTRY_PR(cwd, **kwargs)
+
 from jearless import gitwrap
 
 
@@ -45,3 +54,24 @@ def origin_and_clone(tmp_path: Path):
     gitwrap.run(["config", "user.name", "Test"], clone)
     gitwrap.run(["remote", "add", "origin", str(bare)], clone)
     return bare, clone
+
+
+@pytest.fixture(autouse=True)
+def _forge_manual_mode(monkeypatch):
+    """The default transport stand-in (task tooling/53): the 'human' commits
+    the staged edit straight to the current branch — the pre-53 manual flow.
+    Ride tests override this with the real forge or a PR-mocking fake."""
+    def _manual(cwd, files, branch, title, body, label, base, trunk):
+        import os
+
+        from jearless import gitwrap
+
+        rel = [os.path.relpath(os.path.join(str(cwd), str(item)), str(cwd)) for item in files]
+        gitwrap.run(["add", *rel], cwd)  # the stand-in stages like the real ride does
+        gitwrap.run(["commit", "-q", "-m", title, "--", *rel], cwd)
+        # and pushes like the real ride does: take and the views read ORIGIN
+        branch_now = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)
+        gitwrap.run(["push", "-q", "origin", branch_now], cwd)
+        return True
+
+    monkeypatch.setattr(_forge, "registry_pr", _manual)

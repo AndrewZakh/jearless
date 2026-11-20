@@ -13,8 +13,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from jearless import gitwrap, registry
-from jearless.add import GUIDANCE_HINT
+from jearless import config, forge, gitwrap, registry
 from jearless.errors import JearlessError
 
 
@@ -42,9 +41,17 @@ def run(cwd: Path, project: str, num: int, cause: str, remote: str = "origin") -
         yaml.dump(data, fh)
 
     gitwrap.run(["add", str(reg_path)], cwd)
-    print(
-        f"{project}/{num} rejected — cause: {cause}\n"
-        f"the registry edit is staged; " + GUIDANCE_HINT + "\n"
-        "(revival: remove the field -> available again; git remembers)"
+    print(f"{project}/{num} rejected — cause: {cause}")
+    cfg = config.load(cwd)
+    forge.registry_pr(
+        cwd,
+        files=[str(reg_path)],
+        branch=f"registry/{project}-{num}-rejected",
+        title=f"tasks.yml: {project}/{num} rejected — {cause[:60]}",
+        body=f"{project}/{num} rejected: {cause}\n\n(the registry mutation rides the forge — task tooling/53)",
+        label="registry",
+        base=cfg.trunk_ref,
+        trunk=cfg.trunk_ref,
     )
+    print("(revival: remove the field -> available again; git remembers)")
     return 0

@@ -12,10 +12,8 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from jearless import config, duplicate, gitwrap, registry, state
+from jearless import config, duplicate, forge, gitwrap, registry, state
 from jearless.errors import JearlessError
-
-GUIDANCE_HINT = "carry it to a branch and open a PR toward main — nothing direct lands on main (the constitution, tooling/51)"
 from jearless.registry import REGISTRY_NAME
 
 # Project names live in branch names: lowercase latin, digits, underscores.
@@ -141,10 +139,16 @@ def add(
     data.setdefault("tasks", {}).setdefault(project, []).append(entry)
     yaml.dump(data, path)
     if gitwrap.is_repo(cwd):
-        gitwrap.run(["add", str(path)], cwd)  # the tool stages, the human commits (tooling/52)
-        print(
-            f"task {project}/{next_id} added — the edit is staged; "
-            + GUIDANCE_HINT
+        print(f"task {project}/{next_id} added")
+        forge.registry_pr(
+            cwd,
+            files=[str(path)],
+            branch=f"registry/{project}-{next_id}",
+            title=f"tasks.yml: {project}/{next_id} — {summary}",
+            body=f"{project}/{next_id}: {summary}\n\n(the registry mutation rides the forge — task tooling/53)",
+            label="registry",
+            base=cfg.trunk_ref,
+            trunk=cfg.trunk_ref,
         )
     else:
         print(f"task {project}/{next_id} added — the registry is written; commit it when the repo exists")

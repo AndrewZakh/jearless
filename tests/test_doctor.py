@@ -178,11 +178,13 @@ def test_acknowledge_appends_and_stages(repo, capsys):
     assert doctor_mod.acknowledge(repo, sha, "the honest mistake, acknowledged") == 0
     out = capsys.readouterr().out
     assert f"acknowledged: {sha} — the honest mistake, acknowledged" in out
-    assert "staged" in out
+    committed = gitwrap.out(["show", "HEAD:.jearless/doctor_ignore"], repo)
+    assert f"{sha}  # the honest mistake, acknowledged" in committed  # landed (task tooling/53)
     ledger = (repo / ".jearless" / "doctor_ignore").read_text(encoding="utf-8")
     assert f"{sha}  # the honest mistake, acknowledged" in ledger
-    staged = gitwrap.out(["status", "--porcelain"], repo)
-    assert "jearless/doctor_ignore" in staged  # staged (A or M), never committed — the charter
+    # the manual-mode stand-in commits like the human would (tooling/53)
+    committed = gitwrap.out(["show", "HEAD:.jearless/doctor_ignore"], repo)
+    assert f"{sha}  # the honest mistake, acknowledged" in committed
 
 
 def test_acknowledge_then_doctor_is_clean(repo, capsys):

@@ -56,8 +56,9 @@ def test_reject_writes_field_and_stages(repo, capsys):
     assert "revival" in out  # the reversible-exit is disclosed
     text = (repo / ".jearless" / "tasks.yml").read_text(encoding="utf-8")
     assert "rejected: too expensive for the value" in text
-    staged = gitwrap.out(["status", "--porcelain"], repo)
-    assert "M  .jearless/tasks.yml" in staged  # staged, not committed (the charter)
+    # the manual-mode stand-in commits like the human would (task tooling/53)
+    committed = gitwrap.out(["show", "HEAD:.jearless/tasks.yml"], repo)
+    assert "rejected: too expensive for the value" in committed
 
 
 def test_state_derives_rejected(repo):
