@@ -66,10 +66,10 @@ jobs:
             echo ""
             echo "### The board"
             echo ""
-            # the public dashboard shows the WHOLE working set — available,
-            # done and rejected included; the sprint focus lives in the gantt
-            # and the burn-down above (task tooling/50, round 2)
-            BOARD=$(jear board --all)
+            # the sprint view (plan-mode): planned cards + unplanned live work
+            # (hiding the latter would be a lie — the manifest rule); the whole
+            # working set stays on `jear board --all` (task tooling/50, round 3)
+            BOARD=$(jear board)
             echo '```mermaid'
             # quote card labels: parens like (2 pt) break GitHub's kanban lexer
             printf '%s\n' "$BOARD" | python3 examples/quote_mermaid_labels.py
