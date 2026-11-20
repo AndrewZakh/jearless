@@ -1,0 +1,11 @@
+plan:
+  goal: the constitution — PR-only main, the release rides a PR, the forge opens PRs itself; then the 1.0.0 tag
+  tasks:
+    - task: tooling/51
+      planned: {start: 2026-11-20, end: 2026-11-22}
+    - task: tooling/52
+      planned: {start: 2026-11-21, end: 2026-11-21}
+    - task: tooling/53
+      planned: {start: 2026-11-22, end: 2026-11-23}
+    - task: tooling/54
+      planned: {start: 2026-11-23, end: 2026-11-24}
