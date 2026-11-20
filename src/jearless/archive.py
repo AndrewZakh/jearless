@@ -13,6 +13,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from jearless import config, gitwrap, registry, timeline
+from jearless.add import GUIDANCE_HINT
 from jearless.errors import JearlessError
 
 ARCHIVE_PREFIX = "archive_"
@@ -73,5 +74,7 @@ def run(cwd: Path, tag: str) -> int:
     print(f"archived {total} task(s) done as of {tag} -> {home_path.name}:")
     for project, entries in sorted(moved.items()):
         print(f"  {project}: " + ", ".join(str(entry["id"]) for entry in entries))
-    print("commit both files to main — the union (registry + archives) keeps every identity")
+    gitwrap.run(["add", str(reg_path), str(home_path)], cwd)
+    print("the edits are staged; " + GUIDANCE_HINT
+          + "; the union (registry + archives) keeps every identity")
     return 0

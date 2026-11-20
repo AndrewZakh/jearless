@@ -18,6 +18,7 @@ ledger"); the exit code counts only live findings, so doctor is gate-able.
 from pathlib import Path
 
 from jearless import config, gitwrap, registry
+from jearless.add import GUIDANCE_HINT
 from jearless.errors import JearlessError
 from jearless.gitwrap import GitError
 from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
@@ -183,5 +184,5 @@ def acknowledge(cwd: Path, sha: str, cause: str, remote: str = "origin") -> int:
     gitwrap.run(["add", str(ledger_path)], cwd)
     print(f"acknowledged: {full[:7]} — {cause}")
     print(f"ledger: {len(_ledger(cwd))} scar(s) in {HOMEDIR}/{LEDGER_NAME}")
-    print("the ledger edit is staged; commit it to main to make it permanent")
+    print("the ledger edit is staged; " + GUIDANCE_HINT)
     return 0

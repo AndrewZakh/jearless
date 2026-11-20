@@ -14,6 +14,8 @@ from ruamel.yaml import YAML
 
 from jearless import config, duplicate, gitwrap, registry, state
 from jearless.errors import JearlessError
+
+GUIDANCE_HINT = "carry it to a branch and open a PR toward main — nothing direct lands on main (the constitution, tooling/51)"
 from jearless.registry import REGISTRY_NAME
 
 # Project names live in branch names: lowercase latin, digits, underscores.
@@ -138,5 +140,12 @@ def add(
         entry["story_points"] = points
     data.setdefault("tasks", {}).setdefault(project, []).append(entry)
     yaml.dump(data, path)
-    print(f"task {project}/{next_id} added — commit tasks.yml to main")
+    if gitwrap.is_repo(cwd):
+        gitwrap.run(["add", str(path)], cwd)  # the tool stages, the human commits (tooling/52)
+        print(
+            f"task {project}/{next_id} added — the edit is staged; "
+            + GUIDANCE_HINT
+        )
+    else:
+        print(f"task {project}/{next_id} added — the registry is written; commit it when the repo exists")
     return next_id

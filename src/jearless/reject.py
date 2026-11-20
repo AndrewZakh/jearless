@@ -14,6 +14,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from jearless import gitwrap, registry
+from jearless.add import GUIDANCE_HINT
 from jearless.errors import JearlessError
 
 
@@ -43,7 +44,7 @@ def run(cwd: Path, project: str, num: int, cause: str, remote: str = "origin") -
     gitwrap.run(["add", str(reg_path)], cwd)
     print(
         f"{project}/{num} rejected — cause: {cause}\n"
-        f"the registry edit is staged; commit it to main to make it permanent\n"
-        f"(revival: remove the field -> available again; git remembers)"
+        f"the registry edit is staged; " + GUIDANCE_HINT + "\n"
+        "(revival: remove the field -> available again; git remembers)"
     )
     return 0
