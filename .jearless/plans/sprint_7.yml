@@ -1,0 +1,5 @@
+plan:
+  goal: the follow-up review's last item — the polish pack; the off-plan review work (47, 48, 50) shipped before this birth and will be graded actual-only, honestly
+  tasks:
+    - task: tooling/49
+      planned: {start: 2026-11-20, end: 2026-11-20}
