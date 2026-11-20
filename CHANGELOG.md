@@ -1,4 +1,15 @@
 # Changelog
+## v0.45.10 (2026-11-20)
+### Added
+- tooling-24: logo — vector redraw of the mascot
+- tooling-36: doctor acknowledge — the ledger UX command
+- tooling-37: housekeeping pack — doctor in the CI gate, xcf ignored, take blocked-warning
+- tooling-40: archive-aware identity — take and sprint over the union
+- tooling-41: duplicate keys — the loader refuses project/id collisions
+- tooling-42: retro sprint window — birth(N) to birth(N+1)
+- tooling-43: honest metrics — fix share, return rate, backlog growth
+- tooling-44: docs pack — the review round
+
 ## v0.37.10 (2026-11-19)
 ### Added
 - tooling-35: find — search across the eternal registry
