@@ -140,3 +140,21 @@ def test_return_rate_counts_re_merges(repo, capsys):
     assert "p/1  first task" in out.split("## Return rate")[1].split("##")[0]
     # velocity keeps first-arrival: p/1 shipped before v0.1.0, only p/2 counts
     assert "p: 3 pt" in out
+
+
+def test_first_arrival_by_history_order(repo, capsys):
+    """task tooling/47: the feature keeps first-arrival even when the fix carries
+    a fresher date — the walk is ancestors-first, not git-log order."""
+    _merge_branch(repo, "feature/p/1-a", "Alice", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    feature_sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    _merge_branch(repo, "fix/p/1-a", "Bob", "2026-11-03T09:00:00", "2026-11-03T12:00:00")
+    fix_sha = gitwrap.out(["rev-parse", "origin/main"], repo)[:7]
+    gitwrap.run(["tag", "v0.1.0"], repo)
+
+    assert report_mod.run(repo, "v0.1.0") == 0
+    out = capsys.readouterr().out
+    return_section = out.split("## Return rate")[1].split("##")[0]
+    assert f"p/1  first task  [{fix_sha}]" in return_section  # the RETURN is the fix, by sha
+    assert feature_sha not in return_section  # the feature is not mislabeled a return
+    assert "p/1 — Alice" in out  # attribution reads the FEATURE branch, not the fix
+    assert "median 24.0h" in out  # cycle time reads the feature's 24h, not the fix's 3h
