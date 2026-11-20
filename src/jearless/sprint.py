@@ -135,7 +135,7 @@ def _rag_rows(cwd: Path, cfg: config.Config, plan_path: Path, remote: str) -> li
     Green = alive. Pending = not taken yet. Nothing is stored.
     """
     plan_obj = plan_mod.load_plan(plan_path, registry.load_all(cwd))
-    view = state.compute(cwd, cfg, registry.load(cwd), remote)
+    view = state.compute(cwd, cfg, registry.load_all(cwd), remote)
     by_key = {(tv.task.project, tv.task.id): tv for tv in view.tasks}
     done = {key for key, tv in by_key.items() if tv.state == state.DONE}
     # naive UTC: the git dates it is compared against render via TZ=UTC
@@ -195,7 +195,7 @@ def run(cwd: Path, write: str | None = None, rag: str | None = None, remote: str
             f"cannot fetch '{remote}': the sprint truth lives on the remote"
         ) from exc
     cfg = config.load(cwd)
-    view = state.compute(cwd, cfg, registry.load(cwd), remote)
+    view = state.compute(cwd, cfg, registry.load_all(cwd), remote)
     if write is None:
         _print_terminal(view)
         if rag:

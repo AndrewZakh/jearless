@@ -49,7 +49,7 @@ def run(
         ) from exc
 
     cfg = config.load(cwd)
-    reg = registry.load(cwd)
+    reg = registry.load_all(cwd)
     view = state.compute(cwd, cfg, reg, remote)
     by_key = {(tv.task.project, tv.task.id): tv for tv in view.tasks}
 

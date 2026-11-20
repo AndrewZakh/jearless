@@ -2,7 +2,7 @@
 
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -37,6 +37,7 @@ class Task:
     story_points: int | None = None
     depends_on: tuple[tuple[str, int], ...] = ()
     rejected: str | None = None  # the withdrawal cause — an authorial decision fact (tooling/38)
+    archived: bool = False  # set by load_all for archive-sourced tasks (tooling/40)
 
 
 @dataclass
@@ -195,12 +196,16 @@ def load_all(cwd: Path) -> Registry:
     """The registry plus every archive: the identity source for the changelog and analytics.
 
     Archives are read from BOTH homes — frozen files stay where they were born.
+    Archive-sourced tasks carry archived=True (task tooling/40): the union is
+    identity, but only the working set belongs to the live views.
     """
     combined = load(cwd)
     home = cwd / HOMEDIR
     for path in sorted(set(cwd.glob("archive_*.yml")) | set(home.glob("archive_*.yml"))):
         for project, tasks in load_path(path).tasks.items():
-            combined.tasks.setdefault(project, []).extend(tasks)
+            combined.tasks.setdefault(project, []).extend(
+                replace(t, archived=True) for t in tasks
+            )
     return combined
 
 

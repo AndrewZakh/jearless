@@ -41,7 +41,10 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = 
     if kind not in KINDS:
         raise JearlessError(f"kind must be one of: {', '.join(KINDS)} (got '{kind}')")
     cfg = config.load(cwd)
-    task = _find_task(registry.load(cwd), project, num)
+    task = _find_task(registry.load_all(cwd), project, num)
+    if task.archived and kind != "fix":
+        # archived ⇒ shipped (only done tasks are archived): rework declares fix (task tooling/40)
+        raise JearlessError(f"task {project}/{num} is archived — it shipped; re-take requires --type fix")
     if not gitwrap.is_repo(cwd):
         raise JearlessError("not a git repository")
     try:
@@ -64,7 +67,7 @@ def take(cwd: Path, project: str, num: int, remote: str = "origin", kind: str = 
         raise JearlessError(f"no {base}: take branches off the main tip ({exc})") from exc
 
     # a DONE task re-taken is rework: the kind stays declared (task tooling/26)
-    view = state.compute(cwd, cfg, registry.load(cwd), remote)
+    view = state.compute(cwd, cfg, registry.load_all(cwd), remote)
     tv = next((tv for tv in view.tasks if (tv.task.project, tv.task.id) == (project, num)), None)
     if tv is not None and tv.state == state.DONE and kind != "fix":
         raise JearlessError(f"task {project}/{num} is done — re-take requires --type fix")
