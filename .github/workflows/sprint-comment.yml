@@ -66,9 +66,13 @@ jobs:
             echo ""
             echo "### The board"
             echo ""
+            # the public dashboard shows the WHOLE working set — available,
+            # done and rejected included; the sprint focus lives in the gantt
+            # and the burn-down above (task tooling/50, round 2)
+            BOARD=$(jear board --all)
             echo '```mermaid'
             # quote card labels: parens like (2 pt) break GitHub's kanban lexer
-            jear board | python3 examples/quote_mermaid_labels.py
+            printf '%s\n' "$BOARD" | python3 examples/quote_mermaid_labels.py
             echo '```'
             echo ""
             echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${GITHUB_SHA::7} — release-time slices live in .jearless/reports/_"
