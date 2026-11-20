@@ -33,8 +33,12 @@ jear-dashboard:
           echo '```mermaid'; jear timeline --live; echo '```'
         fi
         echo; echo "### The board"
+        # the public dashboard shows the WHOLE working set (task tooling/50, round 2)
+        BOARD=$(jear board --all)
+        echo '```mermaid'
         # quote card labels: parens like (2 pt) break the kanban lexer
-        echo '```mermaid'; jear board | python3 examples/quote_mermaid_labels.py; echo '```'
+        printf '%s\n' "$BOARD" | python3 examples/quote_mermaid_labels.py
+        echo '```'
         echo; echo "_generated at $(date -u '+%Y-%m-%d %H:%M UTC') on commit ${CI_COMMIT_SHORT_SHA}_"
       } > dashboard.md
     - |
