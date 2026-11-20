@@ -1,0 +1,457 @@
+# Frozen history: tasks done as of v0.45.10, moved out of tasks.yml by `jear archive v0.45.10`.
+# Identity for analytics is the union of tasks.yml and the archives (registry.load_all).
+tasks:
+  tooling:
+    - id: 8
+      summary: archive — moving done tasks out
+      description: |
+        By release tag into archive_<tag>.yml, done tasks only,
+        triggered by ergonomics (measurement 2026-11-06: speed is not the trigger).
+      story_points: 1
+    - id: 11
+      summary: double-merge resilience — the same branch merged twice after a restore
+      description: |
+        Scenario: feature/p/N merged, then the branch is restored after a
+        local/remote divergence and merged again — main now carries TWO merge
+        commits naming the same branch. Audit every derived surface:
+        changelog (duplicate entry inside one range; worse — a task re-shipped
+        in a later range when its first merge predates from_tag), timeline
+        (two bars sharing the mermaid id project_num), retro (dict overwrite —
+        the oldest bar currently wins the join; decide explicitly).
+        Sprint and doctor are expected safe (set semantics; merges always
+        attributed). Hypothesis to implement: dedupe by (project, number)
+        keeping the FIRST arrival — a task shipped in the version of its first
+        merge; re-merges are artifacts. Test factory: merge, reset/restore,
+        merge again, then run every command.
+      story_points: 2
+    - id: 12
+      summary: 'graph — the dependency view: task links and a mermaid flowchart'
+      description: |
+        depends_on is a frozen authorial fact (the story_points rule): a bare
+        number points inside the same project, "project/num" crosses projects.
+        Mermaid gantt cannot draw arrows — the view is a flowchart (jear graph),
+        a PLAN-side artifact, the gantt contract's sibling, not a timeline
+        feature. No gating: a link never blocks take — at most an annotation,
+        like the duplicate guard. Validation: targets must exist in the
+        registry ∪ archives (archiving cannot orphan a link), cycles refused,
+        doctor reports broken links as findings. add gains --depends
+        (repeatable); sprint annotates "after p/N".
+      story_points: 2
+    - id: 13
+      summary: 'sprint — markdown dashboard: --write with default path'
+      description: |
+        The resurrected sprint.md, resolved (it died as a hand-maintained
+        cache; it returns as a generated report). Bare sprint stays a PURE
+        view — peeking never writes. --write [PATH] targets ./sprint.md by
+        default; three cases: file absent — create whole-file with
+        jear:sprint markers inside; markers present — replace the chunk only,
+        human text around is untouchable; markers absent — refuse with a
+        paste-ready snippet (a human file can never be overwritten).
+        The chunk carries a stamp: generated-at · git@sha — staleness is
+        visible (sha mismatch = the report is stale). Write only on content
+        change: a no-op refresh leaves the tree clean. The human commits the
+        refresh (nothing automatic writes to main); doctor sanctions
+        *.md-only commits as documentation bookkeeping — the accepted price
+        (a docs-only squash is invisible) is recorded. Sections with counts,
+        points, after-links, branches — the same canonical join, second
+        renderer (the changelog/timeline render/run pattern).
+      story_points: 2
+    - id: 14
+      summary: sprint dashboard on every MR — a GitHub Action posting a sticky PR comment
+      description: |
+        The dashboard rides the forge, not the tree: a pull_request Action
+        installs the PR's own jearless (pip install . — the PR tests its own
+        tool), renders jear timeline --live (mermaid — GitHub renders it
+        directly in comments) plus the sprint board, and maintains ONE sticky
+        comment per MR (gh pr comment --edit-last --create-if-none).
+        Discussion surface, never a ref move: the "zero CI with write access"
+        pros line means code, and is amended in README. sprint.md stays
+        human-run. A concurrency group per MR cancels superseded runs;
+        fetch-depth 0 so the join reads the full merge history. Bare sprint
+        stays a pure view; this is presentation, not state.
+      story_points: 2
+    - id: 15
+      summary: housekeeping — all artifacts under .jearless/ (registry move, resolution order)
+      description: |
+        Everything jearless writes lives under .jearless/ in the repo root;
+        the public face stays out (README and CHANGELOG.md at the root — the
+        pyproject Changelog URL is pinned to it; sprint.md --write default
+        stays visible). Registry resolution order: .jearless/tasks.yml →
+        root tasks.yml → birth in .jearless/. BOTH existing = refuse loudly —
+        two live registries are the drift disease, not a migration. Old
+        installs keep living at the root with a one-line nudge; migration is
+        manual git mv (history preserved, human commit). Archives: read the
+        glob over BOTH places (frozen files stay where they were born), write
+        new ones into .jearless/. git log -p for scope creep will need
+        --follow across the rename. Price accepted: the registry leaves the
+        repo front page — the dashboard remains the human face.
+      story_points: 2
+    - id: 16
+      summary: 'planning — the sprint plan contract: plan/sprint_N.yml'
+      depends_on:
+        - 15
+      description: |
+        The authored commitment: ids (+ optional per-task planned dates), in
+        .jearless/plans/. The file's git birth IS the sprint start — nothing
+        stores a date. Numbering = max over plan files + 1, eternal. Hand-
+        authored; validated at report/rag time like check_links (unknown ids
+        refuse loud). The gantt-of-the-plan is DERIVED from this file — one
+        authored plan, no drift with a hand-drawn md gantt (the unification
+        decision). Burndown = join of the plan with first-arrival merges
+        inside the window. The order of ids may encode execution order —
+        this is the sprint priority (see the README manifest).
+      story_points: 2
+    - id: 17
+      summary: report — the release-time PM snapshot (velocity, cycle time, rework)
+      depends_on:
+        - 15
+        - 16
+      description: |
+        jear report <tag> — the changelog pattern for PM numbers: generated
+        at the tag boundary, committed next to it
+        (.jearless/reports/report-<tag>.md), into the release step.
+        Velocity: points done between tags per subproject — union points via
+        load_all (archives!), first-arrival range logic reused. Scope creep:
+        tasks born after the plan's git birth (git log --follow). Cycle time:
+        median + p85, no mean — start = the branch's first own commit author
+        date, end = merge committer date, with the client-clock disclaimer.
+        Rework rate: fix-prefix merges / all merges — counts ad-hoc fixes a
+        parent field never sees. Attribution: most commits on the branch,
+        fallback first-commit committer — derived, nothing stored; reports
+        are public, names already are. Label velocity between tags as
+        RELEASE velocity; sprint burndown is the plan join — different
+        questions.
+      story_points: 3
+    - id: 18
+      summary: RAG — the red-yellow-green view over plan x state, on demand
+      depends_on:
+        - 16
+      description: |
+        A derived view over plan x state x depends_on — computed on demand,
+        never stored, the one canonical join. Red: a planned task whose
+        depends_on target is not done (the existing graph — no blocked_by
+        field, rejected as a duplicate carrier). Yellow, two kinds of aging:
+        taken-never-started (branch exists, no own commits, branch age > N)
+        and stalled (last own commit older than N) — N in [rag] of
+        .jearless.toml. Green: in progress, alive. Requires an explicit plan
+        argument — which plan is current is never guessed; without a plan
+        the RAG does not appear.
+      story_points: 2
+    - id: 19
+      summary: 'take — typed branches: --type fix|chore|feature (default feature)'
+      description: |
+        take hardcodes feature/ — a registry-recorded bug lands in "Added"
+        and escapes the defect ratio. Fix: --type fix|chore|feature (default
+        feature) -> the branch prefix. The registry stays typeless: the
+        type's only carrier is the branch prefix (one carrier per fact). The
+        auto-hotfix hypothesis (unplanned tasks automatically become
+        hotfix/) was REJECTED: membership and kind are orthogonal axes; the
+        inference bakes a time-of-take judgment into an immutable branch
+        name and erases the "production on fire vs calm scope addition"
+        distinction. A forgotten type is correctable pre-merge (git branch
+        -m) and never after.
+      story_points: 1
+    - id: 20
+      summary: retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail)
+      description: |
+        The unification decision (tooling/16) made plan/sprint_N.yml the one
+        authored plan — but retro still parses an authored plan.md gantt
+        (_PLAN_LINE): two plan formats live in the codebase, the drift we
+        promised to kill. Migrate retro to load_plan: join dated planned
+        windows with first-arrival merges (bar ids already share the
+        project_num key space); undated entries are plan-only, no window to
+        compare. The md-gantt parsing retires with a golden test proving the
+        join against a committed sprint plan.
+      story_points: 2
+    - id: 21
+      summary: registry race — test two concurrent adds and document the resolution flow
+      description: |
+        Branch occupancy is server-arbitrated (push = non-fast-forward), but
+        registry EDITS are not: two concurrent `jear add` commits to main
+        race on push — the second is rejected, the pull surfaces a tasks.yml
+        conflict, and the resolution is a hand merge (no rebase — the
+        charter). Deliverable: a factory test proving the conflict surfaces
+        and the pull/resolve/push flow closes it, plus the documented
+        resolution flow in the README. Frequency is low; the cost of an
+        undocumented conflict is not.
+      story_points: 1
+    - id: 22
+      summary: mailmap — normalize author identity for attribution (%aN)
+      description: |
+        Attribution (report) reads %an — raw author names — and the history
+        carries two identities (AndrewZakh, Andrei Zakhrebetkov) from a
+        mid-project git config change: the report sees two people where
+        there is one. Fix: a .mailmap mapping both to one canonical name,
+        and the report switches %an -> %aN (the mailmap-aware token; plain
+        %an ignores the mailmap). Verify via the live report on v0.16.7.
+      story_points: 1
+    - id: 23
+      summary: release checklist — publish to PyPI after jear release
+      description: |
+        The canonical release flow is human-run (the charter): jear release
+        -> uv build -> uv publish (TestPyPI rehearsal when metadata changes).
+        It was forgotten once — PyPI drifted 0.16.7 -> v0.20.7 while the repo
+        moved on. Deliverable: `jear release` prints the publish hint at the
+        end ("now: uv build && uv publish"), and the README gains the release
+        checklist. No CI publishing — nothing automatic touches the forge.
+      story_points: 1
+    - id: 24
+      summary: logo — vector redraw of the mascot
+      description: |
+        The mascot is canon: a hedgehog whose spines are a gear (jear = gear).
+        Done so far (uncommitted work on the feature branch): hand-authored
+        assets/img/logo.svg — 2.5 KB of true Bézier curves, no autotrace mess.
+        The gear is computed by polar math (12 teeth, rotated +12 deg so the
+        right ones hide behind the crown); the organics (back, face+chest,
+        muzzle, eye, paws) are hand-tuned over 5 render-iterate rounds via
+        macOS qlmanage (SVG -> PNG -> eyeball). Palette from the draft:
+        #F5A62B / #252E45 / #A6AFBF / #F2EFE6 / #1D2436. Background and glow
+        deliberately dropped (re-addable as a radial gradient). Remaining:
+        the user's iteration feedback (pupil size, muzzle angle, paw
+        thickness), then derivatives — favicon 32x32, README header variant,
+        monochrome badge — and the fate of the PNG draft (keep as reference
+        or drop).
+      story_points: 2
+    - id: 25
+      summary: board — the kanban view over the canonical states
+      description: |
+        A mermaid kanban view over the canonical join — the human-familiar
+        board, derived, nothing stored. Sprint-first: `jear board` renders the
+        latest plan's tasks; `--plan FILE` explicit; `--all` the fallback with
+        PER-COLUMN limits: available — last N by id (free, monotonic; no
+        history walk), done — last N by merge date (derivable from bars),
+        in_progress — all (branches are few), plus the disclosure "and M more
+        available". Rows follow the plan's order when planned. Columns are
+        STATES, not sprints — multi-sprint boards refused: that is the
+        velocity trend's job (tooling/27). GitHub may not render the mermaid
+        kanban type (v11) — accepted: the output is portable text (GitLab
+        renders natively; local via mermaid.live/CLI).
+      story_points: 2
+    - id: 26
+      summary: retake — reopening done tasks with a declared kind
+      description: |
+        Re-take a DONE task — four atoms, story points untouched. (1) take on
+        a done task refuses the default kind ("done — re-take requires
+        --type fix"): the kind stays declared, not inferred. (2) the state
+        join derives REOPEN: a live branch forked after the done-merge
+        (merge-base date > merge committer date) wins over done — in_progress
+        again. (3) changelog/timeline dedupe keys on the BRANCH, not the
+        task: same branch twice = re-merge artifact (collapse); a different
+        prefix = new work (changelog "Fixed"). (4) the timeline bar id gets a
+        _fix suffix — rework must be visible on the chart. Points are NOT
+        incremented: a frozen estimate that velocity would double-count; the
+        fix's cost is derived (its own cycle time + the rework rate). "Why"
+        lives in the fix branch's first commit message.
+      story_points: 3
+    - id: 27
+      summary: burndown — sprint burn-down and velocity trend via xychart
+      description: |
+        Two derived charts via xychart-beta (GitHub may not render it —
+        accepted, portable text). (1) Sprint burn-down for a plan: the ideal
+        line = total planned points declining linearly over the window (plan
+        birth -> last planned end; undated plans degrade with a disclaimer),
+        the actual line = remaining points after each first-arrival merge,
+        plotted per day. (2) Velocity trend across plans: bars of points done
+        per sprint (plans + archives union x merges) — answers the
+        planning-buffer question (mean unplanned share). `jear burndown
+        <plan>` for (1); (2) lands in the report or as a flag — decide at
+        implementation.
+      story_points: 3
+    - id: 28
+      summary: 'ci — a test gate workflow: pytest and ruff on pull requests'
+      description: |
+        152 tests exist and NOTHING enforces them on the forge: PRs #1-#4
+        were merged without a single pytest run — the dashboard bot only
+        posts pictures. Deliverable: .github/workflows/tests.yml — pytest +
+        ruff on pull_request and push to main, Python 3.12, uv for speed.
+        The suite is integration-heavy (real repos, ~45s) — CI makes its
+        growth visible; a speed budget is follow-up policy, not this task.
+      story_points: 1
+    - id: 29
+      summary: windows — reconcile the OS-Independent claim with the tzset conftest
+      description: |
+        pyproject claims OS Independent, but conftest calls time.tzset() —
+        absent on Windows; the suite cannot even import there. Two honest
+        exits: drop the classifier (and state POSIX-only in the README), or
+        make the fixture portable (guard tzset behind hasattr / skip
+        date-dependent asserts on win32). Pick one at implementation; the
+        claim must stop lying either way.
+      story_points: 1
+    - id: 30
+      summary: 'docs — storefront restructure: manifest, contributing, examples, horizons'
+      description: |
+        (1) manifest.md — the planning manifest moves out of README, plus the
+        charter rules (main by merges, --no-ff, derived-not-stored,
+        one-carrier) and the decision history: every rule with the cause that
+        born it. The new thesis lands here: humans bring chaos, and chaos is
+        data, not a violation — the retro shows it, the report counts it;
+        discipline lies in visibility, not in prohibition. (2) CONTRIBUTING.md
+        — setup, the branch ritual, pointers to the manifest and the CI gate.
+        (3) README becomes the storefront: logo (when tooling/24 lands), the
+        pitch, install, quickstart, and REAL artifacts as the hook — the dark
+        gantt, the board, a changelog fragment. (4) the deprecation horizon:
+        the root-registry fallback dies in 1.0. (5) .jearless/release.md —
+        the authored release checklist printed by every release (missing file
+        -> the one-line fallback); README's checklist section becomes a
+        pointer; the sprint.md refresh line lives in the file. Plus the
+        scale-boundary note: hundreds of merges a day ~= tens of seconds.
+      story_points: 3
+    - id: 31
+      summary: doctor_ignore — the scar ledger for accepted holes
+      description: |
+        "The visible hole" evolves into "the documented hole": .jearless/
+        doctor_ignore is the ledger of accepted scars — one sha per line
+        (# comments allowed), each with the cause. Matching is by SHA only
+        (immutable, exact — it can never hide a NEW violation, only the ones
+        acknowledged by hand). The ledger lives in .jearless/ (its reader is
+        jearless; git-convention files stay at the root). Doctor prints
+        non-ignored findings loud, then "N accepted scar(s) on the ledger",
+        and the exit code counts only non-ignored — doctor becomes
+        gate-able. Scope: the ledger applies to unattributed-commit findings
+        only; registry/links/naming findings are fixable — fix, don't
+        ignore. The ledger itself must be SANCTIONED for direct edits, or
+        its update commit becomes a new finding (infinite regress). Effect
+        in our repo: doctor exits 0 and joins the CI gate from tooling/28.
+        First live false positive of the duplicate guard recorded on the way
+        (67% vs tooling/5 — the net caught a non-fish; --yes applied).
+      story_points: 2
+    - id: 32
+      summary: integration_ref — the GitFlow mode for done-detection and live views
+      description: |
+        Config: [git] integration_ref = "staging" in .jearless.toml (validated).
+        done-detection walks the UNION of remote/main and remote/<integration_ref>
+        merges — a task merged into the integration branch is DONE ("integrated"),
+        no more available-flicker when the forge auto-deletes the feature branch.
+        cfg.live_ref(remote): every LIVE/unreleased surface (state reopen base,
+        changelog default, timeline --live, burndown bars, take fork base) reads
+        the integration tip when configured; TAG-based released views (changelog
+        ranges, report, snapshots) stay on main/tags — release semantics unchanged.
+        Promotions must be true merges (doctor polices; squash = loud finding).
+        Documented in manifest.md ("GitFlow mode") — our repo stays trunk-based;
+        the mode is for adopters whose forges accumulate on an integration branch.
+      story_points: 3
+    - id: 33
+      summary: trunk_ref and integration_ref templates — master and release-sN support
+      description: |
+        Names are configurable for every flow. [git] trunk_ref = "main"
+        (default) — the delivery trunk: state walks, the doctor audit, the
+        release sync check, the reopen merge-base, the live_ref trunk
+        fallback. [git] integration_ref supports the {n} template resolved
+        from the LATEST plan number (release-s{n} for sprint_N.yml) — no
+        per-sprint manual config edits. Validation charset extended with
+        braces for the template. The doctor audit stays on the trunk only:
+        integration-branch internals are the team's discipline.
+      story_points: 2
+    - id: 35
+      summary: find — search across the eternal registry
+      description: |
+        The eternal registry grows forever — finding "that task about unbound"
+        must not be a manual grep. `jear find <query>` — case-insensitive
+        substring search across summaries and descriptions of the live
+        registry; prints project/num, summary, story_points. Archives stay
+        out of v1 (the union is the report's business, find works on the
+        working set).
+      story_points: 1
+    - id: 36
+      summary: doctor acknowledge — the ledger UX command
+      description: |
+        The scar ledger is hand-edited today: no sha validation, no required
+        cause. `jear doctor --acknowledge <sha> <cause...>` — validates the
+        sha exists on the trunk's first-parent chain, appends the ledger line
+        with the cause, prints the ledger summary. The ledger file itself is
+        sanctioned for direct edits (the tool edits it; the human commits —
+        the charter holds). The duplicate guard may flag this task against
+        tooling/31 — a false positive, --yes applied.
+      story_points: 1
+    - id: 37
+      summary: housekeeping pack — doctor in the CI gate, xcf ignored, take blocked-warning
+      description: |
+        The freebies pack: (a) doctor joins the tooling/28 tests workflow as
+        the fourth step — gate-able since the scar ledger landed (exit 0 on
+        our repo); (b) *.xcf into .gitignore — the GIMP source stays
+        untracked by the user's own decision, the status noise stops;
+        (c) take warns when a task's depends_on has an undone target — not a
+        refusal, one state.compute line, the RAG already knows.
+      story_points: 1
+    - id: 38
+      summary: rejected — the fourth derived state and the reject command
+      description: |
+        The fourth derived state: a recorded task whose intent was withdrawn.
+        Field: rejected: "cause" in the entry — an AUTHORIAL decision fact
+        (the same class as planned dates), not live state; it changes only
+        at decision moments, human-committed. Loader validation: the field
+        present -> the cause must be a non-empty string (a bare rejection
+        is invisible debt). state.py derives the fourth state REJECTED =
+        present AND rejected field — it wins over done (a human's latest
+        declaration about the future, not a rewrite of the past: the merge
+        stays in history). board: a fourth column; sprint: a rejected
+        section; find: the marker. `jear reject <project> <id> <cause...>`
+        — the mirror of doctor --acknowledge (36): validates the task
+        exists, is not already rejected, the cause is non-empty, writes the
+        field. Revival is reversible: remove the field -> available; git
+        remembers the whole story. Points stay untouched: velocity excludes
+        rejected naturally (no merge -> no first arrival -> no count).
+        Boundaries: the system does not judge WHETHER the rejection was
+        right (L4 Outcome, the external world); quality of teaching
+        analogue: preparation and provenance are measured, effectiveness
+        is not.
+      story_points: 2
+    - id: 39
+      summary: storefront polish — plan, EngineerOps in English, cookbook rename
+      description: |
+        Actualize PLAN.md (the phase plan is history — the surface map is reality);
+        translate ENGINEEROPS.md to English (a public repo speaks English);
+        rename tasks_query.md to COOKBOOK.md (agent vote: COOKBOOK promises copy-paste
+        recipes, QUERIES is vaguer) and update the README link. The owner's refreshed
+        logo.png rides along here (the storefront hero) — tooling/24's vector redraw
+        stays open on its own branch.
+      story_points: 2
+    - id: 40
+      summary: archive-aware identity — take and sprint over the union
+      description: |
+        The review P1: take and state.compute read only the live registry, so archiving
+        makes a task un-retakeable and its fix branches invisible. take finds tasks via
+        load_all (retake by the same ID after archiving); an archived task is done by
+        construction, so feature-kind retake refuses with --type fix required;
+        state/sprint/board surface an archived task ONLY when it carries a live branch —
+        quiet archives stay off the working set. E2E: merge, tag, archive, take --type
+        fix, in_progress on the board.
+      story_points: 2
+    - id: 41
+      summary: duplicate keys — the loader refuses project/id collisions
+      description: |
+        The review P1: a manual merge can silently keep two entries under one project/id,
+        making branch and plan references ambiguous. from_data refuses duplicates within
+        a file; load_all refuses live-vs-archive collisions; the error names the key and
+        both entries. Doctor reports it as an invalid registry and the CI doctor step
+        guards the merge result — one mechanism instead of separate pre-commit and CI
+        plumbing.
+      story_points: 1
+    - id: 42
+      summary: retro sprint window — birth(N) to birth(N+1)
+      description: |
+        The review P2: actual-only is filtered only from below (>= birth), so recomputing
+        an old retro picks up the next sprint's unplanned merges. Definition: sprint N
+        lives from its plan's birth to the next plan's birth; the latest plan lives to
+        now. The retro also prints the plan revision (sha) and the HEAD slice so a
+        recomputed retro is reproducible.
+      story_points: 2
+    - id: 43
+      summary: honest metrics — fix share, return rate, backlog growth
+      description: |
+        The review P2: fix share keeps its precise name; NEW return rate = tasks with
+        more than one merge bar / distinct merged tasks per report window, multi-returns
+        counted each (a retake is rework; the cause is retro business). Scope creep
+        renamed to backlog growth (created after the plan's birth); the true
+        unplanned-merged signal stays in the retro — referenced, not duplicated.
+      story_points: 2
+    - id: 44
+      summary: docs pack — the review round
+      description: |
+        Vasya and Masha: first merge = done signal, rework = retake, separate FE/DB
+        tasks are the team's call. README reconciled with take: the ls-remote check is
+        advisory, the push arbitrates only identical names, exclusive ownership is not
+        required. Release checklist line: artifacts commit pushed but the tag push
+        failed -> tag that SHA by hand. Attribution footnote: the name is the most
+        committer.
+      story_points: 1
