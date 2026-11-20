@@ -1,12 +1,12 @@
-"""The registry-edit race (task tooling/21): two concurrent `add`s compute the
-same id; the second push is rejected; the documented flow closes it.
+"""The registry-edit race (task tooling/21, re-cut for the PR transport —
+task tooling/52+53): two concurrent `add`s compute the same id; the ride's
+push is rejected (same branch name, different commit); the conflict moves to
+the PR merge, and the documented flow closes it.
 
-Branch occupancy is server-arbitrated, registry EDITS are not: both clones
-append at the same spot of tasks.yml, the second push is rejected as
-non-fast-forward, and `git pull` surfaces a real merge conflict. The
-documented resolution (README, Key decisions): keep the winner's entry,
-drop your duplicate, commit the merge (no rebase — the charter), then
-re-run `add` — it allocates the next free id against the merged registry.
+The push race still arbitrates the CLAIM (same branch name, different sha).
+The task-level conflict surfaces at merge time: alpha's PR merges, beta
+drops the stale duplicate branch, pulls the merged registry and re-runs
+`add` — it allocates the next free id against the merged registry.
 """
 
 import pytest
@@ -40,49 +40,49 @@ def two_clones(tmp_path):
     return alpha, beta
 
 
-def _commit_registry(clone, message: str):
-    gitwrap.run(["add", "tasks.yml"], clone)
-    gitwrap.run(["commit", "-q", "-m", message], clone)
+def test_registry_race_conflict_and_resolution(two_clones, monkeypatch, capsys):
+    import conftest as conftest_helpers
+    from jearless import forge as forge_module
 
+    # this test IS about the ride — restore the real one (the autouse fixture
+    # stands it in everywhere else)
+    monkeypatch.setattr(forge_module, "registry_pr", conftest_helpers.real_registry_pr)
 
-def test_registry_race_conflict_and_resolution(two_clones, capsys):
     alpha, beta = two_clones
 
-    # alpha takes the lead: id 2 allocated, committed, pushed
+    # alpha takes the lead: id 2 allocated, the ride lands it on registry/p-2
     assert add_mod.add(alpha, "p", "task from alpha") == 2
-    _commit_registry(alpha, "add: task from alpha")
-    gitwrap.run(["push", "-q", "origin", "main"], alpha)
+    assert "registry/p-2" in gitwrap.out(["ls-remote", "--heads", "origin"], alpha)
 
-    # beta, without pulling, allocates the SAME id 2 — the race
+    # beta, without pulling, allocates the SAME id 2 — the ride's push is
+    # rejected: same branch name, different commit; the race arbitrates HERE
     assert add_mod.add(beta, "p", "task from beta") == 2
-    _commit_registry(beta, "add: task from beta")
+    with pytest.raises(GitError, match=r"rejected|fetch first"):
+        gitwrap.run(["push", "origin", "registry/p-2"], beta)
 
-    # the server arbitrates: beta's push is rejected (non-fast-forward —
-    # worded "(fetch first)" on a local transport, "[rejected]" on any)
-    with pytest.raises(GitError, match=r"\[rejected\]"):
-        gitwrap.run(["push", "origin", "main"], beta)
+    # the resolution: alpha's PR merges first (the forge); beta drops the
+    # stale duplicate, pulls the merged registry, re-adds — no id reuse
+    gitwrap.run(["checkout", "-q", "main"], alpha)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge pull request #1: registry/p-2", "registry/p-2"],
+        alpha,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], alpha)
+    gitwrap.run(["push", "-q", "origin", "--delete", "registry/p-2"], alpha)  # the forge auto-delete
+    gitwrap.run(["checkout", "-q", "main"], beta)
+    gitwrap.run(["pull", "--no-rebase", "-q", "origin", "main"], beta)
+    gitwrap.run(["branch", "-q", "-D", "registry/p-2"], beta)
 
-    # a bare `pull` dies first: modern git demands an explicit strategy on
-    # divergent branches (rc 128, "specify how to reconcile") — which happens
-    # to enforce the charter's "no rebase" for free
-    with pytest.raises(GitError, match="divergent"):
-        gitwrap.run(["pull", "origin", "main"], beta)
-
-    # the merge pull surfaces the real conflict — both edits touched the same spot
-    with pytest.raises(GitError):
-        gitwrap.run(["pull", "--no-rebase", "origin", "main"], beta)
-    assert "UU tasks.yml" in gitwrap.out(["status", "--porcelain"], beta)
-
-    # the documented resolution: keep the winner's entry, drop your duplicate,
-    # commit the merge (a merge commit — no rebase, the charter)
-    gitwrap.run(["checkout", "--theirs", "tasks.yml"], beta)  # alpha's version wins
-    gitwrap.run(["add", "tasks.yml"], beta)
-    gitwrap.run(["commit", "-q", "-m", "merge: alpha's registry wins"], beta)
-    gitwrap.run(["push", "-q", "origin", "main"], beta)
-
-    # re-run add: the id allocates against the MERGED registry — no reuse
     assert add_mod.add(beta, "p", "task from beta, re-added") == 3
-    _commit_registry(beta, "add: task from beta, re-added")
+
+    # beta's PR merges (the forge): main gains the re-added task
+    gitwrap.run(["fetch", "-q", "origin"], beta)
+    gitwrap.run(["checkout", "-q", "main"], beta)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge pull request #2: registry/p-3 (re-added)",
+         "origin/registry/p-3"],
+        beta,
+    )
     gitwrap.run(["push", "-q", "origin", "main"], beta)
 
     # alpha pulls the resolution: three tasks, ids unique, nothing lost

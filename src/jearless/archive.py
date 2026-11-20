@@ -12,8 +12,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from jearless import config, gitwrap, registry, timeline
-from jearless.add import GUIDANCE_HINT
+from jearless import config, forge, gitwrap, registry, timeline
 from jearless.errors import JearlessError
 
 ARCHIVE_PREFIX = "archive_"
@@ -74,7 +73,14 @@ def run(cwd: Path, tag: str) -> int:
     print(f"archived {total} task(s) done as of {tag} -> {home_path.name}:")
     for project, entries in sorted(moved.items()):
         print(f"  {project}: " + ", ".join(str(entry["id"]) for entry in entries))
-    gitwrap.run(["add", str(reg_path), str(home_path)], cwd)
-    print("the edits are staged; " + GUIDANCE_HINT
-          + "; the union (registry + archives) keeps every identity")
+    forge.registry_pr(
+        cwd,
+        files=[str(reg_path), str(home_path)],
+        branch=f"archive/{tag}",
+        title=f"archive {tag}: done tasks move out",
+        body=f"archive {tag}: done-as-of-tag tasks leave tasks.yml; the union keeps every identity\n\n(the registry mutation rides the forge — task tooling/53)",
+        label="archive",
+        base=cfg.trunk_ref,
+        trunk=cfg.trunk_ref,
+    )
     return 0
