@@ -9,6 +9,6 @@ repos:
     hooks:
       - id: jear-registry-union
         name: jear registry union (duplicate keys refuse)
-        entry: python3 -c "from pathlib import Path; from jearless import registry; registry.load_all(Path.cwd())"
+        entry: .venv/bin/python -c "from pathlib import Path; from jearless import registry; registry.load_all(Path.cwd())"
         language: system
         files: ^(tasks\.yml|\.jearless/(tasks\.yml|archive_.*\.yml)|archive_.*\.yml)$
