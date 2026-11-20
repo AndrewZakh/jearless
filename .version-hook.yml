@@ -48,6 +48,23 @@ branch_flow:
     target: main
     policy: ignore
 
+  # the forge-ride branches (tooling/53): the hook fails CLOSED on unmatched
+  # names (on_error: fail), so every new tool prefix needs its explicit ignore
+  - name: registry
+    regex: '^registry/'
+    target: main
+    policy: ignore
+
+  - name: ledger
+    regex: '^ledger/'
+    target: main
+    policy: ignore
+
+  - name: archive-branch
+    regex: '^archive/'
+    target: main
+    policy: ignore
+
 hooks:
   auto_stage: true
   on_error: fail
