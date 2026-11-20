@@ -81,6 +81,8 @@ tell the truth about both. Verified live (2026-11-17).
 | An unread config key rots like an unread field | config sections are born with the feature that needs them |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
 | Auto-committed reports resurrect the post-merge writer — a committed live report lies between runs, and a CI commit-back breaks "nothing automatic writes main" | dashboards ride the forge (PR/MR comments), pages or job artifacts; the tree holds only the release-time frozen slice (tooling/14, reaffirmed 2026-11-20) |
+| Direct pushes to a protected branch are the industry's antipattern — "таких проектов просто нет"; five of five of our scars were direct-to-main sins | main accepts changes only through PRs/MRs; the release rides one too; the emergency bypass is explicit and every use is a ledger scar (tooling/54) |
+| A binary drawing source drifted from the vector truth | the canonical logo source is the hand-authored svg; the xcf stays untracked (rejected: tooling/45) |
 
 ## GitFlow mode
 
