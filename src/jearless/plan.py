@@ -186,6 +186,22 @@ def window_end(cwd: Path, path: Path) -> str | None:
     return upper
 
 
+def content_rev(cwd: Path, path: Path) -> str:
+    """The plan version the tool ACTUALLY read (task tooling/48).
+
+    'worktree (uncommitted edits)' when the file differs from HEAD —
+    membership came from an unpublished state; otherwise the short sha of the
+    newest commit touching the path. The birth commit (the window origin) is
+    a different fact and is stamped separately.
+    """
+    try:
+        if gitwrap.out(["status", "--porcelain", "--", str(path)], cwd).strip():
+            return "worktree (uncommitted edits)"
+        return gitwrap.out(["log", "-1", "--format=%h", "--", str(path)], cwd) or "?"
+    except gitwrap.GitError:
+        return "?"
+
+
 def _plan_gantt(plan: Plan, reg: registry.Registry) -> str:
     """The derived gantt-of-the-plan: dated windows only, undated tasks listed in a comment."""
     labels = {(t.project, t.id): t.summary for t in reg.all()}

@@ -25,6 +25,7 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
     birth = plan.birth_date(cwd, plan_path)  # full timestamp; None = unborn
     upper = plan.window_end(cwd, plan_path)  # the next plan's birth closes the window (tooling/42)
     revision = plan.birth_commit(cwd, plan_path)
+    content = plan.content_rev(cwd, plan_path)
     try:
         head = gitwrap.out(["rev-parse", "--short=7", ref], cwd)
     except gitwrap.GitError:
@@ -32,10 +33,11 @@ def run(cwd: Path, plan_path: Path, ref: str = "HEAD") -> int:
 
     joined = [entry for entry in plan_obj.entries if entry.task in actual]
     window = "open — the latest plan" if upper is None else f"closes at the next plan's birth ({upper})"
-    revision_note = f" · plan@{revision[:7]}" if revision else ""
+    revision_note = f" · plan@{revision[:7]} (window origin)" if revision else ""
+    content_note = f" · content@{content}" if content else ""
     print(
         f"retro: {plan_path.name} vs actual ({len(joined)} joined)"
-        f" · history@{head}{revision_note} · window: {window}"
+        f" · history@{head}{revision_note}{content_note} · window: {window}"
     )
     for entry in joined:  # the plan's own order: top-down is the sprint priority
         bar = actual[entry.task]
