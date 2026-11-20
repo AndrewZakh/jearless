@@ -190,3 +190,36 @@ def test_window_closes_at_next_plan_birth(repo, capsys):
     assert "window: open — the latest plan" in out
     assert "p/2: planned 11-07" in out  # joined as planned (it owns the window's task)
     assert "actual-only: p/3" not in out  # pre-birth work is not a hole in sprint_2 either
+
+
+def test_stamp_names_the_version_actually_read(repo, capsys):
+    """task tooling/48: the stamp reflects the plan version the retro read —
+    a dirty worktree edit is labeled; a committed amendment moves content@."""
+    plan_path = repo / "sprint_1.yml"
+    plan_path.write_text(PLAN, encoding="utf-8")
+    gitwrap.run(["add", "sprint_1.yml"], repo)
+    gitwrap.run(["commit", "-q", "-m", "the contract"], repo,
+                env={"GIT_COMMITTER_DATE": "2026-11-03T08:00:00"})
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    _merge_branch(repo, "feature/p/1-first", "2026-11-04T10:00:00", "2026-11-04T12:00:00")
+
+    assert retro_mod.run(repo, plan_path) == 0
+    out = capsys.readouterr().out
+    assert "plan@" in out and " (window origin)" in out and "content@" in out
+    assert "uncommitted" not in out
+
+    # the review's state 1: a dirty edit at the same HEAD must be visible in the stamp
+    plan_path.write_text(PLAN + "    - task: p/2\n", encoding="utf-8")
+    assert retro_mod.run(repo, plan_path) == 0
+    out = capsys.readouterr().out
+    assert "content@worktree (uncommitted edits)" in out
+    assert "plan-only: p/2" in out  # the membership truly came from the edited file
+
+    # the review's state 2: after the commit, content@ names the holding commit
+    gitwrap.run(["add", "sprint_1.yml"], repo)
+    gitwrap.run(["commit", "-q", "-m", "amend the contract"], repo,
+                env={"GIT_COMMITTER_DATE": "2026-11-05T08:00:00"})
+    assert retro_mod.run(repo, plan_path) == 0
+    out = capsys.readouterr().out
+    assert "uncommitted" not in out
+    assert "plan-only: p/2" in out  # the amendment is part of the read membership

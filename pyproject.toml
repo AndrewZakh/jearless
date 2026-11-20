@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jearless"
-version = "0.48.12"
+version = "0.49.12"
 description = "Fearless. Jearless. Task tracking and a changelog on bare git — for small teams."
 readme = "README.md"
 requires-python = ">=3.11"
