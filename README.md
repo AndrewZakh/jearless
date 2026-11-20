@@ -1,7 +1,7 @@
 # jearless
 
 <p align="center">
-  <img src="assets/img/logo.png" alt="jearless — the hedgehog whose spines are a gear" width="320">
+  <img src="assets/img/logo.svg" alt="jearless — the hedgehog whose spines are a gear" width="150">
 </p>
 
 **Fearless. Jearless.** Task tracking and a changelog on bare git — for small teams.
