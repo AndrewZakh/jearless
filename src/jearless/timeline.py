@@ -97,12 +97,15 @@ def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) 
     must be visible on the chart.
     """
     log = gitwrap.out(
-        ["log", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
+        ["log", "--topo-order", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
         cwd,
         env=_UTC,
     )
     bars: dict[tuple[str, int, str], Bar] = {}
-    for line in reversed([ln for ln in log.splitlines() if ln.strip()]):  # oldest first
+    # topo-order makes the reversed walk true history order — ancestors strictly
+    # first, not commit-date order, which lies on rebased or near-simultaneous
+    # merges (task tooling/47); the first arrival per key must be the ancestor
+    for line in reversed([ln for ln in log.splitlines() if ln.strip()]):
         sha, subject, cdate = line.split("\x1f", 2)
         branch = state.branch_from_merge_subject(subject)
         m = cfg.match_branch(branch) if branch else None

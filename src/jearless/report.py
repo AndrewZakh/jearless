@@ -41,7 +41,9 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
     returns: list[tuple[tuple[str, int], str]] = []
     total_merges = 0
     fix_merges = 0
-    for line in gitwrap.lines(["log", rev_range, "--merges", "--format=%H%x1f%s"], cwd):
+    # ancestors first (task tooling/47): the default log order lists fresh merges
+    # on top, which let a later fix occupy the first-arrival slot of its feature
+    for line in gitwrap.lines(["log", "--topo-order", "--reverse", rev_range, "--merges", "--format=%H%x1f%s"], cwd):
         sha, subject = line.split("\x1f", 1)
         total_merges += 1
         branch = state.branch_from_merge_subject(subject)
