@@ -45,7 +45,9 @@ jobs:
               echo "### The sprint gantt ($(basename "$PLAN"))"
               echo ""
               echo '```mermaid'
-              jear plan "$PLAN" --gantt
+              GANTT_RAW=$(jear plan "$PLAN" --gantt)
+              GANTT=$(printf '%s\n' "$GANTT_RAW" | sed -n '/^%%{init/,$p')
+              echo "${GANTT:-$GANTT_RAW}"
               echo '```'
               echo ""
               echo "### The burn-down"

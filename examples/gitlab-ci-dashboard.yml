@@ -23,7 +23,9 @@ jear-dashboard:
         echo "## 🐭 jearless — sprint dashboard"
         if [ -n "$PLAN" ]; then
           echo; echo "### The sprint gantt ($(basename "$PLAN"))"
-          echo '```mermaid'; jear plan "$PLAN" --gantt; echo '```'
+          GANTT_RAW=$(jear plan "$PLAN" --gantt)
+          GANTT=$(printf '%s\n' "$GANTT_RAW" | sed -n '/^%%{init/,$p')
+          echo '```mermaid'; echo "${GANTT:-$GANTT_RAW}"; echo '```'
           echo; echo "### The burn-down"
           echo '```mermaid'; jear burndown "$PLAN" || true; echo '```'
         else
