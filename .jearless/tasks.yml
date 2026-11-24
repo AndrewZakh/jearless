@@ -28,6 +28,77 @@ tasks:
         committed), a separate asset repo, or local-only acceptance.
       story_points: 1
       rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
+    - id: 56
+      summary: reporter scaffold — Points-in-time and review latency
+      description: |
+        Sections over the existing machinery (report.py stays the tag-frozen slice):
+        lead time by size bucket (median/p85 hours per story_points, n shown, first
+        arrivals only), review latency (PR created_at -> merged_at via forge.py,
+        server clocks), cycle time split into phases (first commit -> PR created ->
+        merged). The labor/duration precision lands in the manifest: labor hours
+        stay honestly unanswered; duration (lead time) is measured with the
+        client-clock disclaimer. One shared data pull: merges + forge timestamps.
+      story_points: 3
+    - id: 57
+      summary: rhythm — commit-hour maps and assignment hints
+      description: |
+        Commit-hour maps: team-level aggregate histogram (the local hour recovered
+        from the stored offsets) and per-author assignment hints (opt-in command,
+        best-effort client-clock estimates, never workload evidence — the
+        Peter-Friday-17:59 case: don't drop an urgent task into a dead window).
+        The manifest line: per-author rhythms may inform assignment; they are never
+        workload proof.
+      story_points: 2
+    - id: 58
+      summary: jear prune and jear message — the lifecycle and trailer commands
+      description: |
+        jear prune: delete local branches fully merged into origin/main (the charter
+        lifecycle as a command; unmerged refused — nothing unpushed is lost).
+        jear message <project>/<id>: generate the squash-message with the Task:
+        trailer for adopters whose orgs mandate squash (the trailer survives; our
+        own repos stay --no-ff).
+      story_points: 1
+    - id: 59
+      summary: authorship diagram — lines by author, volume not value
+      description: |
+        git log --numstat over the release range grouped by author (mailmap-
+        normalized): additions/deletions per author as a diagram; noise filtered
+        (generated/vendored/binary); labeled volume-not-value, never a KPI.
+        v2: bus-factor per file (the knowledge map).
+      story_points: 2
+    - id: 60
+      summary: merge semantics matrix — documented and edge-tested
+      description: |
+        The documented matrix (merge/squash/rebase/ff/re-merge/octopus/partial ->
+        supported/limited/loud-diagnostic) in the manifest; octopus and partial-
+        merge edge tests (branch_from_merge_subject + doctor first-parent
+        behavior); doctor findings' hints completeness audit. The review's 2.1+2.3
+        as documentation-and-tests, not new engineering — the behavior is verified.
+      story_points: 2
+    - id: 61
+      summary: GitFlow edge verification — partial promotion and re-integration
+      description: |
+        The review's 2.2 as tests where missing + the matrix's GitFlow section:
+        partial promotion, re-integration after an intermediate merge, integration
+        vs main divergence, retake after an intermediate merge.
+      story_points: 2
+    - id: 62
+      summary: family docs pack — the pattern and the proposal framing
+      description: |
+        ENGINEEROPS gains the family pattern section (facts -> deterministic rules
+        -> result: jearless / auto-submodule / auto-version-hook) and the three-
+        category proposal framing (confirmed need / potential / hypothesis, with
+        'nothing to change' as a valid outcome — the review's section 8); the
+        section-10 principles echo.
+      story_points: 1
+    - id: 63
+      summary: batch registry edits — one ride for N adds
+      description: |
+        jear add rides per call: a batch of N adds opens N conflicting PRs (each
+        branch carries only its own task against the same base). Found live during
+        the sprint_9 re-slice (2026-11-24): the batch had to be hand-authored.
+        Needs a batch mode (one commit, one PR) or a ride-suppression flag.
+      story_points: 1
     - id: 55
       summary: 'manifest: unglue the GitFlow promotion sentence'
       story_points: 1
