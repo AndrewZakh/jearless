@@ -23,6 +23,7 @@ from jearless import reject as reject_mod
 from jearless import release as release_mod
 from jearless import report as report_mod
 from jearless import retro as retro_mod
+from jearless import rhythm as rhythm_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod
 from jearless import timeline as timeline_mod
@@ -152,6 +153,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     p = sub.add_parser(
+        "rhythm",
+        help="commit-hour and weekday maps — team aggregate or per-author assignment hints (task tooling/57)",
+    )
+    p.add_argument("author", nargs="?", default=None, metavar="AUTHOR")
+
+    p = sub.add_parser(
         "plan", help="validate a sprint plan contract and show it (task tooling/16)"
     )
     p.add_argument("file", metavar="FILE")
@@ -195,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.finalize:
                 return release_mod.finalize(cwd, args.finalize)
             return release_mod.run(cwd, tag=args.tag)
+        if args.command == "rhythm":
+            return rhythm_mod.run(cwd, author=args.author)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)
         if args.command == "log":
