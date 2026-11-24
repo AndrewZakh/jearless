@@ -28,3 +28,6 @@ tasks:
         committed), a separate asset repo, or local-only acceptance.
       story_points: 1
       rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
+    - id: 55
+      summary: 'manifest: unglue the GitFlow promotion sentence'
+      story_points: 1
