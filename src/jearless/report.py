@@ -11,7 +11,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-from jearless import config, gitwrap, plan, registry, state, timeline
+from jearless import config, forge, gitwrap, plan, registry, state, timeline
 
 _DATE = "%Y-%m-%dT%H:%M:%S"
 _UTC = {"TZ": "UTC"}
@@ -38,6 +38,7 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
                 shipped_before.add((m.group("project"), int(m.group("num"))))
     rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
     first: dict[tuple[str, int], str] = {}
+    first_branch: dict[tuple[str, int], str] = {}
     returns: list[tuple[tuple[str, int], str]] = []
     total_merges = 0
     fix_merges = 0
@@ -57,7 +58,8 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
             returns.append((key, sha))
             continue
         first[key] = sha
-    return first, returns, total_merges, fix_merges
+        first_branch[key] = branch
+    return first, first_branch, returns, total_merges, fix_merges
 
 
 def _task_births(cwd: Path, reg_path: Path) -> dict[tuple[str, int], str]:
@@ -107,7 +109,9 @@ def _percentile(values: list[float], pct: int) -> float:
 def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None = None) -> str:
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
-    first, returns, total_merges, fix_merges = _task_merges(cwd, cfg, from_tag, to_ref or tag)
+    first, first_branch, returns, total_merges, fix_merges = _task_merges(
+        cwd, cfg, from_tag, to_ref or tag
+    )
     tasks_by_key = {(t.project, t.id): t for t in reg.all()}
 
     lines = [f"# Report {tag}", ""]
@@ -126,6 +130,7 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
     lines.append("")
 
     durations: list[float] = []
+    hours_by_key: dict[tuple[str, int], float] = {}
     lines.append("## Cycle time (client clocks — commit dates are self-reported)")
     for key, sha in sorted(first.items()):
         own = timeline.own_commits(cwd, sha)
@@ -135,6 +140,7 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
         )
         if start and end:
             hours = (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds() / 3600
+            hours_by_key[key] = hours
             durations.append(hours)
     if durations:
         lines.append(
@@ -191,6 +197,53 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
     for key, sha in sorted(first.items()):
         own = timeline.own_commits(cwd, sha)
         lines.append(f"- {key[0]}/{key[1]} — {_attribution(cwd, own, sha)}")
+    lines.append("")
+
+    # task tooling/56: the reporter scaffold — duration metrics, never labor
+    pr_map = forge.pr_times_map(cwd)
+    lines.append("## Points-in-time (lead time by size — wall clock, client commit dates)")
+    buckets: dict[int, list[float]] = {}
+    unpointed = 0
+    for key, hours in hours_by_key.items():
+        task = tasks_by_key.get(key)
+        if not task or not task.story_points:
+            unpointed += 1
+            continue
+        buckets.setdefault(task.story_points, []).append(hours)
+    if buckets:
+        for pts in sorted(buckets):
+            vals = buckets[pts]
+            lines.append(
+                f"- {pts} pt: median {statistics.median(vals):.1f}h,"
+                f" p85 {_percentile(vals, 85):.1f}h (n={len(vals)})"
+            )
+    else:
+        lines.append("- no point-tagged tasks in the range")
+    if unpointed:
+        lines.append(f"- {unpointed} task(s) without points — excluded")
+    lines.append("")
+
+    lines.append("## Review latency (server clocks — the forge PR created/merged)")
+    latencies: list[float] = []
+    without_pr = 0
+    for key in sorted(first):
+        branch = first_branch.get(key)
+        times = pr_map.get(branch) if branch else None
+        if not times:
+            without_pr += 1
+            continue
+        created, merged = (datetime.fromisoformat(part) for part in times)
+        latencies.append((merged - created).total_seconds() / 3600)
+    if latencies:
+        lines.append(
+            f"- median {statistics.median(latencies):.1f}h,"
+            f" p85 {_percentile(latencies, 85):.1f}h over {len(latencies)} PR(s)"
+        )
+    else:
+        lines.append("- no forge PR data in the range (direct merges or the forge unreachable)")
+    if without_pr:
+        lines.append(f"- {without_pr} task(s) without forge PR data")
+    lines.append("")
     return "\n".join(lines) + "\n"
 
 

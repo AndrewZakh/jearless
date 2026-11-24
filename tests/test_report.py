@@ -158,3 +158,24 @@ def test_first_arrival_by_history_order(repo, capsys):
     assert feature_sha not in return_section  # the feature is not mislabeled a return
     assert "p/1 — Alice" in out  # attribution reads the FEATURE branch, not the fix
     assert "median 24.0h" in out  # cycle time reads the feature's 24h, not the fix's 3h
+
+
+def test_reporter_scaffold_points_in_time_and_review_latency(repo, monkeypatch, capsys):
+    """task tooling/56: bucketed lead time by size + server-clock review latency."""
+    from jearless import forge as forge_mod
+
+    _merge_branch(repo, "feature/p/1-a", "Alice", "2026-11-01T10:00:00", "2026-11-02T10:00:00")
+    _merge_branch(repo, "feature/p/2-b", "Bob", "2026-11-03T10:00:00", "2026-11-05T10:00:00")
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    monkeypatch.setattr(forge_mod, "pr_times_map", lambda *a, **k: {
+        "feature/p/1-a": ("2026-11-01T12:00:00Z", "2026-11-02T10:00:00Z"),
+        "feature/p/2-b": ("2026-11-03T12:00:00Z", "2026-11-05T10:00:00Z"),
+    })
+    assert report_mod.run(repo, "v0.1.0") == 0
+    out = capsys.readouterr().out
+    assert "## Points-in-time (lead time by size" in out
+    assert "2 pt: median 24.0h, p85 24.0h (n=1)" in out
+    assert "3 pt: median 48.0h, p85 48.0h (n=1)" in out
+    assert "## Review latency (server clocks" in out
+    lat = out.split("## Review latency")[1].split("##")[0]
+    assert "median 34.0h, p85 46.0h over 2 PR(s)" in lat

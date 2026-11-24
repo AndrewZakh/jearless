@@ -83,6 +83,29 @@ def _gitlab_mr(
     return data.get("web_url")
 
 
+def pr_times_map(cwd: Path, limit: int = 200) -> dict[str, tuple[str, str]]:
+    """Server-stamped PR lifecycle (task tooling/56): head branch ->
+    (createdAt, mergedAt) for merged PRs, one gh call for the whole map.
+    An empty dict = no forge data (manual territory — the report labels it).
+    """
+    raw = _run([
+        "gh", "pr", "list", "--state", "merged", "--limit", str(limit),
+        "--json", "headRefName,createdAt,mergedAt",
+    ], cwd)
+    if not raw:
+        return {}
+    out: dict[str, tuple[str, str]] = {}
+    try:
+        for pr in json.loads(raw):
+            head = pr.get("headRefName")
+            created, merged = pr.get("createdAt"), pr.get("mergedAt")
+            if head and created and merged:
+                out[head] = (created, merged)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    return out
+
+
 def registry_pr(
     cwd: Path,
     files: list[str],
