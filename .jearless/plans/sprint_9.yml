@@ -1,0 +1,19 @@
+plan:
+  goal: the reporter and the semantic verification — Points-in-time, rhythm, forge-latency, authorship, prune+message, the GitFlow sentence, the merge/GitFlow edges, the family docs
+  tasks:
+    - task: tooling/55
+      planned: {start: 2026-11-21, end: 2026-11-21}
+    - task: tooling/56
+      planned: {start: 2026-11-21, end: 2026-11-23}
+    - task: tooling/57
+      planned: {start: 2026-11-23, end: 2026-11-24}
+    - task: tooling/58
+      planned: {start: 2026-11-24, end: 2026-11-24}
+    - task: tooling/59
+      planned: {start: 2026-11-24, end: 2026-11-25}
+    - task: tooling/60
+      planned: {start: 2026-11-21, end: 2026-11-22}
+    - task: tooling/61
+      planned: {start: 2026-11-22, end: 2026-11-23}
+    - task: tooling/62
+      planned: {start: 2026-11-25, end: 2026-11-25}
