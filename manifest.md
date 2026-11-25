@@ -67,6 +67,27 @@ tell the truth about both. Verified live (2026-11-17).
   boundary is birth order, not the N. The retro prints its plan revision and
   the history slice, so a recount is reproducible. (Task tooling/42.)
 
+## The merge semantics matrix (task tooling/60)
+
+How main's landing types map to jearless — **first-class, limited, or loudly
+diagnosed**. The rule behind the table: work that landed is attributed; work
+that lost its name is counted as the visible hole.
+
+| Landing type | jearless behavior |
+|---|---|
+| `--no-ff` merge commit (single task branch) | first-class: the branch name is the task key — bars, changelog, cycle time |
+| Forge PR merge ("Merge pull request #N from …/branch") | first-class: the PR form parses to the same branch key |
+| Same-branch re-merge | an artifact: first-arrival wins; re-merges are counted as returns in the report |
+| Retake (a new branch for a done task) | a new bar (`_fix`/`_chore` suffix) — rework is visible on the chart |
+| Octopus merge (2+ branches in one merge) | limited: attributed as a merge (doctor is silent), but no per-task bars and the changelog counts it as skipped — the visible hole. Prefer sequential merges |
+| Cherry-pick onto main | loud: a non-merge commit — doctor flags it unattributed (ledger or PR, not silence) |
+| Squash merge | loud: the branch name dies and the task key is lost — doctor flags it; the Task: trailer (`jear message`) is the adopters' bridge |
+| Fast-forward | loud: no merge commit at all — doctor flags it |
+| Direct push (non-merge, non-sanctioned files) | loud: doctor flags it; under the PR-only constitution it's also platform-blocked |
+
+Every loud row lands in the ledger with a cause when accepted — the same
+"visibility, not prohibition" rule as everywhere else.
+
 ## The decision history (cause → rule)
 
 | Cause | Rule |
