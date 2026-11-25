@@ -102,3 +102,6 @@ tasks:
     - id: 55
       summary: 'manifest: unglue the GitFlow promotion sentence'
       story_points: 1
+    - id: 64
+      summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
+      story_points: 2
