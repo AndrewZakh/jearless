@@ -20,7 +20,8 @@ POSIX only (Linux, macOS — WSL counts as Linux); native Windows is untested.
 ## The ritual
 
 Nothing lands on main directly: every change arrives as a pull request, and
-the merge button belongs to the reviewer.
+the merge button belongs to the reviewer. An issue starts from a template —
+a bug report, an idea or a question — chosen when it is opened.
 
 1. `jear board` — see the working set. `jear add tooling "your task"` — the
    task is written to `.jearless/tasks.yml` and carried to a `registry/…`
@@ -31,9 +32,11 @@ the merge button belongs to the reviewer.
 3. Work, commit on the branch. The pre-commit hook bumps the version — it
    rides the branch, main is untouched. Run `pytest -q` and
    `ruff check src tests` before every commit.
-4. Open the pull request and stop. Every PR gets a sticky comment with the
-   sprint gantt, the burn-down and the board. Merge commits only — squash and
-   rebase merges are disabled.
+4. Open the pull request and stop. The description starts from a template:
+   the task, what changes and why, how it was checked, and which documents
+   were touched. Every PR gets a sticky comment with the sprint gantt, the
+   burn-down and the board. Merge commits only — squash and rebase merges
+   are disabled.
 5. `jear sprint` — the board recomputes from git; `jear doctor` — the audit;
    `jear prune` — removes the local copies of merged branches.
 6. Releases are two-phase: `jear release` prepares a `release/<tag>` branch

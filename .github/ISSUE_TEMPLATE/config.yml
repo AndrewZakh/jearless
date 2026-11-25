@@ -1,0 +1,9 @@
+# Blank issues stay available: a report that fits no form is better than no report.
+blank_issues_enabled: true
+contact_links:
+  - name: Security
+    url: https://github.com/AndrewZakh/jearless/security/advisories/new
+    about: A suspected vulnerability is not discussed in a public issue. The reporting route is in SECURITY.md.
+  - name: Philosophy
+    url: https://github.com/AndrewZakh/jearless/blob/main/ENGINEEROPS.md
+    about: Questions about the ideas behind the tool — EngineerOps, the artifact model.

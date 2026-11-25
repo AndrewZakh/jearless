@@ -1,0 +1,90 @@
+name: Bug report
+description: Something does not work the way it should.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. A few details let the
+        problem be reproduced without a round of questions.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `jear --version`.
+      placeholder: jearless 1.6.0
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - WSL
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: forge
+    attributes:
+      label: Forge
+      description: Where the repository is hosted. "None" if you only use jearless locally.
+      options:
+        - GitHub
+        - GitLab
+        - Gitea
+        - None
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: The command
+      description: The exact command that misbehaved.
+      placeholder: jear sprint
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: |
+        The smallest set of steps that shows the problem. A throwaway
+        repository built with a handful of git commands is ideal — the test
+        suite is written the same way.
+      placeholder: |
+        git init --bare -b main origin.git
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The full output, including the error. It is formatted as text.
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: The relevant part of `.jearless.toml`, the shape of the history, a suspected cause.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on the latest release.
+          required: true
+        - label: This is not a security problem — SECURITY.md says how those are reported.
+          required: true
