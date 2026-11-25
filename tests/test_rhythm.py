@@ -72,3 +72,25 @@ def test_merges_excluded(repo, capsys):
     )
     assert rhythm_mod.run(repo) == 0
     assert "4 landed commit(s)" in capsys.readouterr().out  # the merge commit is not counted
+
+
+def test_week_and_month_cuts(repo, capsys):
+    """task tooling/65: the calendar lens — weeks and months."""
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/2-b"], repo)
+    (repo / "oct.txt").write_text("oct\n", encoding="utf-8")
+    env = {
+        "GIT_AUTHOR_DATE": "2026-10-20T10:00:00+03:00",
+        "GIT_COMMITTER_DATE": "2026-10-20T10:00:00+03:00",
+    }
+    gitwrap.run(["add", "oct.txt"], repo)
+    gitwrap.run(["commit", "-q", "-m", "october work"], repo, env=env)
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/2-b'", "feature/p/2-b"],
+        repo,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], repo)  # rhythm reads origin/main
+    assert rhythm_mod.run(repo) == 0
+    out = capsys.readouterr().out
+    assert "week" in out and "2026-W43" in out  # Oct 20 = ISO week 43
+    assert "month" in out and "2026-10" in out and "2026-11" in out

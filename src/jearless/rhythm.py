@@ -23,7 +23,10 @@ _WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 def _rows(cwd: Path, ref: str, author: str | None) -> list[tuple[str, datetime]]:
     fmt = "%aN%x1f%aI"
-    lines = gitwrap.lines(["log", "--first-parent", "--no-merges", f"--format={fmt}", ref], cwd)
+    # no --first-parent: the task work arrives via merges and lives on the
+    # second-parent line — the first-parent walk would count only the direct
+    # main commits (the registry/docs edits), not the landed task work
+    lines = gitwrap.lines(["log", "--no-merges", f"--format={fmt}", ref], cwd)
     rows: list[tuple[str, datetime]] = []
     for line in lines:
         name, iso = line.split("\x1f", 1)
@@ -73,6 +76,16 @@ def run(cwd: Path, author: str | None = None) -> int:
 
     print()
     print(_mermaid(hours))
+    weeks: Counter = Counter(
+        f"{dt.isocalendar().year}-W{dt.isocalendar().week:02d}" for _, dt in rows
+    )
+    months: Counter = Counter(dt.strftime("%Y-%m") for _, dt in rows)
+    week_keys = sorted(weeks)
+    for out in _histogram_line("week", week_keys, weeks, width=12):
+        print(out)
+    month_keys = sorted(months)
+    for out in _histogram_line("month", month_keys, months, width=12):
+        print(out)
     if author:
         print(
             "assignment hints — best-effort estimates from client clocks;"
