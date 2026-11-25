@@ -61,7 +61,10 @@ def _check_branches(cwd: Path, cfg: config.Config, findings: list[str], remote: 
     for name in heads:
         prefix = name.split("/", 1)[0]
         if prefix in known and not cfg.match_branch(name):
-            findings.append(f"branch: '{name}' starts like a task branch but misses the pattern")
+            findings.append(
+                f"branch: '{name}' starts like a task branch but misses the pattern"
+                " — rename it to match, or delete it"
+            )
 
 
 # Sanctioned artifacts: bookkeeping, not task work. env.yml version bumps
