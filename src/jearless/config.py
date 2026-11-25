@@ -1,6 +1,7 @@
 """The .jearless.toml config: the branch regex, the changelog line template, sections."""
 
 import re
+import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,31 +43,72 @@ class Config:
     def live_ref(self, cwd: Path, remote: str) -> str:
         """The tip unreleased work integrates into. Trunk: origin/<trunk_ref>.
         GitFlow: origin/<integration_ref> with {n} resolved to the latest plan
-        number — and no plans committed means trunk behavior everywhere (the
-        same rule the board and the burndown follow)."""
+        number whose branch exists — and no plans committed means trunk
+        behavior everywhere (the same rule the board and the burndown follow).
+
+        With {n} the plan number alone is not enough (task tooling/66). A
+        sprint's plan is often committed before its branch is created; reading
+        the number blindly then points at a branch that does not exist, and
+        jear take refuses while the work on the previous branch drops out of
+        view. So {n} walks the plan numbers from the newest down and stops at
+        the first whose branch is there.
+
+        "Is there" is read from the local remote refs, not from the remote
+        itself: this function stays free of network calls. The live commands
+        fetch first, so for them the answer is current. Without a fetch it is
+        as fresh as the last one — the same as any other history read.
+        """
         if not self.integration_ref:
             return f"{remote}/{self.trunk_ref}"
         ref = self.integration_ref
         if "{n}" in ref:
-            latest = latest_plan_number(cwd)
-            if latest == 0:
+            resolved = _resolve_sprint_number(cwd, remote, ref)
+            if resolved is None:
                 return f"{remote}/{self.trunk_ref}"
-            ref = ref.replace("{n}", str(latest))
+            ref = ref.replace("{n}", str(resolved))
         return f"{remote}/{ref}"
+
+
+def _remote_branch_exists(cwd: Path, remote: str, branch: str) -> bool:
+    """Whether the local git knows `branch` on `remote` — a local read."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{remote}/{branch}"],
+            cwd=cwd,
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return False  # git itself is not available
+    return result.returncode == 0
+
+
+def _resolve_sprint_number(cwd: Path, remote: str, pattern: str) -> int | None:
+    """The newest plan number whose branch exists; None when none does."""
+    numbers = sorted(plan_numbers(cwd), reverse=True)
+    for number in numbers:
+        if _remote_branch_exists(cwd, remote, pattern.replace("{n}", str(number))):
+            return number
+    return None
+
+
+def plan_numbers(cwd: Path) -> list[int]:
+    """Every plan number under .jearless/plans/ (empty when none)."""
+    plans = cwd / HOMEDIR / "plans"
+    found: list[int] = []
+    if plans.exists():
+        for path in plans.glob("sprint_*.yml"):
+            m = re.match(r"sprint_(\d+)\.yml", path.name)
+            if m:
+                found.append(int(m.group(1)))
+    return found
 
 
 def latest_plan_number(cwd: Path) -> int:
     """max plan number across .jearless/plans/ (0 when none) — the CURRENT
     sprint; next_plan_number in plan.py is this + 1 (kept there, imported here
     would be a cycle)."""
-    best = 0
-    plans = cwd / HOMEDIR / "plans"
-    if plans.exists():
-        for path in plans.glob("sprint_*.yml"):
-            m = re.match(r"sprint_(\d+)\.yml", path.name)
-            if m:
-                best = max(best, int(m.group(1)))
-    return best
+    return max(plan_numbers(cwd), default=0)
 
 
 def _compile_branch_pattern(pattern: str) -> re.Pattern:
