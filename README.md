@@ -27,12 +27,16 @@ For development: `uv venv && uv pip install -e ".[dev]"` (or the pip equivalent)
 Inside your git repository:
 
 ```sh
-jear add door "paint it black" --points 2   # a task in the eternal registry
+jear add door "paint it black" --points 2   # a task in the eternal registry — carried to a pull request
 jear take door 1                            # branch feature/door/1-paint-it-black, pushed — the push IS the claim
-# ... work, then a true merge (--no-ff) ...
-jear sprint                                 # available / in_progress / done — derived from git
+# ... work on the branch, then open a pull request ...
+jear sprint                                 # available / in_progress / done / rejected — derived from git
 jear doctor                                 # the audit: unattributed commits, naming, registry health
 ```
+
+Main accepts changes only through pull requests: the merge button belongs to the reviewer. The
+`--no-ff` merge commit is the only carrier of "this task shipped" — squash and rebase merges
+are disabled.
 
 No statuses are ever stored. Three sources — the registry, the branches, the merge history — are joined on demand.
 
@@ -59,15 +63,19 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 | available | in `tasks.yml`, no branch on origin, no merge commit |
 | in_progress | a branch exists on origin |
 | done | a merge commit naming the task, in main |
+| rejected | the task carries a `rejected:` cause — it wins over every other state |
 
 - **The eternal registry** (`.jearless/tasks.yml`): frozen facts only — id, summary, description, story_points, `depends_on`. Tasks are never deleted. No status fields: git knows the state.
 - **Taking a task = pushing a branch**: `jear take door 1` checks occupancy via the remote first (advisory — `ls-remote`), and the push arbitrates the race for identical branch names — though git may answer `Everything up-to-date` when the branch already carries that exact commit. Exclusive ownership is not required: two engineers on one task are both visible on the board.
 - **Two engineers, one task — the Vasya and Masha model**: the first merge is the `done` signal. If the contract check finds gaps, Vasya re-takes the task (`jear take --type fix`) and the board shows the rework; the full story lives in `jear log`. Whether front-end and database work deserve separate tasks is the team's own call — the same ID means the same task.
 - **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join. The report carries velocity, cycle time (client-clock disclaimer), fix share, return rate (same-ID re-merges), backlog growth and attribution — the name is the task branch's most frequent committer, enough to find the first person to talk to.
-- **The changelog, reports and charts are generated at release time** from merge commits between tags. Nothing is stored — everything is a join.
+- **Every pull request gets a dashboard** — the sprint gantt, the burn-down and the board as one sticky comment. Dashboards ride the forge, never the tree.
+- **Hours are not measured; duration is.** Lead time per story point (Points-in-time), review latency and the commit rhythm are reported as wall-clock duration. They calibrate estimates and inform assignments; they are never evidence of how hard anyone worked.
 - **`jear doctor`** audits main: unattributed commits (squash/fast-forward scars) are loud; acknowledged scars live in the `.jearless/doctor_ignore` ledger, counted aloud.
 
 Ad-hoc questions (total effort, per-project sums, dependencies) answer by one-liners — the query cookbook: [COOKBOOK.md](COOKBOOK.md).
+
+Smaller tools for the same loop: `jear reject <project> <id> <cause>` withdraws a task with a mandatory reason, `jear log <project> <id>` shows one task's full history across branches and merges, `jear prune` removes local copies of merged branches, `jear rhythm` maps when landed work happens, `jear message <project>/<id>` prints the squash-box message carrying the `Task:` trailer.
 
 The philosophy behind it — EngineerOps, the engineer-first artifact model — lives in [ENGINEEROPS.md](ENGINEEROPS.md) (Concept 0.1).
 
@@ -75,12 +83,12 @@ The planning rules — why there is no priority field, why kind is declared whil
 
 ## Release checklist
 
-Human-run; `jear release` prints the authored checklist (`.jearless/release.md`) every time: build, publish (TestPyPI rehearsal on metadata change), verify via the JSON API, refresh the dashboard.
+Human-run, in two phases: `jear release` prepares a `release/<tag>` branch and its pull request; after the merge, `jear release --finalize <tag>` lands the tag and prints the authored checklist (`.jearless/release.md`): build, publish (TestPyPI rehearsal on metadata change), verify via the JSON API.
 
 ## The fine print
 
 - **Scale**: hundreds of merges a day ≈ tens of seconds per report (git subprocess fan-out) — built for small teams, honestly.
-- **Deprecation horizon**: the legacy root registry fallback dies in 1.0; `.jearless/` is the only home after that.
+- **The legacy root registry still works** (with a nudge) — `.jearless/` is the canonical home.
 - **A released-but-unpublished version drifts** — which is why every release ends with its checklist.
 
 ## The idea, compressed

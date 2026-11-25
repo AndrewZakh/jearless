@@ -101,7 +101,23 @@ tasks:
       story_points: 1
     - id: 55
       summary: 'manifest: unglue the GitFlow promotion sentence'
-      story_points: 1
+      description: |
+        Docs housekeeping across every living markdown file, plus the GitFlow
+        sentence. The sentence: one claim glued to its consequence - split
+        into "promotions must be true merges" and "a squash promotion loses
+        the task names, and jear doctor reports it".
+        The housekeeping: CONTRIBUTING still describes the pre-constitution
+        world (direct --no-ff merges, add landing in tasks.yml, one-phase
+        releases); README has a duplicated bullet, a state table without
+        rejected, and none of rhythm/prune/message/reject; PLAN marks
+        --acknowledge as planned and calls branch protection and xcf->LFS
+        open; COOKBOOK carries stale counts and a root tasks.yml path;
+        examples/README omits two of its files. Frozen release reports and
+        CHANGELOG are not touched.
+        Snapshots: the mmd files tracked in the tree are removed - the
+        diagrams ride the MR dashboards. No code change: the release step
+        and jear timeline --snapshot stay as they are.
+      story_points: 2
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
       story_points: 2

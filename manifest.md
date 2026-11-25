@@ -32,7 +32,7 @@ how much routine the tool really lifts. (Review, 2026-11-19.)
 - **State is derived, never stored.** available = in the registry without a branch; in_progress = a branch on origin; done = a merge commit naming the task. Reopen is derived too: a live branch forked at-or-after the done-merge means rework is under way.
 - **One carrier per fact.** The branch prefix is the declared kind; `depends_on` is the only link field; story_points are the only estimate, never incremented.
 - **Nothing automatic writes to main.** Releases, archives, dashboards — human-run, the tool prints the hints.
-- **Artifacts live under `.jearless/`** (plans, reports, archives, snapshots, the release checklist); files other things read by convention stay at the root (README, CHANGELOG, `.mailmap`, `.gitignore`, `.jearless.toml`). The root-registry fallback dies in 1.0.
+- **Artifacts live under `.jearless/`** (plans, reports, archives, the release checklist); files other things read by convention stay at the root (README, CHANGELOG, `.mailmap`, `.gitignore`, `.jearless.toml`). The root-registry fallback dies in 1.0.
 
 ## Boundary cases
 
@@ -114,6 +114,6 @@ instead of promoting per task: `[git] integration_ref = "staging"` in
 the board, the sprint, the burndown, the changelog's unreleased section,
 take's fork base — reads the integration tip. Released (tag-based) views keep
 reading main: the promotion delivers the accumulated batch, and the changelog
-range catches it naturally via reachability. Promotions must be true merges —
-a squash promotion loses the task names and `jear doctor`'s ledger will hear
-about it. Our own repository stays trunk-based; the mode is for adopters.
+range catches it naturally via reachability. Promotions must be true merges.
+A squash promotion loses the task names, and `jear doctor` reports it.
+Our own repository stays trunk-based; the mode is for adopters.
