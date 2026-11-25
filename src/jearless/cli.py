@@ -17,13 +17,13 @@ from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import find as find_mod
 from jearless import graph as graph_mod
+from jearless import lifecycle as lifecycle_mod
 from jearless import log as log_mod
 from jearless import plan as plan_mod
 from jearless import reject as reject_mod
 from jearless import release as release_mod
 from jearless import report as report_mod
 from jearless import retro as retro_mod
-from jearless import lifecycle as lifecycle_mod
 from jearless import rhythm as rhythm_mod
 from jearless import sprint as sprint_mod
 from jearless import take as take_mod

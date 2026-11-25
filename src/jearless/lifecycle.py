@@ -24,7 +24,7 @@ def run_prune(cwd: Path, remote: str = "origin") -> int:
     prunable: list[str] = []
     for line in merged:
         name = line.strip()
-        if name.startswith("* ") or name.startswith("("):
+        if name.startswith(("* ", "(")):
             continue  # the checked-out branch / a detached marker
         if name == current or name == cfg.trunk_ref:
             continue
