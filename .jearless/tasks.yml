@@ -105,3 +105,6 @@ tasks:
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
       story_points: 2
+    - id: 65
+      summary: rhythm — the week and month cuts
+      story_points: 1
