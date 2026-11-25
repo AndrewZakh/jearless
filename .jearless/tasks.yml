@@ -28,6 +28,42 @@ tasks:
         committed), a separate asset repo, or local-only acceptance.
       story_points: 1
       rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
+    - id: 66
+      summary: 'sprint-{n}: follow the integration branch that exists'
+      description: |
+        The narrow fix. Found while writing the cyclic GitFlow example
+        (2026-11-25), run by hand in a throwaway repository.
+        Today {n} resolves to the latest plan number, and nothing checks
+        whether that branch exists. When sprint_28.yml is committed before
+        sprint-28 is created: jear take refuses ("no origin/sprint-28"), and
+        every task integrated on sprint-27 but not yet promoted drops from
+        done back to available. A single name such as dev is not affected.
+        The rule: {n} is the latest plan number whose branch exists on the
+        remote. Until sprint-28 is created the tool stays on sprint-27.
+        One function resolves the name (Config.live_ref) and every live view
+        goes through it.
+        Known limit, kept and documented: if sprint-28 is created BEFORE
+        sprint-27 is promoted, the tool moves on and the work on sprint-27
+        goes out of view again. That is task 67.
+      story_points: 3
+    - id: 67
+      summary: 'sprint-{n}: see every unpromoted sprint branch'
+      description: |
+        The full fix — the limit left by task 66.
+        The tool reads ONE integration branch at a time. With a branch per
+        sprint, a sprint opened and created before the previous one is
+        promoted leaves that previous branch out of view: its tasks drop
+        from done, and its merges are missing from the changelog.
+        The change: treat every unpromoted branch matching the {n} pattern
+        as an integration branch — merges are collected from all of them,
+        new tasks fork from the newest, the changelog lists what each still
+        owes to the trunk.
+        This lifts the manifest's "one intermediate branch at a time": the
+        design question is what "done", "reopened" and the unreleased
+        changelog mean when several branches are unreleased at once. Settle
+        that in the manifest before writing code. Not started; estimate to
+        be confirmed once the design is.
+      story_points: 5
     - id: 56
       summary: reporter scaffold — Points-in-time and review latency
       description: |
