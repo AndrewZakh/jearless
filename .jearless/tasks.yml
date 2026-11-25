@@ -130,3 +130,6 @@ tasks:
         is release-scoped, weeks/months are calendar-scoped. Author filter
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
+    - id: 66
+      summary: 'sprint-{n}: follow the integration branch that exists, keep unpromoted work visible'
+      story_points: 3
