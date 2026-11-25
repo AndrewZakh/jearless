@@ -134,6 +134,38 @@ range catches it naturally via reachability. Promotions must be true merges.
 A squash promotion loses the task names, and `jear doctor` reports it.
 Our own repository stays trunk-based; the mode is for adopters.
 
+### A GitFlow example, end to end (task tooling/61)
+
+A team integrates on `dev` and promotes it to `main` at the end of each
+sprint. The whole setup is two settings in `.jearless.toml`, committed to the
+repository:
+
+```toml
+[git]
+trunk_ref = "main"          # the released line — the default, shown for completeness
+integration_ref = "dev"     # the intermediate branch, whatever the team calls it
+```
+
+Both branches exist on the remote. Then the cycle is the same as always, with
+one difference: pull requests target `dev`, not `main`.
+
+1. **Take a task.** `jear take shop 1` creates `feature/shop/1-add-the-cart-page`
+   forked from the tip of `dev`, and pushes it.
+2. **Open the pull request against `dev`** and have it merged with a merge
+   commit.
+3. **The task is done.** `jear sprint` shows `shop/1` under `done`, although
+   `main` has no task merge yet — done means integrated, and it reached `dev`.
+4. **Take the next task.** `jear take shop 2` forks from the new tip of `dev`,
+   so it builds on the cart page.
+5. **See what a promotion will deliver.** `jear changelog --to origin/dev`
+   lists the tasks on `dev` that `main` does not have yet:
+   `- shop-1: add the cart page`.
+6. **Promote.** Merge `dev` into `main` with a true merge commit. Nothing
+   changes on the board: the tasks were already done.
+
+Every step above was run against this configuration; the output quoted is
+what the tool printed.
+
 ### Where GitFlow mode holds (task tooling/61)
 
 Each line was run by hand in a throwaway repository and is pinned by a test
