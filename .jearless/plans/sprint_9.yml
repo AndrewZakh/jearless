@@ -17,3 +17,5 @@ plan:
       planned: {start: 2026-11-22, end: 2026-11-23}
     - task: tooling/62
       planned: {start: 2026-11-25, end: 2026-11-25}
+    - task: tooling/65
+      planned: {start: 2026-11-25, end: 2026-11-25}

@@ -105,3 +105,12 @@ tasks:
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
       story_points: 2
+    - id: 65
+      summary: rhythm — the week and month cuts
+      description: |
+        The calendar lens over landed work: commits per ISO week and per
+        month, alongside the hour/weekday maps. For repos without plans
+        (reactive inflow) this is the only time axis that exists — velocity
+        is release-scoped, weeks/months are calendar-scoped. Author filter
+        applies; the labels sort lexicographically = chronologically.
+      story_points: 1
