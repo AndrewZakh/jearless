@@ -244,6 +244,47 @@ def render(cwd: Path, tag: str, from_tag: str | None = None, to_ref: str | None 
     if without_pr:
         lines.append(f"- {without_pr} task(s) without forge PR data")
     lines.append("")
+
+    # task tooling/59: authorship — lines by author over the range (numstat,
+    # mailmap-normalized names); binaries skipped; volume, not value — never
+    # a KPI leaderboard (the manifest: metrics are not automatic people grades)
+    to = to_ref or tag
+    rev_range = f"{from_tag}..{to}" if from_tag else to
+    author_lines: dict[str, list[int]] = {}
+    current_author = None
+    for line in gitwrap.lines(["log", "--numstat", "--format=%x1f%aN", rev_range], cwd):
+        if line.startswith("\x1f"):
+            current_author = line[1:]
+            continue
+        parts = line.split("\t")
+        if len(parts) < 3 or not (parts[0].isdigit() and parts[1].isdigit()):
+            continue  # binary rows are "- -"
+        stat = author_lines.setdefault(current_author, [0, 0])
+        stat[0] += int(parts[0])
+        stat[1] += int(parts[1])
+
+    lines.append("## Authorship (lines by author — volume, not value)")
+    if author_lines:
+        ordered = sorted(author_lines, key=lambda a: -author_lines[a][0])
+        adds = ", ".join(str(author_lines[a][0]) for a in ordered)
+        dels = ", ".join(str(author_lines[a][1]) for a in ordered)
+        labels = ", ".join('"' + a.replace('"', "'") + '"' for a in ordered)
+        ymax = max(v for a in author_lines.values() for v in a)
+        lines.append("")
+        lines.append("```mermaid")
+        lines.append("xychart-beta")
+        lines.append(f'    title "lines by author ({from_tag or "whole history"})"')
+        lines.append(f'    x-axis [{labels}]')
+        lines.append(f'    y-axis "lines" 0 --> {ymax}')
+        lines.append(f"    bar [{adds}]")
+        lines.append(f"    line [{dels}]")
+        lines.append("```")
+        lines.append("")
+        for a in ordered:
+            lines.append(f"- {a}: +{author_lines[a][0]} / -{author_lines[a][1]}")
+    else:
+        lines.append("- no line data in the range")
+    lines.append("")
     return "\n".join(lines) + "\n"
 
 

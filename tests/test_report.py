@@ -179,3 +179,45 @@ def test_reporter_scaffold_points_in_time_and_review_latency(repo, monkeypatch, 
     assert "## Review latency (server clocks" in out
     lat = out.split("## Review latency")[1].split("##")[0]
     assert "median 34.0h, p85 46.0h over 2 PR(s)" in lat
+
+
+def test_authorship_lines_by_author(repo, capsys):
+    """task tooling/59: lines by author over the range — volume, not value."""
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/1-a"], repo)
+    (repo / "a.py").write_text("one\ntwo\nthree\n", encoding="utf-8")
+    gitwrap.run(["add", "a.py"], repo)
+    gitwrap.run(
+        ["commit", "-q", "-m", "alice's work"],
+        repo,
+        env={
+            "GIT_AUTHOR_NAME": "Alice",
+            "GIT_AUTHOR_EMAIL": "alice@x",
+            "GIT_AUTHOR_DATE": "2026-11-01T10:00:00",
+            "GIT_COMMITTER_DATE": "2026-11-01T10:00:00",
+        },
+    )
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-a'", "feature/p/1-a"], repo)
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/2-b"], repo)
+    (repo / "b.py").write_text("only\n", encoding="utf-8")
+    gitwrap.run(["add", "b.py"], repo)
+    gitwrap.run(
+        ["commit", "-q", "-m", "bob's work"],
+        repo,
+        env={
+            "GIT_AUTHOR_NAME": "Bob",
+            "GIT_AUTHOR_EMAIL": "bob@x",
+            "GIT_AUTHOR_DATE": "2026-11-02T10:00:00",
+            "GIT_COMMITTER_DATE": "2026-11-02T10:00:00",
+        },
+    )
+    gitwrap.run(["checkout", "-q", "main"], repo)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/2-b'", "feature/p/2-b"], repo)
+    gitwrap.run(["tag", "v0.1.0"], repo)
+    assert report_mod.run(repo, "v0.1.0") == 0
+    out = capsys.readouterr().out
+    assert "## Authorship (lines by author — volume, not value)" in out
+    assert "Alice: +3 / -0" in out
+    assert "Bob: +1 / -0" in out
+    assert "```mermaid" in out and "xychart-beta" in out
+    assert '"Alice"' in out and '"Bob"' in out  # quoted x-axis labels
