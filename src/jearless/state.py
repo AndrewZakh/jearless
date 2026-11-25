@@ -92,12 +92,20 @@ def compute(
         forked at-or-after ANY done-merge of the task (a done sha is an ancestor
         of — or equal to — the branch's fork point) means rework is under way,
         in_progress wins over done. A stale pre-merge branch (forked before
-        every done-merge) stays done. No same-second traps: shas, not dates."""
-        try:
-            base = gitwrap.out(["merge-base", ref, branch_name], cwd)
-        except GitError:
-            return False
-        return any(gitwrap.is_ancestor(done_sha, base, cwd) for done_sha in done_shas)
+        every done-merge) stays done. No same-second traps: shas, not dates.
+
+        The fork point is taken against every ref the merges were read from
+        (task tooling/61): in GitFlow mode a merge may sit on the integration
+        branch alone, before any promotion — measured only against the trunk
+        it would be invisible and a live retake would stay done."""
+        for ref in refs_to_walk:
+            try:
+                base = gitwrap.out(["merge-base", ref, branch_name], cwd)
+            except GitError:
+                continue  # no common history with this ref — try the next
+            if any(gitwrap.is_ancestor(done_sha, base, cwd) for done_sha in done_shas):
+                return True
+        return False
 
     ref = f"{remote}/{cfg.trunk_ref}"
     views: list[TaskView] = []

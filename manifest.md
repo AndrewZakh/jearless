@@ -100,6 +100,7 @@ Every loud row lands in the ledger with a cause when accepted — the same
 | The auto-hotfix inference baked a time-of-take judgment into an immutable name | kind is declared at take (`--type`); unplanned-ness is derived |
 | Story points incremented post-hoc double-count in velocity and rewrite the past | points are frozen estimates; rework cost is derived (cycle time + rework rate) |
 | An unread config key rots like an unread field | config sections are born with the feature that needs them |
+| In GitFlow mode a retake made before promotion went unnoticed — the reopen was measured against the trunk, where the merge did not exist yet (tooling/61) | the fork point is measured against every ref the merges are read from |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
 | Auto-committed reports resurrect the post-merge writer — a committed live report lies between runs, and a CI commit-back breaks "nothing automatic writes main" | dashboards ride the forge (PR/MR comments), pages or job artifacts; the tree holds only the release-time frozen slice (tooling/14, reaffirmed 2026-11-20) |
 | Direct pushes to a protected branch are the industry's antipattern — "таких проектов просто нет"; five of five of our scars were direct-to-main sins | main accepts changes only through PRs/MRs; the release rides one too; the emergency bypass is explicit and every use is a ledger scar (tooling/54) |
@@ -117,3 +118,28 @@ reading main: the promotion delivers the accumulated batch, and the changelog
 range catches it naturally via reachability. Promotions must be true merges.
 A squash promotion loses the task names, and `jear doctor` reports it.
 Our own repository stays trunk-based; the mode is for adopters.
+
+### Where GitFlow mode holds (task tooling/61)
+
+Each line was run by hand in a throwaway repository and is pinned by a test
+in `tests/test_gitflow.py`.
+
+- **Done means integrated.** A task merged into the integration branch is
+  done even while main still lacks it. After a partial promotion — one task
+  promoted, another not — both read as done; the changelog from main to the
+  integration tip lists exactly what the next promotion delivers.
+- **Re-integration is harmless.** Merging the same branch name into the
+  integration branch a second time leaves the task done: the first arrival
+  already shipped it.
+- **A retake reopens the task.** A fix branch forked from the integration tip
+  — past the task's own merge — puts the task back in progress, whether or
+  not the task has been promoted yet. (Until tooling/61 the reopen was
+  measured against the trunk alone, so a retake made before promotion went
+  unnoticed and the task stayed done.)
+- **A branch forked before the merge is not a retake.** It carries none of
+  the integrated work, so it cannot reopen the task.
+- **Divergence is fine.** The integration branch ahead of main, main ahead of
+  it, task branches deleted — the states do not depend on the two agreeing.
+
+Not covered, and not promised: promotions that are not true merges, and
+more than one integration branch at a time.
