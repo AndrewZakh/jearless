@@ -1,0 +1,36 @@
+name: Feature idea
+description: A capability the tool should have, or a change to how it behaves.
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The manifest records why things are the way they are, including the
+        things that were deliberately left out. An idea that answers the
+        recorded reason is far easier to accept than one that does not.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you were trying to do, and where the tool got in the way.
+      placeholder: I wanted to …, but …
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like instead
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today
+      description: The workaround, an external command, or "nothing".
+  - type: input
+    id: manifest
+    attributes:
+      label: "Does manifest.md already speak to this?"
+      description: If a section of the manifest covers the area, name it. Leave empty if you are not sure.
+      placeholder: "Priority is deliberately absent"

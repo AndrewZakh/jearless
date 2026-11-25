@@ -100,6 +100,7 @@ Every loud row lands in the ledger with a cause when accepted — the same
 | The auto-hotfix inference baked a time-of-take judgment into an immutable name | kind is declared at take (`--type`); unplanned-ness is derived |
 | Story points incremented post-hoc double-count in velocity and rewrite the past | points are frozen estimates; rework cost is derived (cycle time + rework rate) |
 | An unread config key rots like an unread field | config sections are born with the feature that needs them |
+| In GitFlow mode a retake made before promotion went unnoticed — the reopen was measured against the trunk, where the merge did not exist yet (tooling/61) | the fork point is measured against every ref the merges are read from |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
 | Auto-committed reports resurrect the post-merge writer — a committed live report lies between runs, and a CI commit-back breaks "nothing automatic writes main" | dashboards ride the forge (PR/MR comments), pages or job artifacts; the tree holds only the release-time frozen slice (tooling/14, reaffirmed 2026-11-20) |
 | Direct pushes to a protected branch are the industry's antipattern — "таких проектов просто нет"; five of five of our scars were direct-to-main sins | main accepts changes only through PRs/MRs; the release rides one too; the emergency bypass is explicit and every use is a ledger scar (tooling/54) |
@@ -107,9 +108,24 @@ Every loud row lands in the ledger with a cause when accepted — the same
 
 ## GitFlow mode
 
-For forges that accumulate unreleased work on an integration branch (staging)
-instead of promoting per task: `[git] integration_ref = "staging"` in
-`.jearless.toml`. Then done = "merged into main OR the integration tip"
+For teams that accumulate unreleased work on an intermediate branch before
+it reaches main — `dev`, `release-1`, `sprint-27`, whatever the team calls
+it — instead of promoting task by task. Name that branch in `.jearless.toml`:
+
+```toml
+[git]
+integration_ref = "dev"
+```
+
+The name is yours: letters, digits, `-`, `_`, `.`, `/` and the `{n}` template.
+`{n}` resolves to the latest sprint's number, so `sprint-{n}` follows the
+plans on its own. The trunk is configurable the same way (`trunk_ref`).
+
+**One intermediate branch at a time.** `integration_ref` names a single
+branch; work flowing through `dev` and then a separate `release-1` is not
+tracked as two hops — point it at the one the team treats as "integrated".
+
+In this mode done = "merged into main OR the integration branch"
 (the union kills the pre-promotion available-flicker), and every live view —
 the board, the sprint, the burndown, the changelog's unreleased section,
 take's fork base — reads the integration tip. Released (tag-based) views keep
@@ -117,3 +133,62 @@ reading main: the promotion delivers the accumulated batch, and the changelog
 range catches it naturally via reachability. Promotions must be true merges.
 A squash promotion loses the task names, and `jear doctor` reports it.
 Our own repository stays trunk-based; the mode is for adopters.
+
+### A GitFlow example, end to end (task tooling/61)
+
+A team integrates on `dev` and promotes it to `main` at the end of each
+sprint. The whole setup is two settings in `.jearless.toml`, committed to the
+repository:
+
+```toml
+[git]
+trunk_ref = "main"          # the released line — the default, shown for completeness
+integration_ref = "dev"     # the intermediate branch, whatever the team calls it
+```
+
+Both branches exist on the remote. Then the cycle is the same as always, with
+one difference: pull requests target `dev`, not `main`.
+
+1. **Take a task.** `jear take shop 1` creates `feature/shop/1-add-the-cart-page`
+   forked from the tip of `dev`, and pushes it.
+2. **Open the pull request against `dev`** and have it merged with a merge
+   commit.
+3. **The task is done.** `jear sprint` shows `shop/1` under `done`, although
+   `main` has no task merge yet — done means integrated, and it reached `dev`.
+4. **Take the next task.** `jear take shop 2` forks from the new tip of `dev`,
+   so it builds on the cart page.
+5. **See what a promotion will deliver.** `jear changelog --to origin/dev`
+   lists the tasks on `dev` that `main` does not have yet:
+   `- shop-1: add the cart page`.
+6. **Promote.** Merge `dev` into `main` with a true merge commit. Nothing
+   changes on the board: the tasks were already done.
+
+Every step above was run against this configuration; the output quoted is
+what the tool printed.
+
+### Where GitFlow mode holds (task tooling/61)
+
+Each line was run by hand in a throwaway repository and is pinned by a test
+in `tests/test_gitflow.py`.
+
+- **Done means integrated.** A task merged into the integration branch is
+  done even while main still lacks it. After a partial promotion — one task
+  promoted, another not — both read as done; the changelog from main to the
+  integration tip lists exactly what the next promotion delivers.
+- **Re-integration is harmless.** Merging the same branch name into the
+  integration branch a second time leaves the task done: the first arrival
+  already shipped it.
+- **A retake reopens the task.** A fix branch forked from the integration tip
+  — past the task's own merge — puts the task back in progress, whether or
+  not the task has been promoted yet. (Until tooling/61 the reopen was
+  measured against the trunk alone, so a retake made before promotion went
+  unnoticed and the task stayed done.)
+- **A branch forked before the merge is not a retake.** It carries none of
+  the integrated work, so it cannot reopen the task.
+- **Divergence is fine.** The integration branch ahead of main, main ahead of
+  it, task branches deleted — the states do not depend on the two agreeing.
+
+Not covered, and not promised: promotions that are not true merges, and
+more than one integration branch at a time. The branch's own name is not a
+limit — `tests/test_gitflow.py` runs the same scenario under `dev`,
+`release-1`, `sprint-27`, `release/2.x` and `sprint-{n}`.

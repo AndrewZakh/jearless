@@ -1,0 +1,24 @@
+name: Question
+description: How to use the tool, or why it behaves a certain way.
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `jear --version`.
+      placeholder: jearless 1.6.0
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried
+      description: The command, its output, and the part of the documentation that did not answer it.
