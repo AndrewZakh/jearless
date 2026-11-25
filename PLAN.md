@@ -1,6 +1,6 @@
 # Implementation plan
 
-Date: 2026-11-06; actualized 2026-11-19 (task tooling/39). The four-phase build plan
+Date: 2026-11-06; actualized 2026-11-19 (tooling/39) and 2026-11-25 (tooling/55). The four-phase build plan
 became history in three days (v0.1.0 → the first release v0.9.4); this file now maps
 the technical decisions and the shipped CLI surface. Development runs on jearless
 itself — sprints live in `.jearless/plans/`, the tool builds itself (see the tag
@@ -18,9 +18,9 @@ Bare git is enough — for small teams."
 - **ruamel.yaml (rt mode) — the only YAML parser.** Edits preserve comments (closes the round-trip risk from the README); reads use it too — the files are kilobytes, and the 2026-11-06 measurement showed performance is a non-issue at any scale.
 - **Tests are repository factories in temporary directories** (the pattern of our /tmp demos) plus golden files for the generator. No git mocks — only real repositories with real merges.
 - **The config is `.jearless.toml`:** the branch regex, the changelog line template, the prefix-to-section mapping, GitFlow mode (`[git] trunk_ref` + `integration_ref` with the `{n}` plan-number template).
-- **Artifacts live under `.jearless/`** (task tooling/15): the registry, archives, plans, reports, snapshots; the public face stays at the root (README, CHANGELOG.md). Resolution order `.jearless/` → root → birth in `.jearless/`; both existing = refuse — two live registries are the drift disease.
+- **Artifacts live under `.jearless/`** (task tooling/15): the registry, archives, plans, reports; the public face stays at the root (README, CHANGELOG.md). Resolution order `.jearless/` → root → birth in `.jearless/`; both existing = refuse — two live registries are the drift disease.
 - **Planning follows the README manifest** (tooling 15–19): the plan file is the only authored artifact about the future; priority, blocked_by and parent are deliberate refusals with recorded reasons; kind is declared at take, membership is derived from the plan.
-- **The MR dashboard is a forge comment, not a tree file** (task tooling/14, shipped as `sprint-comment.yml`): a `pull_request` Action installs the PR's own jearless, renders the live timeline plus the board, and maintains one sticky comment per MR. No ref moves — the charter invariant is untouched; sprint.md stays human-run.
+- **The MR dashboard is a forge comment, not a tree file** (task tooling/14, shipped as `sprint-comment.yml`): a `pull_request` Action installs the PR's own jearless, renders the current sprint's gantt, burn-down and board, and maintains one sticky comment per PR (tooling/50). A GitLab analog ships in `examples/`. No ref moves — the charter invariant is untouched.
 
 ## The CLI surface (all shipped unless noted)
 
@@ -35,15 +35,18 @@ Bare git is enough — for small teams."
 | `log <project> <id>` | the per-task journal: every branch of the task, own commits, merge dates — the retake story in one screen |
 | `reject <project> <id> <cause>` | withdraw a task with a mandatory cause ("a bare rejection is invisible debt"); REJECTED is the fourth derived state and wins over everything; revival = remove the field, git remembers |
 | `changelog --from <tag> --to <tag>` | merge commits → the config regex → sections by prefix; the summary from the registry (union with archives); the dry-run mindset — printed, never stored (storing is the release step) |
-| `doctor [--acknowledge <sha> "cause"]` | unattributed commits on main (the first-parent audit), branch-naming violations, an invalid registry; the scar ledger `.jearless/doctor_ignore` keeps acknowledged holes visible; exit code counts live findings only — gate-able. `--acknowledge` is the ledger UX command (planned, sprint_5) |
+| `doctor [--acknowledge <sha> "cause"]` | unattributed commits on main (the first-parent audit), branch-naming violations, an invalid registry; the scar ledger `.jearless/doctor_ignore` keeps acknowledged holes visible; exit code counts live findings only — gate-able. `--acknowledge <sha> "cause"` appends an accepted scar to the ledger |
 | `timeline --live \| --snapshot <tag>` | a mermaid gantt of the facts; live is never committed; the snapshot is a release artifact |
 | `retro <plan.yml>` | join the authored sprint contract with first-arrival merges: dated windows report the drift, undated join by membership; merged-but-unplanned work is the visible hole |
 | `plan <file> [--gantt]` | validate the authored sprint contract (`.jearless/plans/`): ids vs the union, duplicates, dates; the file's git birth is the sprint start; the order of ids is the sprint priority |
 | `burndown [plan] [--trend]` | sprint burn-down (stepped ideal at planned ends vs first-arrival actual, window = plan birth → last planned end, extended honestly) and the cross-sprint velocity trend |
 | `archive <tag>` | move done-as-of-tag tasks into `archive_<tag>.yml` (the cut is by the release tag, done tasks only); identity is the union (load_all); human-run — the tool writes both files, the human commits; an archive file is frozen |
-| `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity, scope creep, cycle time (median + p85, client-clock disclaimer), rework rate, attribution |
+| `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity, cycle time (median + p85, client-clock disclaimer), fix share, return rate, backlog growth, attribution, Points-in-time (lead time by size), review latency (forge server clocks), authorship (lines by author) |
 | `release [--tag TAG] [--finalize TAG]` | two phases, nothing writes main: PREPARE commits the artifacts (changelog, snapshot, report) on release/<tag> and opens the PR; FINALIZE lands the annotated tag on the merge commit after the PR merges (task tooling/51); ends with the publish reminder |
 | `graph` | mermaid flowchart of the registry's `depends_on` links; refuses unknown targets and cycles, doctor reports them as findings |
+| `rhythm [author]` | when landed work happens: commits by local hour, weekday, ISO week and month, read from the offsets stored in the commits; per-author mode is opt-in assignment hints — never workload evidence |
+| `prune` | deletes local branches fully merged into origin/main; unmerged branches are refused |
+| `message <project>/<id>` | the squash-box message carrying the `Task:` trailer, for adopters whose forges mandate squash |
 
 ## The phases — all shipped
 
@@ -69,4 +72,6 @@ not to build them in here.
 
 - `take` for a task missing from the registry: **settled** — it refuses; ad-hoc work gets a registry entry or a non-taxonomy branch (shown aloud as the visible hole).
 - Detecting a fast-forward retroactively is impossible (it leaves no trace) — doctor catches only unattributed commits. Standing rule: the scars go on the ledger, the shishki stay visible.
-- Branch protection (mechanics vs culture fork) and the xcf→Git-LFS question: open, on the owner's desk.
+- Branch protection: **settled** — main accepts changes only through pull requests (tooling/54); recipes in `examples/branch-protection.md`.
+- xcf→Git-LFS: **rejected** (tooling/45) — the hand-authored svg is the canonical logo source.
+- Trailer attribution for squash-mandated forges (tooling/64): recorded, not started.
