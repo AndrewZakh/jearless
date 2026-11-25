@@ -17,6 +17,7 @@ from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
 from jearless import find as find_mod
 from jearless import graph as graph_mod
+from jearless import lifecycle as lifecycle_mod
 from jearless import log as log_mod
 from jearless import plan as plan_mod
 from jearless import reject as reject_mod
@@ -158,6 +159,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("author", nargs="?", default=None, metavar="AUTHOR")
 
+    sub.add_parser("prune", help="delete local branches fully merged into origin/main (task tooling/58)")
+
+    p = sub.add_parser("message", help="the squash-box message with the Task: trailer (task tooling/58)")
+    p.add_argument("ref", metavar="PROJECT/ID")
+
     p = sub.add_parser(
         "plan", help="validate a sprint plan contract and show it (task tooling/16)"
     )
@@ -204,6 +210,10 @@ def main(argv: list[str] | None = None) -> int:
             return release_mod.run(cwd, tag=args.tag)
         if args.command == "rhythm":
             return rhythm_mod.run(cwd, author=args.author)
+        if args.command == "prune":
+            return lifecycle_mod.run_prune(cwd)
+        if args.command == "message":
+            return lifecycle_mod.message(cwd, args.ref)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)
         if args.command == "log":
