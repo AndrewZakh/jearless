@@ -118,12 +118,15 @@ integration_ref = "dev"
 ```
 
 The name is yours: letters, digits, `-`, `_`, `.`, `/` and the `{n}` template.
-`{n}` resolves to the latest sprint's number, so `sprint-{n}` follows the
-plans on its own. The trunk is configurable the same way (`trunk_ref`).
+`{n}` resolves to the newest sprint **whose branch exists**, so `sprint-{n}`
+follows the sprint branches on their own. The trunk is configurable the same
+way (`trunk_ref`).
 
 **One intermediate branch at a time.** `integration_ref` names a single
 branch; work flowing through `dev` and then a separate `release-1` is not
 tracked as two hops — point it at the one the team treats as "integrated".
+The same holds for `sprint-{n}`: one sprint branch is in view at a time, so
+deliver a sprint before creating the next sprint's branch.
 
 In this mode done = "merged into main OR the integration branch"
 (the union kills the pre-promotion available-flicker), and every live view —
@@ -134,37 +137,67 @@ range catches it naturally via reachability. Promotions must be true merges.
 A squash promotion loses the task names, and `jear doctor` reports it.
 Our own repository stays trunk-based; the mode is for adopters.
 
-### A GitFlow example, end to end (task tooling/61)
+### A GitFlow example: a branch per sprint (task tooling/61, tooling/66)
 
-A team integrates on `dev` and promotes it to `main` at the end of each
-sprint. The whole setup is two settings in `.jearless.toml`, committed to the
-repository:
+A team gives every sprint its own integration branch — `sprint-27`,
+`sprint-28`, and so on — and promotes it to `main` when the sprint is
+delivered. One setting in `.jearless.toml`, committed to the repository:
 
 ```toml
 [git]
-trunk_ref = "main"          # the released line — the default, shown for completeness
-integration_ref = "dev"     # the intermediate branch, whatever the team calls it
+integration_ref = "sprint-{n}"
 ```
 
-Both branches exist on the remote. Then the cycle is the same as always, with
-one difference: pull requests target `dev`, not `main`.
+`{n}` stands for a sprint number. A fixed name such as `dev` needs no
+template and works the same way; the rest of this cycle applies to it
+unchanged.
 
-1. **Take a task.** `jear take shop 1` creates `feature/shop/1-add-the-cart-page`
-   forked from the tip of `dev`, and pushes it.
-2. **Open the pull request against `dev`** and have it merged with a merge
-   commit.
-3. **The task is done.** `jear sprint` shows `shop/1` under `done`, although
-   `main` has no task merge yet — done means integrated, and it reached `dev`.
-4. **Take the next task.** `jear take shop 2` forks from the new tip of `dev`,
-   so it builds on the cart page.
-5. **See what a promotion will deliver.** `jear changelog --to origin/dev`
-   lists the tasks on `dev` that `main` does not have yet:
+The cycle of one sprint:
+
+1. **Open the sprint.** Commit `.jearless/plans/sprint_27.yml` and create the
+   branch `sprint-27` from `main`.
+2. **Take a task.** `jear take shop 1` creates `feature/shop/1-add-the-cart-page`
+   forked from the tip of `sprint-27`, and pushes it.
+3. **Open the pull request against `sprint-27`**, not `main`, and have it
+   merged with a merge commit.
+4. **The task is done.** `jear sprint` shows `shop/1` under `done`, although
+   `main` has no task merge yet — done means integrated, and it reached
+   `sprint-27`.
+5. **Take the next task.** `jear take shop 2` forks from the new tip of
+   `sprint-27`, so it builds on the cart page.
+6. **See what the sprint still owes to `main`.** `jear changelog --from
+   origin/main --to origin/sprint-27` lists the tasks not yet promoted:
    `- shop-1: add the cart page`.
-6. **Promote.** Merge `dev` into `main` with a true merge commit. Nothing
-   changes on the board: the tasks were already done.
+7. **Deliver.** Merge `sprint-27` into `main` with a true merge commit.
+   Nothing changes on the board: the tasks were already done.
 
-Every step above was run against this configuration; the output quoted is
-what the tool printed.
+**A plan committed before its branch.** A sprint plan may be committed before
+anyone has created that sprint's branch. `{n}` resolves to the newest
+sprint **whose branch exists**, so after `sprint_28.yml` is committed and
+while `sprint-28` is not there yet, the tool stays on `sprint-27`: tasks
+integrated there remain done, and `jear take` forks from `sprint-27` and
+works. *(Until tooling/66 the tool read the plan number alone. `jear take`
+then refused with `no origin/sprint-28`, and every task on `sprint-27` not
+yet promoted fell back from `done` to `available`.)*
+
+Every step above was run against exactly this configuration in a throwaway
+repository; the output quoted is what the tool printed.
+
+#### The limit that remains (task tooling/67)
+
+**Deliver the previous sprint before creating the next sprint's branch.**
+If `sprint-28` is created while `sprint-27` is still not in `main`, the tool
+moves to `sprint-28` and `sprint-27` leaves its view:
+
+- tasks integrated on `sprint-27` show as `available` again, not `done`;
+- a task taken now forks from `sprint-28`, which does not contain the work
+  on `sprint-27`;
+- the changelog of the current branch does not list what `sprint-27` owes.
+
+Nothing is lost. The merges and the code stay on `sprint-27`; merging
+`sprint-27` into `main` puts every task back to `done`, and the changelog
+`--from origin/main --to origin/sprint-27` shows what it still owes until
+then. Reading several unpromoted sprint branches at once is task tooling/67.
 
 ### Where GitFlow mode holds (task tooling/61)
 

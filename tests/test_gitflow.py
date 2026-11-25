@@ -348,3 +348,146 @@ def test_integration_branch_is_any_name(origin_and_clone, integration, capsys):
 
     assert changelog_mod.run(clone, from_tag="origin/main", to_tag=f"origin/{name}") == 0
     assert "p-1: feature one" in capsys.readouterr().out  # the unreleased view reads that branch
+
+
+# --- {n} follows the branch that exists (task tooling/66) --------------------
+# A sprint's plan is often committed before its branch is created. Reading the
+# plan number blindly pointed at a branch that did not exist: jear take
+# refused, and the work integrated on the previous branch dropped out of view.
+
+TWO_SHOP_TASKS = """\
+tasks:
+  shop:
+    - id: 1
+      summary: add the cart page
+      story_points: 3
+    - id: 2
+      summary: add the checkout button
+      story_points: 1
+"""
+
+
+@pytest.fixture
+def sprint_repo(origin_and_clone):
+    """GitFlow with sprint-{n}; sprint 27 open, task 1 integrated on its branch
+    and not promoted."""
+    _bare, clone = origin_and_clone
+    (clone / ".jearless" / "plans").mkdir(parents=True)
+    (clone / ".jearless.toml").write_text(
+        '[git]\nintegration_ref = "sprint-{n}"\n', encoding="utf-8"
+    )
+    (clone / ".jearless" / "tasks.yml").write_text(TWO_SHOP_TASKS, encoding="utf-8")
+    (clone / ".jearless" / "plans" / "sprint_27.yml").write_text(
+        "plan:\n  goal: the cart\n  tasks:\n    - task: shop/1\n    - task: shop/2\n",
+        encoding="utf-8",
+    )
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "registry, sprint_27 plan, config"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    gitwrap.run(["push", "-q", "origin", "main:sprint-27"], clone)
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+
+    gitwrap.run(["checkout", "-q", "-b", "feature/shop/1-add-the-cart-page", "origin/sprint-27"], clone)
+    (clone / "cart.txt").write_text("work\n", encoding="utf-8")
+    gitwrap.run(["add", "cart.txt"], clone)
+    gitwrap.run(["commit", "-q", "-m", "the cart page"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "feature/shop/1-add-the-cart-page"], clone)
+    gitwrap.run(["checkout", "-q", "-B", "sprint-27", "origin/sprint-27"], clone)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/shop/1-add-the-cart-page'",
+         "origin/feature/shop/1-add-the-cart-page"],
+        clone,
+    )
+    gitwrap.run(["push", "-q", "origin", "sprint-27"], clone)
+    gitwrap.run(["push", "-q", "origin", "--delete", "feature/shop/1-add-the-cart-page"], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+    return clone
+
+
+def _open_sprint_28_without_its_branch(clone):
+    (clone / ".jearless" / "plans" / "sprint_28.yml").write_text(
+        "plan:\n  goal: checkout\n  tasks:\n    - task: shop/2\n", encoding="utf-8"
+    )
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "sprint_28 plan"], clone)
+    gitwrap.run(["push", "-q", "origin", "main"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+    assert "sprint-28" not in gitwrap.remote_heads(clone)  # the premise holds
+
+
+def test_sprint_n_stays_on_the_branch_that_exists(sprint_repo):
+    """The defect: sprint_28.yml is committed before sprint-28 is created.
+    The integrated task stays done instead of dropping back to available."""
+    clone = sprint_repo
+    assert _states(clone) == {1: "done", 2: "available"}
+    _open_sprint_28_without_its_branch(clone)
+    assert _states(clone) == {1: "done", 2: "available"}
+
+
+def test_sprint_n_take_works_before_the_new_branch_exists(sprint_repo):
+    """jear take no longer refuses; the task forks from sprint-27's tip, so it
+    carries the work already integrated there."""
+    clone = sprint_repo
+    _open_sprint_28_without_its_branch(clone)
+    branch = take_mod.take(clone, "shop", 2)
+    fork = gitwrap.out(["merge-base", "origin/sprint-27", branch], clone)
+    assert fork == gitwrap.out(["rev-parse", "origin/sprint-27"], clone)
+    assert gitwrap.out(["rev-parse", f"{branch}^{{tree}}"], clone) == gitwrap.out(
+        ["rev-parse", "origin/sprint-27^{tree}"], clone
+    )
+    gitwrap.run(["checkout", "-q", "main"], clone)
+
+
+def test_sprint_n_moves_on_once_the_new_branch_exists(sprint_repo):
+    """When sprint-28 is created the tool follows it. This is the limit task
+    tooling/67 keeps: sprint-27 is not promoted, and it now drops out of view."""
+    clone = sprint_repo
+    _open_sprint_28_without_its_branch(clone)
+    gitwrap.run(["push", "-q", "origin", "main:sprint-28"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+    cfg = config_mod.load(clone)
+    assert cfg.live_ref(clone, "origin") == "origin/sprint-28"
+    assert _states(clone) == {1: "available", 2: "available"}
+
+
+def test_sprint_n_without_any_branch_falls_back_to_the_trunk(origin_and_clone):
+    """Plans exist, no sprint branch was ever created: the trunk is the
+    integration target, as when no plan exists at all."""
+    _bare, clone = origin_and_clone
+    (clone / ".jearless" / "plans").mkdir(parents=True)
+    (clone / ".jearless.toml").write_text(
+        '[git]\nintegration_ref = "sprint-{n}"\n', encoding="utf-8"
+    )
+    (clone / ".jearless" / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: seed\n", encoding="utf-8"
+    )
+    (clone / ".jearless" / "plans" / "sprint_1.yml").write_text(
+        "plan:\n  goal: g\n  tasks:\n    - task: p/1\n", encoding="utf-8"
+    )
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "config + registry + plan"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+    cfg = config_mod.load(clone)
+    assert cfg.live_ref(clone, "origin") == "origin/main"
+
+
+def test_sprint_n_needs_no_network(tmp_path, monkeypatch):
+    """live_ref reads the local refs only: with git unable to reach anything,
+    it still answers — and says the trunk when no sprint branch is known."""
+    gitwrap.run(["init", "-q", "-b", "main", str(tmp_path)], tmp_path)
+    (tmp_path / ".jearless" / "plans").mkdir(parents=True)
+    (tmp_path / ".jearless.toml").write_text(
+        '[git]\nintegration_ref = "sprint-{n}"\n', encoding="utf-8"
+    )
+    (tmp_path / ".jearless" / "plans" / "sprint_3.yml").write_text(
+        "plan:\n  goal: g\n  tasks: []\n", encoding="utf-8"
+    )
+    # any attempt to talk to a remote would go through this and fail loudly
+    def no_network(*args, **kwargs):
+        raise AssertionError("live_ref must not reach the remote")
+
+    monkeypatch.setattr(gitwrap, "remote_heads", no_network)
+    cfg = config_mod.load(tmp_path)
+    assert cfg.live_ref(tmp_path, "origin") == "origin/main"
