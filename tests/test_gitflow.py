@@ -286,3 +286,65 @@ def test_retake_is_seen_before_any_promotion(gitflow):
     gitwrap.run(["checkout", "-q", "main"], clone)
     gitwrap.run(["fetch", "-q", "origin"], clone)
     assert _states(clone) == {1: "in_progress"}
+
+
+# --- the integration branch is any name (task tooling/61) --------------------
+# Nothing in the tool is tied to a branch called "staging": the name comes
+# from [git] integration_ref and may contain slashes.
+
+@pytest.mark.parametrize(
+    "integration", ["dev", "release-1", "sprint-27", "release/2.x", "sprint-{n}"]
+)
+def test_integration_branch_is_any_name(origin_and_clone, integration, capsys):
+    """A task merged into the integration branch is done, the next task forks
+    from that branch's tip and the changelog reads it — whatever it is called.
+    With {n} the name follows the latest plan number."""
+    _bare, clone = origin_and_clone
+    name = integration
+    (clone / ".jearless").mkdir()
+    if "{n}" in name:
+        plans = clone / ".jearless" / "plans"
+        plans.mkdir()
+        (plans / "sprint_27.yml").write_text(
+            "plan:\n  goal: g\n  tasks:\n    - task: p/1\n", encoding="utf-8"
+        )
+        name = name.replace("{n}", "27")
+    (clone / ".jearless.toml").write_text(
+        f'[git]\nintegration_ref = "{integration}"\n', encoding="utf-8"
+    )
+    (clone / ".jearless" / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: feature one\n    - id: 2\n      summary: next task\n",
+        encoding="utf-8",
+    )
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "config + registry"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    gitwrap.run(["push", "-q", "origin", f"main:{name}"], clone)
+
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+    gitwrap.run(["checkout", "-q", "-b", "feature/p/1-feature-one", f"origin/{name}"], clone)
+    (clone / "one.txt").write_text("one\n", encoding="utf-8")
+    gitwrap.run(["add", "one.txt"], clone)
+    gitwrap.run(["commit", "-q", "-m", "work task 1"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "feature/p/1-feature-one"], clone)
+    gitwrap.run(["checkout", "-q", "-b", "integ", f"origin/{name}"], clone)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/p/1-feature-one'",
+         "origin/feature/p/1-feature-one"],
+        clone,
+    )
+    gitwrap.run(["push", "-q", "origin", f"HEAD:{name}"], clone)
+    gitwrap.run(["push", "-q", "origin", "--delete", "feature/p/1-feature-one"], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+
+    assert gitwrap.lines(["log", "origin/main", "--merges", "--format=%H"], clone) == []
+    assert _states(clone) == {1: "done", 2: "available"}
+
+    branch = take_mod.take(clone, "p", 2)
+    fork = gitwrap.out(["merge-base", f"origin/{name}", branch], clone)
+    assert fork == gitwrap.out(["rev-parse", f"origin/{name}"], clone)  # stacks on its tip
+    gitwrap.run(["checkout", "-q", "main"], clone)
+
+    assert changelog_mod.run(clone, from_tag="origin/main", to_tag=f"origin/{name}") == 0
+    assert "p-1: feature one" in capsys.readouterr().out  # the unreleased view reads that branch

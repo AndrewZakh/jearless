@@ -108,9 +108,24 @@ Every loud row lands in the ledger with a cause when accepted — the same
 
 ## GitFlow mode
 
-For forges that accumulate unreleased work on an integration branch (staging)
-instead of promoting per task: `[git] integration_ref = "staging"` in
-`.jearless.toml`. Then done = "merged into main OR the integration tip"
+For teams that accumulate unreleased work on an intermediate branch before
+it reaches main — `dev`, `release-1`, `sprint-27`, whatever the team calls
+it — instead of promoting task by task. Name that branch in `.jearless.toml`:
+
+```toml
+[git]
+integration_ref = "dev"
+```
+
+The name is yours: letters, digits, `-`, `_`, `.`, `/` and the `{n}` template.
+`{n}` resolves to the latest sprint's number, so `sprint-{n}` follows the
+plans on its own. The trunk is configurable the same way (`trunk_ref`).
+
+**One intermediate branch at a time.** `integration_ref` names a single
+branch; work flowing through `dev` and then a separate `release-1` is not
+tracked as two hops — point it at the one the team treats as "integrated".
+
+In this mode done = "merged into main OR the integration branch"
 (the union kills the pre-promotion available-flicker), and every live view —
 the board, the sprint, the burndown, the changelog's unreleased section,
 take's fork base — reads the integration tip. Released (tag-based) views keep
@@ -142,4 +157,6 @@ in `tests/test_gitflow.py`.
   it, task branches deleted — the states do not depend on the two agreeing.
 
 Not covered, and not promised: promotions that are not true merges, and
-more than one integration branch at a time.
+more than one integration branch at a time. The branch's own name is not a
+limit — `tests/test_gitflow.py` runs the same scenario under `dev`,
+`release-1`, `sprint-27`, `release/2.x` and `sprint-{n}`.
