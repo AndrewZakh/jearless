@@ -79,3 +79,35 @@ by provenance.
 contour of this philosophy: tasks, state derived from history, reporting
 assembled from merges, the provenance audit. The philosophy is deliberately
 wider than the tool: the tool is obliged to stay narrow.
+
+## One pattern, several tools
+
+jearless is not alone. The same shape — **facts → deterministic rules → a
+derived result** — runs through the family of tools around this repository:
+
+| Tool | Facts | Deterministic rules | Result |
+|---|---|---|---|
+| [jearless](README.md) | git history, refs, the registry | task lifecycle rules | task states and reports |
+| [auto-submodule](https://github.com/AndrewZakh/auto-submodule) | yaml config, git index, commits, remotes | consistency rules | diagnostics of drift |
+| [auto-version-hook](https://github.com/AndrewZakh/auto-version-hook) | branches, branch_flow, versions | versioning rules | the computed version |
+
+The shared discipline: never store and maintain by hand a state that can be
+reliably derived from the facts; automation explains and checks — it does
+not mutate without explicit intent. Each tool stays narrow and delegates
+the rest; integrations (if any) remain external consumers of a tool's
+derived result, never part of its core.
+
+## How proposals are weighed
+
+Not every idea becomes work. A proposal is placed in one of three
+categories, and each has its own next step:
+
+| Category | Meaning | The step |
+|---|---|---|
+| Confirmed need | a real operational problem and a clear benefit | estimate and plan, if the cost is acceptable |
+| Potential improvement | the benefit is plausible, the scenario is not proven yet | verify in real use first |
+| Architectural hypothesis | promising, but the idea itself needs testing | formulate the problem, compare the benefit with the complexity |
+
+And the honest outcome a review may reach is **"nothing to change"**. The
+presence of an idea does not oblige the project to grow a feature; the
+refusals recorded in [manifest.md](manifest.md) are features too.

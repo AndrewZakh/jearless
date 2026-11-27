@@ -65,6 +65,8 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 | done | a merge commit naming the task, in main |
 | rejected | the task carries a `rejected:` cause — it wins over every other state |
 
+An archived task (moved out at a release) leaves the working set: it shows on the board only while a live branch carries it — a retake by its old ID works (`jear take --type fix`, task tooling/40).
+
 - **The eternal registry** (`.jearless/tasks.yml`): frozen facts only — id, summary, description, story_points, `depends_on`. Tasks are never deleted. No status fields: git knows the state.
 - **Taking a task = pushing a branch**: `jear take door 1` checks occupancy via the remote first (advisory — `ls-remote`), and the push arbitrates the race for identical branch names — though git may answer `Everything up-to-date` when the branch already carries that exact commit. Exclusive ownership is not required: two engineers on one task are both visible on the board.
 - **Two engineers, one task — the Vasya and Masha model**: the first merge is the `done` signal. If the contract check finds gaps, Vasya re-takes the task (`jear take --type fix`) and the board shows the rework; the full story lives in `jear log`. Whether front-end and database work deserve separate tasks is the team's own call — the same ID means the same task.
