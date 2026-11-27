@@ -166,3 +166,23 @@ tasks:
         is release-scoped, weeks/months are calendar-scoped. Author filter
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
+    - id: 68
+      summary: export — task data as CSV and JSON
+      description: |
+        The canonical flattened view of the join: one row per task - frozen
+        facts, derived state, and every date the tool honestly has. CSV for
+        spreadsheets, JSON for integrations. Read-only: stdout by default,
+        --output FILE when asked. No network beyond the fetch every live
+        view makes.
+        Period boundaries resolve to delivery moments: a date, p/N (that
+        task's first-arrival merge) or a branch name (that branch's
+        promotion merge on the trunk). Rows are never dropped - the
+        boundaries fill the in_period column; undelivered tasks ride along
+        with empty dates. Times are UTC; commit dates are client clocks
+        (manifest: hours are not measured, duration is).
+        The columns are frozen and listed in src/jearless/export.py.
+        Prometheus in the original idea was an integration example, not a
+        goal: an exporter would be an external consumer of the JSON (the
+        review's section 3.5), and Grafana reads the JSON directly via its
+        json datasource.
+      story_points: 2

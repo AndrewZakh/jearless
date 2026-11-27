@@ -6,6 +6,11 @@ docs. Every query here is verified against this repository's registry
 
 ## The stack
 
+For the whole join — every task with its derived state and dates — there
+is `jear export --format csv` (spreadsheets) and `--format json`
+(integrations); no yq needed for that.
+
+For everything below, the registry file itself is enough:
 `yq` (mikefarah — `brew install yq`) converts YAML→JSON, `jq` aggregates:
 
 ```sh

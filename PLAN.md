@@ -44,6 +44,7 @@ Bare git is enough — for small teams."
 | `report <tag>` | the release-time PM snapshot into `.jearless/reports/`: velocity, cycle time (median + p85, client-clock disclaimer), fix share, return rate, backlog growth, attribution, Points-in-time (lead time by size), review latency (forge server clocks), authorship (lines by author) |
 | `release [--tag TAG] [--finalize TAG]` | two phases, nothing writes main: PREPARE commits the artifacts (changelog, snapshot, report) on release/<tag> and opens the PR; FINALIZE lands the annotated tag on the merge commit after the PR merges (task tooling/51); ends with the publish reminder |
 | `graph` | mermaid flowchart of the registry's `depends_on` links; refuses unknown targets and cycles, doctor reports them as findings |
+| `export [--format csv\|json] [--from/--to] [--output FILE]` | the whole join as flat rows — one per task, with state, branch and every date (created/taken/merged, forge server clocks); boundaries resolve to delivery moments and fill `in_period`, never drop rows (task tooling/68) |
 | `rhythm [author]` | when landed work happens: commits by local hour, weekday, ISO week and month, read from the offsets stored in the commits; per-author mode is opt-in assignment hints — never workload evidence |
 | `prune` | deletes local branches fully merged into origin/main; unmerged branches are refused |
 | `message <project>/<id>` | the squash-box message carrying the `Task:` trailer, for adopters whose forges mandate squash |
