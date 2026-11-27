@@ -106,6 +106,79 @@ def pr_times_map(cwd: Path, limit: int = 200) -> dict[str, tuple[str, str]]:
     return out
 
 
+def add_ride(
+    cwd: Path,
+    project: str,
+    num: int,
+    files: list[str],
+    title: str,
+    body: str,
+    label: str,
+    base: str,
+    trunk: str,
+    remote: str,
+    apply_entry,
+) -> bool:
+    """The registry-add transport (task tooling/63): a burst of adds rides ONE
+    branch. The project's registry/<project>-* branch is reused when it
+    exists — the new entry lands as a commit on it and its open pull request
+    updates itself — instead of every add opening its own conflicting PR.
+
+    `apply_entry(cwd)` writes the new entry into the registry file; it is
+    called after the branch is checked out, so a burst appends to the
+    branch's own version of the file. Returns True when the ride pushed.
+    False = manual territory (no forge, an unreachable remote, a failed
+    push) — the caller writes and stages the edit itself.
+    """
+    if not gitwrap.is_repo(cwd):
+        return False
+    origin_branch = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)
+    prefix = f"registry/{project}-"
+    try:
+        heads = gitwrap.remote_heads(cwd, remote)
+    except gitwrap.GitError:
+        return False  # offline: the caller writes and stages the edit itself
+    # a rejected-task branch (…-rejected) is closed history, not an open burst
+    existing = sorted(
+        (name for name in heads if name.startswith(prefix) and not name.endswith("-rejected")),
+        key=lambda name: (
+            int(name.rsplit("-", 1)[-1]) if name.rsplit("-", 1)[-1].isdigit() else 0,
+            name,
+        ),
+    )
+    if existing:
+        branch = existing[-1]
+        fresh = False
+        gitwrap.run(["fetch", "-q", remote], cwd)
+        gitwrap.run(["checkout", "-q", "-B", branch, f"{remote}/{branch}"], cwd)
+    else:
+        branch = prefix + str(num)
+        fresh = True
+        gitwrap.run(["checkout", "-q", "-b", branch, base], cwd)
+    try:
+        apply_entry(cwd)
+        rel = [os.path.relpath(os.path.join(str(cwd), str(item)), str(cwd)) for item in files]
+        gitwrap.run(["add", *rel], cwd)
+        gitwrap.run(["commit", "-q", "-m", title, "--", *rel], cwd)
+        gitwrap.run(["push", "-q", "-u", remote, branch], cwd)
+    except gitwrap.GitError as exc:
+        print(f"jear: the branch ride failed ({exc}) — the entry lives on {branch}; open the PR by hand")
+        if origin_branch != branch:
+            try:
+                gitwrap.run(["checkout", "-q", origin_branch], cwd)
+            except gitwrap.GitError:
+                pass
+        return False
+    if fresh:
+        url = open_pr(cwd, base, branch, title, body, labels=(label,))
+        print(f"PR: {url}" if url else f"open the PR by hand: {branch} -> {base}")
+    else:
+        print(f"the entry joined the open pull request on {branch} — it updates itself")
+    if origin_branch != branch:
+        gitwrap.run(["checkout", "-q", origin_branch], cwd)
+    return True
+
+
 def registry_pr(
     cwd: Path,
     files: list[str],

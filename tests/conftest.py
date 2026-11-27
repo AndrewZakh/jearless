@@ -6,11 +6,17 @@ import pytest
 from jearless import forge as _forge
 
 _REAL_REGISTRY_PR = _forge.registry_pr
+_REAL_ADD_RIDE = _forge.add_ride
 
 
 def real_registry_pr(cwd, **kwargs):
     """The real ride — for tests that verify the forge flow itself."""
     return _REAL_REGISTRY_PR(cwd, **kwargs)
+
+
+def real_add_ride(cwd, **kwargs):
+    """The real add transport — for tests that verify the burst flow itself."""
+    return _REAL_ADD_RIDE(cwd, **kwargs)
 
 from jearless import gitwrap
 
@@ -74,4 +80,19 @@ def _forge_manual_mode(monkeypatch):
         gitwrap.run(["push", "-q", "origin", branch_now], cwd)
         return True
 
+    def _manual_add(cwd, files, title, project, num, base, trunk, remote, apply_entry, **kwargs):
+        import os
+
+        from jearless import gitwrap
+
+        # the stand-in writes and commits on the CURRENT branch — the pre-53
+        # manual flow, so tests that read the worktree file keep passing
+        rel = [os.path.relpath(os.path.join(str(cwd), str(item)), str(cwd)) for item in files]
+        apply_entry(cwd)
+        gitwrap.run(["add", *rel], cwd)
+        gitwrap.run(["commit", "-q", "-m", title, "--", *rel], cwd)
+        gitwrap.run(["push", "-q", "origin", gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)], cwd)
+        return True
+
     monkeypatch.setattr(_forge, "registry_pr", _manual)
+    monkeypatch.setattr(_forge, "add_ride", _manual_add)
