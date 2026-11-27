@@ -1,6 +1,6 @@
 # Implementation plan
 
-Date: 2026-11-06; actualized 2026-11-19 (tooling/39) and 2026-11-25 (tooling/55). The four-phase build plan
+Date: 2026-11-06; actualized 2026-11-19 (tooling/39), 2026-11-25 (tooling/55) and 2026-11-28 (tooling/68). The four-phase build plan
 became history in three days (v0.1.0 → the first release v0.9.4); this file now maps
 the technical decisions and the shipped CLI surface. Development runs on jearless
 itself — sprints live in `.jearless/plans/`, the tool builds itself (see the tag

@@ -11,7 +11,7 @@ recipes for GitHub and GitLab are in
 ```sh
 uv venv && uv pip install -e ".[dev]"     # or: python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pre-commit install              # the version bump and the registry checks
-.venv/bin/pytest -q                       # the suite (integration-heavy: real repos, ~65s)
+.venv/bin/pytest -q                       # the suite (integration-heavy: real repos, ~85s)
 .venv/bin/ruff check src tests
 ```
 

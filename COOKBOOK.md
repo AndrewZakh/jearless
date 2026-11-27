@@ -2,7 +2,7 @@
 
 The registry is data — the questions answer by one-liners, not by reading
 docs. Every query here is verified against this repository's registry
-(re-verified 2026-11-25: 13 live tasks, 22 pt).
+(re-verified 2026-11-28: 16 live tasks, 32 pt).
 
 ## The stack
 
