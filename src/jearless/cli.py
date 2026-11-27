@@ -15,6 +15,7 @@ from jearless import board as board_mod
 from jearless import burndown as burndown_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
+from jearless import export as export_mod
 from jearless import find as find_mod
 from jearless import graph as graph_mod
 from jearless import lifecycle as lifecycle_mod
@@ -176,6 +177,21 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("archive", help="move done-as-of-tag tasks into archive_<tag>.yml")
     p.add_argument("tag", metavar="TAG")
 
+    p = sub.add_parser(
+        "export",
+        help="the whole join as flat rows — CSV for spreadsheets, JSON for integrations (task tooling/68)",
+    )
+    p.add_argument("--format", choices=["csv", "json"], default="csv")
+    p.add_argument(
+        "--from",
+        dest="from_boundary",
+        default=None,
+        metavar="BOUNDARY",
+        help="a date, a delivered task (p/N) or a branch name (its promotion merge)",
+    )
+    p.add_argument("--to", dest="to_boundary", default=None, metavar="BOUNDARY")
+    p.add_argument("--output", default=None, metavar="FILE")
+
     return parser
 
 
@@ -216,6 +232,14 @@ def main(argv: list[str] | None = None) -> int:
             return lifecycle_mod.message(cwd, args.ref)
         if args.command == "archive":
             return archive_mod.run(cwd, args.tag)
+        if args.command == "export":
+            return export_mod.run(
+                cwd,
+                fmt=args.format,
+                from_boundary=args.from_boundary,
+                to_boundary=args.to_boundary,
+                output=args.output,
+            )
         if args.command == "log":
             return log_mod.run(cwd, args.project, args.id, remote=args.remote)
         if args.command == "find":
