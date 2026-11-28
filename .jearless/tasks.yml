@@ -139,3 +139,6 @@ tasks:
     - id: 76
       summary: sprint --write — the default writes into the tree the constitution keeps clean
       story_points: 1
+    - id: 77
+      summary: the join does not credit bookkeeping rides as delivery
+      story_points: 2
