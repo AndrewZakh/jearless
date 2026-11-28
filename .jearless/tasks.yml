@@ -48,7 +48,23 @@ tasks:
       story_points: 5
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
+      description: |
+        The adopter bridge for squash-mandated orgs (the forge's squash
+        button kills the branch name - the task key dies with it). If a
+        commit carries a Task: <project>/<id> trailer, changelog/doctor
+        attribute it to the task even without a merge commit naming the
+        branch. jear message <id> generates the trailer; this task teaches
+        the readers. Design round approved 2026-11-24; scoped separately
+        from the reporter stack.
+        The hostile review's P0 direction (2026-11-28): the merge subject is
+        editable in the forge UI and forgeable by hand - the parser reads %B
+        (the full body) and attributes via Task: trailers first, keeping the
+        subject regexes as the legacy fallback. A configurable merge_regex
+        for other forges is consciously deferred - the priority is hardening
+        the GitHub mechanics. The tip-commit-in-take variant (take stops
+        being zero-commit) is a separate design decision, out of this scope.
       story_points: 2
+
     - id: 65
       summary: rhythm — the week and month cuts
       description: |
