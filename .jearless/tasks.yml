@@ -136,3 +136,6 @@ tasks:
     - id: 75
       summary: the ride race loser gets honest directions — push-rejected vs push-failed
       story_points: 1
+    - id: 76
+      summary: sprint --write — the default writes into the tree the constitution keeps clean
+      story_points: 1
