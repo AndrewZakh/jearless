@@ -28,24 +28,6 @@ tasks:
         committed), a separate asset repo, or local-only acceptance.
       story_points: 1
       rejected: the hand-authored svg superseded the GIMP source — the xcf is a sketchpad (L1), the system stores results (L3); revisit only if a live GIMP pipeline ever returns
-    - id: 66
-      summary: 'sprint-{n}: follow the integration branch that exists'
-      description: |
-        The narrow fix. Found while writing the cyclic GitFlow example
-        (2026-11-25), run by hand in a throwaway repository.
-        Today {n} resolves to the latest plan number, and nothing checks
-        whether that branch exists. When sprint_28.yml is committed before
-        sprint-28 is created: jear take refuses ("no origin/sprint-28"), and
-        every task integrated on sprint-27 but not yet promoted drops from
-        done back to available. A single name such as dev is not affected.
-        The rule: {n} is the latest plan number whose branch exists on the
-        remote. Until sprint-28 is created the tool stays on sprint-27.
-        One function resolves the name (Config.live_ref) and every live view
-        goes through it.
-        Known limit, kept and documented: if sprint-28 is created BEFORE
-        sprint-27 is promoted, the tool moves on and the work on sprint-27
-        goes out of view again. That is task 67.
-      story_points: 3
     - id: 67
       summary: 'sprint-{n}: see every unpromoted sprint branch'
       description: |
@@ -64,96 +46,6 @@ tasks:
         that in the manifest before writing code. Not started; estimate to
         be confirmed once the design is.
       story_points: 5
-    - id: 56
-      summary: reporter scaffold — Points-in-time and review latency
-      description: |
-        Sections over the existing machinery (report.py stays the tag-frozen slice):
-        lead time by size bucket (median/p85 hours per story_points, n shown, first
-        arrivals only), review latency (PR created_at -> merged_at via forge.py,
-        server clocks), cycle time split into phases (first commit -> PR created ->
-        merged). The labor/duration precision lands in the manifest: labor hours
-        stay honestly unanswered; duration (lead time) is measured with the
-        client-clock disclaimer. One shared data pull: merges + forge timestamps.
-      story_points: 3
-    - id: 57
-      summary: rhythm — commit-hour maps and assignment hints
-      description: |
-        Commit-hour maps: team-level aggregate histogram (the local hour recovered
-        from the stored offsets) and per-author assignment hints (opt-in command,
-        best-effort client-clock estimates, never workload evidence — the
-        Peter-Friday-17:59 case: don't drop an urgent task into a dead window).
-        The manifest line: per-author rhythms may inform assignment; they are never
-        workload proof.
-      story_points: 2
-    - id: 58
-      summary: jear prune and jear message — the lifecycle and trailer commands
-      description: |
-        jear prune: delete local branches fully merged into origin/main (the charter
-        lifecycle as a command; unmerged refused — nothing unpushed is lost).
-        jear message <project>/<id>: generate the squash-message with the Task:
-        trailer for adopters whose orgs mandate squash (the trailer survives; our
-        own repos stay --no-ff).
-      story_points: 1
-    - id: 59
-      summary: authorship diagram — lines by author, volume not value
-      description: |
-        git log --numstat over the release range grouped by author (mailmap-
-        normalized): additions/deletions per author as a diagram; noise filtered
-        (generated/vendored/binary); labeled volume-not-value, never a KPI.
-        v2: bus-factor per file (the knowledge map).
-      story_points: 2
-    - id: 60
-      summary: merge semantics matrix — documented and edge-tested
-      description: |
-        The documented matrix (merge/squash/rebase/ff/re-merge/octopus/partial ->
-        supported/limited/loud-diagnostic) in the manifest; octopus and partial-
-        merge edge tests (branch_from_merge_subject + doctor first-parent
-        behavior); doctor findings' hints completeness audit. The review's 2.1+2.3
-        as documentation-and-tests, not new engineering — the behavior is verified.
-      story_points: 2
-    - id: 61
-      summary: GitFlow edge verification — partial promotion and re-integration
-      description: |
-        The review's 2.2 as tests where missing + the matrix's GitFlow section:
-        partial promotion, re-integration after an intermediate merge, integration
-        vs main divergence, retake after an intermediate merge.
-      story_points: 2
-    - id: 62
-      summary: family docs pack — the pattern and the proposal framing
-      description: |
-        ENGINEEROPS gains the family pattern section (facts -> deterministic rules
-        -> result: jearless / auto-submodule / auto-version-hook) and the three-
-        category proposal framing (confirmed need / potential / hypothesis, with
-        'nothing to change' as a valid outcome — the review's section 8); the
-        section-10 principles echo.
-      story_points: 1
-    - id: 63
-      summary: batch registry edits — one ride for N adds
-      description: |
-        jear add rides per call: a batch of N adds opens N conflicting PRs (each
-        branch carries only its own task against the same base). Found live during
-        the sprint_9 re-slice (2026-11-24): the batch had to be hand-authored.
-        Needs a batch mode (one commit, one PR) or a ride-suppression flag.
-      story_points: 1
-    - id: 55
-      summary: 'manifest: unglue the GitFlow promotion sentence'
-      description: |
-        Docs housekeeping across every living markdown file, plus the GitFlow
-        sentence. The sentence: one claim glued to its consequence - split
-        into "promotions must be true merges" and "a squash promotion loses
-        the task names, and jear doctor reports it".
-        The housekeeping: CONTRIBUTING still describes the pre-constitution
-        world (direct --no-ff merges, add landing in tasks.yml, one-phase
-        releases); README has a duplicated bullet, a state table without
-        rejected, and none of rhythm/prune/message/reject; PLAN marks
-        --acknowledge as planned and calls branch protection and xcf->LFS
-        open; COOKBOOK carries stale counts and a root tasks.yml path;
-        examples/README omits two of its files. Frozen release reports and
-        CHANGELOG are not touched.
-        Snapshots: the mmd files tracked in the tree are removed - the
-        diagrams ride the MR dashboards. No code change: the release step
-        and jear timeline --snapshot stay as they are.
-      story_points: 2
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
       story_points: 2
@@ -166,31 +58,7 @@ tasks:
         is release-scoped, weeks/months are calendar-scoped. Author filter
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
-      rejected: the work shipped via the registration ride whose merge the
-        taxonomy cannot parse (registry/tooling-65, merged as pull request
-        34) - the week and
-        month cuts are in main since then; the unit closes, the naming fix
-        is tooling/69
-    - id: 68
-      summary: export — task data as CSV and JSON
-      description: |
-        The canonical flattened view of the join: one row per task - frozen
-        facts, derived state, and every date the tool honestly has. CSV for
-        spreadsheets, JSON for integrations. Read-only: stdout by default,
-        --output FILE when asked. No network beyond the fetch every live
-        view makes.
-        Period boundaries resolve to delivery moments: a date, p/N (that
-        task's first-arrival merge) or a branch name (that branch's
-        promotion merge on the trunk). Rows are never dropped - the
-        boundaries fill the in_period column; undelivered tasks ride along
-        with empty dates. Times are UTC; commit dates are client clocks
-        (manifest: hours are not measured, duration is).
-        The columns are frozen and listed in src/jearless/export.py.
-        Prometheus in the original idea was an integration example, not a
-        goal: an exporter would be an external consumer of the JSON (the
-        review's section 3.5), and Grafana reads the JSON directly via its
-        json datasource.
-      story_points: 2
+      rejected: the work shipped via the registration ride whose merge the taxonomy cannot parse (registry/tooling-65, merged as pull request 34) - the week and month cuts are in main since then; the unit closes, the naming fix is tooling/69
     - id: 69
       summary: 'ride branches — registry/<project>/<num>: the join must read them'
       description: |
