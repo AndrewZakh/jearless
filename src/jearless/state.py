@@ -26,6 +26,13 @@ REJECTED = "rejected"  # task tooling/38 — the fourth derived state
 _MERGE_BRANCH_RE = re.compile(r"^Merge branch '([^']+)'")
 _MERGE_PR_RE = re.compile(r"^Merge pull request #\d+ from [^/\s]+/(\S+)")
 
+# Task tooling/64: a commit declares its task with a Task: trailer — the squash
+# bridge (the forge's squash kills the branch name) and the hardening against
+# hand-edited merge subjects. Git's trailer rule: the message's LAST paragraph;
+# the generator (`jear message`) ends the message with the trailer, so the
+# declaration rides where the forge keeps it.
+_TRAILER_RE = re.compile(r"^Task:\s*([a-z0-9_]+)/(\d+)\s*$")
+
 
 def branch_from_merge_subject(subject: str) -> str | None:
     m = _MERGE_BRANCH_RE.match(subject)
@@ -34,6 +41,24 @@ def branch_from_merge_subject(subject: str) -> str | None:
     m = _MERGE_PR_RE.match(subject)
     if m:
         return m.group(1)
+    return None
+
+
+def task_trailer(body: str) -> tuple[str, int] | None:
+    """The Task: trailer of a commit message body — (project, id), or None.
+
+    Git's semantics: trailers live in the message's last paragraph. A
+    mid-body mention never attributes — a PR template's bold ``**Task:**``
+    line and a note in prose are text, not a declaration. Only the final
+    block declares.
+    """
+    if not body:
+        return None
+    block = body.rstrip().rsplit("\n\n", 1)[-1]
+    for line in block.splitlines():
+        m = _TRAILER_RE.match(line.strip())
+        if m:
+            return (m.group(1), int(m.group(2)))
     return None
 
 

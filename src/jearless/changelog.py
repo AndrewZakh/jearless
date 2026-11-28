@@ -13,6 +13,27 @@ from jearless.errors import JearlessError
 
 _UNRELEASED = "Unreleased"
 
+# Trailer-attributed entries carry no branch kind (the squash bridge: the
+# forge's squash kills the branch name). "trailer" is not in DEFAULT_SECTIONS,
+# so render routes the entries to "Other" — unless an adopter defines a
+# "trailer" section deliberately.
+_TRAILER_SECTION = "trailer"
+
+
+def _records(cwd: Path, args: list[str]) -> list[list[str]]:
+    """(sha, parents, subject, body) per commit, read in one walk.
+
+    %B carries newlines, so the records terminate on NUL (probed live: git
+    emits one record per commit, the body never contains the separators).
+    """
+    out = gitwrap.out([*args, "--format=tformat:%H%x1f%P%x1f%s%x1f%B%x00"], cwd)
+    records = []
+    for record in out.split("\x00"):
+        record = record.strip("\n")
+        if record.strip():
+            records.append(record.split("\x1f", 3))
+    return records
+
 
 def _summary_for(reg: registry.Registry, project: str, num: int, slug: str | None) -> str:
     """The registry (union with archives) first; the branch slug is the fallback (README)."""
@@ -31,39 +52,80 @@ def _entries_from_history(
     aloud). A DIFFERENT branch naming the same task — a declared re-take —
     is new work: it lands in its own kind's section (a fix in "Fixed") even
     when the task shipped before the range.
+
+    Task tooling/64: attribution reads the full body. A ``Task: <project>/<id>``
+    trailer (git's last paragraph) wins over the subject; the subject regexes
+    stay the legacy fallback for real merges. A plain commit on the trunk's
+    first-parent chain attributes ONLY by trailer — the squash bridge — its
+    subject is never trusted.
     """
+    known = {(t.project, t.id) for t in reg.all()}
     sections: dict[str, list[tuple[tuple[str, int], str]]] = {}
     skipped = 0
     remerged = 0
     seen: set[tuple[str, int, str]] = set()
     shipped_before: set[tuple[str, int, str]] = set()
-    if from_tag:
-        for subject in gitwrap.lines(["log", from_tag, "--merges", "--format=%s"], cwd):
+
+    def _attr(subject: str, body: str, is_merge: bool):
+        """(project, num, type, slug, dedupe-unit) — or None: unattributed."""
+        tkey = state.task_trailer(body)
+        if tkey and tkey in known:
+            branch = state.branch_from_merge_subject(subject) if is_merge else None
+            m = cfg.match_branch(branch) if branch else None
+            if m and (m.group("project"), int(m.group("num"))) == tkey:
+                # the subject agrees with the declaration: its kind is honest
+                return (*tkey, m.group("type"), m.group("slug"), branch)
+            return (*tkey, None, None, f"trailer:{tkey[0]}/{tkey[1]}")
+        if is_merge:
             branch = state.branch_from_merge_subject(subject)
             m = cfg.match_branch(branch) if branch else None
             if m:
-                shipped_before.add((m.group("project"), int(m.group("num")), branch))
-    for subject in gitwrap.lines(["log", rev_range, "--merges", "--format=%s"], cwd):
-        branch = state.branch_from_merge_subject(subject)
-        m = cfg.match_branch(branch) if branch else None
-        if not m:
-            skipped += 1  # off-taxonomy merge: the visible hole, counted aloud
-            continue
-        project, num = m.group("project"), int(m.group("num"))
-        key = (project, num, branch)
+                key = (m.group("project"), int(m.group("num")))
+                return (*key, m.group("type"), m.group("slug"), branch)
+        return None
+
+    def _enter(a) -> None:
+        nonlocal remerged
+        project, num, type_, slug, unit = a
+        key = (project, num, unit)
         if key in shipped_before or key in seen:
             remerged += 1
-            continue
+            return
         seen.add(key)
-        summary = _summary_for(reg, project, num, m.group("slug"))
         line = cfg.line_template.format(
-            type=m.group("type"),
+            type=type_ or "",
             project=project,
             num=num,
-            slug=m.group("slug") or "",
-            summary=summary,
+            slug=slug or "",
+            summary=_summary_for(reg, project, num, slug),
         )
-        sections.setdefault(m.group("type"), []).append(((project, num), line))
+        sections.setdefault(type_ or _TRAILER_SECTION, []).append(((project, num), line))
+
+    if from_tag:
+        for sha, parents, subject, body in _records(cwd, ["log", from_tag, "--merges"]):
+            a = _attr(subject, body, is_merge=True)
+            if a:
+                shipped_before.add((a[0], a[1], a[4]))
+        for sha, parents, subject, body in _records(
+            cwd, ["log", "--first-parent", "--no-merges", from_tag]
+        ):
+            a = _attr(subject, body, is_merge=False)
+            if a:
+                shipped_before.add((a[0], a[1], a[4]))
+
+    for sha, parents, subject, body in _records(cwd, ["log", rev_range, "--merges"]):
+        a = _attr(subject, body, is_merge=True)
+        if a is None:
+            skipped += 1  # off-taxonomy merge: the visible hole, counted aloud
+            continue
+        _enter(a)
+    for sha, parents, subject, body in _records(
+        cwd, ["log", "--first-parent", "--no-merges", rev_range]
+    ):
+        a = _attr(subject, body, is_merge=False)
+        if a is None:
+            continue  # a plain commit without a trailer: doctor's business, not the changelog's
+        _enter(a)
     return sections, skipped, remerged
 
 

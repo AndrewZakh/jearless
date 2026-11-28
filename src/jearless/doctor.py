@@ -17,7 +17,7 @@ ledger"); the exit code counts only live findings, so doctor is gate-able.
 
 from pathlib import Path
 
-from jearless import config, forge, gitwrap, registry
+from jearless import config, forge, gitwrap, registry, state
 from jearless.errors import JearlessError
 from jearless.gitwrap import GitError
 from jearless.registry import HOMEDIR, REGISTRY_NAME, RegistryError
@@ -116,18 +116,31 @@ def _check_unattributed(
     ledger = _ledger(cwd)
     try:
         # first-parent only: WIP that arrived inside a --no-ff merge is attributed
-        # by that merge, not audited on its own
-        log = gitwrap.out(["log", "--first-parent", ref, "--format=%H%x1f%P%x1f%s"], cwd)
+        # by that merge, not audited on its own. Bodies ride along (task
+        # tooling/64): a Task: trailer declares the task the forge's squash
+        # delivered — the bridge commit is attributed, not a hole.
+        log = gitwrap.out(
+            ["log", "--first-parent", ref, "--format=tformat:%H%x1f%P%x1f%s%x1f%B%x00"],
+            cwd,
+        )
     except GitError:
         findings.append(f"main: no {ref} — nothing to audit yet")
         return 0
+    try:
+        known = {(t.project, t.id) for t in registry.load_all(cwd).all()}
+    except RegistryError:
+        known = set()  # a broken registry is reported above; trailers cannot attribute
     suppressed = 0
-    for line in log.splitlines():
-        if not line.strip():
+    for record in log.split("\x00"):
+        record = record.strip("\n")
+        if not record.strip():
             continue
-        sha, parents, subject = line.split("\x1f", 2)
+        sha, parents, subject, body = record.split("\x1f", 3)
         if len(parents.split()) > 1:
             continue  # a merge: attributed by its branch name
+        tkey = state.task_trailer(body)
+        if tkey and tkey in known:
+            continue  # the trailer names a registry task (tooling/64): attributed
         if _is_sanctioned_edit(cwd, sha):
             continue  # a sanctioned human edit: a task, the changelog, a snapshot
         if any(sha.startswith(entry) for entry in ledger):
@@ -135,7 +148,8 @@ def _check_unattributed(
             continue
         findings.append(
             f"main: unattributed commit {sha[:7]} \"{subject}\" "
-            f"(not a merge, not a registry edit) — squash or fast-forward suspected"
+            "(not a merge, no Task: trailer, not a registry edit)"
+            " — squash or fast-forward suspected"
         )
     return suppressed
 
