@@ -81,7 +81,7 @@ that lost its name is counted as the visible hole.
 | Retake (a new branch for a done task) | a new bar (`_fix`/`_chore` suffix) — rework is visible on the chart |
 | Octopus merge (2+ branches in one merge) | limited: attributed as a merge (doctor is silent), but no per-task bars and the changelog counts it as skipped — the visible hole. Prefer sequential merges |
 | Cherry-pick onto main | loud: a non-merge commit — doctor flags it unattributed (ledger or PR, not silence) |
-| Squash merge | loud: the branch name dies and the task key is lost — doctor flags it; the Task: trailer (`jear message`) is the adopters' bridge |
+| Squash merge | attributed when the commit declares its task — a `Task:` trailer (`jear message`) makes it a changelog entry and doctor-silent (tooling/64); without a trailer it stays loud: the branch name dies and the task key is lost |
 | Fast-forward | loud: no merge commit at all — doctor flags it |
 | Direct push (non-merge, non-sanctioned files) | loud: doctor flags it; under the PR-only constitution it's also platform-blocked |
 
@@ -102,6 +102,7 @@ Every loud row lands in the ledger with a cause when accepted — the same
 | An unread config key rots like an unread field | config sections are born with the feature that needs them |
 | In GitFlow mode a retake made before promotion went unnoticed — the reopen was measured against the trunk, where the merge did not exist yet (tooling/61) | the fork point is measured against every ref the merges are read from |
 | The registration ride's merge was invisible to the join — tooling/65 sat available for days while its work shipped, and the changelog skipped it (registry/<project>-<num> does not parse) | ride branches take the parseable registry/<project>/<num> form; the allocator protects the ids the ride branches claim (tooling/69) |
+| The merge subject is editable in the forge UI and forgeable by hand; a squashed delivery loses the branch name entirely — the adopters' squash-mandated orgs had no attribution at all | attribution reads the full body: a `Task: <project>/<id>` trailer in the message's last paragraph wins; the subject regexes stay the legacy fallback for real merges; a plain commit's subject is never trusted (tooling/64) |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
 | Auto-committed reports resurrect the post-merge writer — a committed live report lies between runs, and a CI commit-back breaks "nothing automatic writes main" | dashboards ride the forge (PR/MR comments), pages or job artifacts; the tree holds only the release-time frozen slice (tooling/14, reaffirmed 2026-11-20) |
 | Direct pushes to a protected branch are the industry's antipattern — "таких проектов просто нет"; five of five of our scars were direct-to-main sins | main accepts changes only through PRs/MRs; the release rides one too; the emergency bypass is explicit and every use is a ledger scar (tooling/54) |
