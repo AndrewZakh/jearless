@@ -97,6 +97,7 @@ def compute(
     done: dict[tuple[str, int], set[str]] = {}  # key -> shas of done-merges, all refs
     # trunk + every family branch (task tooling/67)
     refs_to_walk = cfg.integration_refs(cwd, remote)
+    known = {(t.project, t.id) for t in reg.all()}
     for ref in refs_to_walk:
         try:
             merges = gitwrap.lines(["log", ref, "--merges", "--format=%H%x1f%s"], cwd)
@@ -110,6 +111,31 @@ def compute(
             m = cfg.match_branch(branch)
             if m:
                 done.setdefault((m.group("project"), int(m.group("num"))), set()).add(sha)
+
+    # the trailer walk (task tooling/74, the hostile review's P0): commits on
+    # the delivery refs' first-parent chains declaring their task — the squash
+    # bridge reaches the BOARD, not just the changelog and doctor, and a merge
+    # whose subject the reviewer edited away still closes its task via the
+    # body. first-parent, merges included; a ghost trailer (no such task)
+    # declares nothing; the merge walk above stays the legacy path. REJECTED
+    # still wins in the view below — the declaration is about delivery, not
+    # about the human's latest word.
+    for ref in refs_to_walk:
+        try:
+            out = gitwrap.out(
+                ["log", "--first-parent", ref, "--format=tformat:%H%x1f%B%x00"],
+                cwd,
+            )
+        except GitError:
+            continue
+        for record in out.split("\x00"):
+            record = record.strip("\n")
+            if not record.strip():
+                continue
+            sha, body = record.split("\x1f", 1)
+            tkey = task_trailer(body)
+            if tkey and tkey in known:
+                done.setdefault(tkey, set()).add(sha)
 
     # the sibling tips that matter for reopen (task tooling/67): non-trunk
     # delivery refs whose tip carries UNPROMOTED work — a retake forked from
