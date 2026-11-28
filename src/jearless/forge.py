@@ -133,7 +133,7 @@ def add_ride(
     if not gitwrap.is_repo(cwd):
         return False
     origin_branch = gitwrap.out(["symbolic-ref", "--short", "HEAD"], cwd)
-    prefix = f"registry/{project}-"
+    prefix = f"registry/{project}/"  # parseable: type/project/num (task tooling/69)
     try:
         heads = gitwrap.remote_heads(cwd, remote)
     except gitwrap.GitError:

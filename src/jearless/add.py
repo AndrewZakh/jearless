@@ -42,7 +42,7 @@ def _max_from_branches(cwd: Path, cfg: config.Config, project: str, remote: str)
     except gitwrap.GitError:
         return None
     best = 0
-    ride_prefix = f"registry/{project}-"
+    ride_prefix = f"registry/{project}/"  # parseable ride branches (task tooling/69)
     ride_branches: list[str] = []
     for name in heads:
         m = cfg.match_branch(name)

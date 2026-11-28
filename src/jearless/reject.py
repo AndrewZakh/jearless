@@ -46,7 +46,7 @@ def run(cwd: Path, project: str, num: int, cause: str, remote: str = "origin") -
     forge.registry_pr(
         cwd,
         files=[str(reg_path)],
-        branch=f"registry/{project}-{num}-rejected",
+        branch=f"registry/{project}/{num}-rejected",  # parseable: num + slug (task tooling/69)
         title=f"tasks.yml: {project}/{num} rejected — {cause[:60]}",
         body=f"{project}/{num} rejected: {cause}\n\n(the registry mutation rides the forge — task tooling/53)",
         label="registry",
