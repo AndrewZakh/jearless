@@ -1,4 +1,9 @@
 # Changelog
+## v1.10.0 (2026-11-28)
+### Added
+- tooling-69: ride branches — registry/<project>/<num>: the join must read them
+# 1 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v1.9.0 (2026-11-28)
 ### Added
 - tooling-55: manifest: unglue the GitFlow promotion sentence
