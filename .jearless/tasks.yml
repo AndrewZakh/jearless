@@ -107,3 +107,6 @@ tasks:
         neutralizes the leading character. Backlogged by the owner's
         reviewer; recorded here so it is not a blind spot.
       story_points: 1
+    - id: 73
+      summary: events — the lifecycle as a versioned JSON stream
+      story_points: 3
