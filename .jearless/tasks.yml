@@ -62,3 +62,6 @@ tasks:
     - id: 70
       summary: validation hardening — the contract holds at the trust boundary
       story_points: 1
+    - id: 71
+      summary: polish pack — the hostile review's small findings
+      story_points: 1
