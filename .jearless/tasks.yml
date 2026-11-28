@@ -61,7 +61,33 @@ tasks:
       rejected: the work shipped via the registration ride whose merge the taxonomy cannot parse (registry/tooling-65, merged as pull request 34) - the week and month cuts are in main since then; the unit closes, the naming fix is tooling/69
     - id: 70
       summary: validation hardening — the contract holds at the trust boundary
+      description: |
+        The hostile review's live-reproduced gaps: id: true loads as a task
+        (True is an int - the known trap, missed in one spot), story_points
+        accepts -7 and 0 (registry and CLI --points), and a hand-edited
+        project name (Bad/../Name) loads and later reaches branch
+        construction. The contract must hold at the trust boundary - on
+        read: bool ids refused, story_points >= 1, project names validated
+        by PROJECT_RE at load, --points validated in the CLI.
       story_points: 1
     - id: 71
       summary: polish pack — the hostile review's small findings
+      description: |
+        The hostile review's small findings, bundled: the unreachable
+        "not implemented" tail and the PHASES relic (a missing dispatch
+        would die with a bare KeyError, not a JearlessError); the README's
+        "one binary" oversell (it is a Python package via pipx); SECURITY.md
+        pins the sprint-comment workflow pattern (fork PRs get a read-only
+        token - same-repo exposure only, pinned consciously); the sprint
+        number resolver reads one for-each-ref instead of N rev-parses.
+      story_points: 1
+    - id: 72
+      summary: CSV formula injection — neutralize in export
+      description: |
+        A summary starting with =, +, - or @ executes as a formula when the
+        CSV export opens in a spreadsheet. The formula is not in git or YAML
+        - it is free text a human pasted from mail or a ticket. Low
+        severity (needs both a hostile summary and Excel); the export
+        neutralizes the leading character. Backlogged by the owner's
+        reviewer; recorded here so it is not a blind spot.
       story_points: 1
