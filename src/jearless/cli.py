@@ -15,6 +15,7 @@ from jearless import board as board_mod
 from jearless import burndown as burndown_mod
 from jearless import changelog as changelog_mod
 from jearless import doctor as doctor_mod
+from jearless import events as events_mod
 from jearless import export as export_mod
 from jearless import find as find_mod
 from jearless import graph as graph_mod
@@ -181,6 +182,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--to", dest="to_boundary", default=None, metavar="BOUNDARY")
     p.add_argument("--output", default=None, metavar="FILE")
 
+    p = sub.add_parser(
+        "events",
+        help="the lifecycle as a versioned JSON stream — the consumer pulls and dedupes (task tooling/73)",
+    )
+    p.add_argument(
+        "--since",
+        default=None,
+        metavar="REF",
+        help="only events this ref does not contain yet — the consumer's last pull point",
+    )
+    p.add_argument("--format", default="json", help="json (the only format today)")
+
     return parser
 
 
@@ -229,6 +242,8 @@ def main(argv: list[str] | None = None) -> int:
                 to_boundary=args.to_boundary,
                 output=args.output,
             )
+        if args.command == "events":
+            return events_mod.run(cwd, since=args.since, fmt=args.format)
         # every command dispatches above (task tooling/71): the Phase 0
         # "not implemented" tail and the PHASES map retired with it
         if args.command == "log":
