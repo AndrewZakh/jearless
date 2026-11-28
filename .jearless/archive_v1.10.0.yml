@@ -1,0 +1,17 @@
+# Frozen history: tasks done as of v1.10.0, moved out of tasks.yml by `jear archive v1.10.0`.
+# Identity for analytics is the union of tasks.yml and the archives (registry.load_all).
+tasks:
+  tooling:
+    - id: 69
+      summary: 'ride branches — registry/<project>/<num>: the join must read them'
+      description: |
+        The defect the release-prep round surfaced (2026-11-28): the add-ride
+        branches are named registry/<project>-<num>, and the branch pattern
+        (type/project/num) cannot parse that form - a merged registration ride
+        is invisible to the join. Task tooling/65 sat available for days while
+        its work shipped, and the changelog skipped its merge as off-taxonomy.
+        The fix: ride branches become registry/<project>/<num> (three
+        segments, parseable) in forge.add_ride and reject, and the allocator's
+        ride-prefix parsing follows. The already-merged history stays as it
+        is - no rewrite.
+      story_points: 1

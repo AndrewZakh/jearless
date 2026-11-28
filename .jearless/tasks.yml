@@ -59,16 +59,3 @@ tasks:
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
       rejected: the work shipped via the registration ride whose merge the taxonomy cannot parse (registry/tooling-65, merged as pull request 34) - the week and month cuts are in main since then; the unit closes, the naming fix is tooling/69
-    - id: 69
-      summary: 'ride branches — registry/<project>/<num>: the join must read them'
-      description: |
-        The defect the release-prep round surfaced (2026-11-28): the add-ride
-        branches are named registry/<project>-<num>, and the branch pattern
-        (type/project/num) cannot parse that form - a merged registration ride
-        is invisible to the join. Task tooling/65 sat available for days while
-        its work shipped, and the changelog skipped its merge as off-taxonomy.
-        The fix: ride branches become registry/<project>/<num> (three
-        segments, parseable) in forge.add_ride and reject, and the allocator's
-        ride-prefix parsing follows. The already-merged history stays as it
-        is - no rewrite.
-      story_points: 1
