@@ -114,3 +114,47 @@ def test_registry_pr_manual_fallback_keeps_the_edit_staged(repo, monkeypatch, ca
     # the edit is committed on the branch (safe), never lost
     branch_tip = gitwrap.out(["rev-parse", "registry/p-2"], repo)
     assert "second" in gitwrap.out(["show", f"{branch_tip}:tasks.yml"], repo)
+
+
+def test_add_burst_rides_one_branch(repo, monkeypatch, capsys):
+    """task tooling/63: a burst of adds rides ONE registry branch — the second
+    add joins the open pull request instead of opening a conflicting one."""
+    import conftest as conftest_helpers
+    from jearless import add as add_mod
+
+    monkeypatch.setattr(forge_mod, "add_ride", conftest_helpers.real_add_ride)
+    opens = []
+    monkeypatch.setattr(forge_mod, "open_pr", lambda *a, **k: opens.append("https://example/pr/1") or opens[0])
+
+    assert add_mod.add(repo, "p", "first batch task", yes=True) == 2
+    assert add_mod.add(repo, "p", "second batch task") == 3
+
+    assert len(opens) == 1  # one pull request for the whole burst
+    assert "registry/p-2" in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
+    assert "registry/p-3" not in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
+    branch_file = gitwrap.out(["show", "origin/registry/p-2:tasks.yml"], repo)
+    assert "first batch task" in branch_file and "second batch task" in branch_file
+    # the ids on the branch are distinct: the allocator reads the branch's
+    # registry content, not the frozen branch name (caught by the live probe)
+    import re as _re
+    ids = _re.findall(r"- id: (\d+)", branch_file)
+    assert sorted(ids) == ["1", "2", "3"], ids
+    # the ride returned to the starting branch and left it clean
+    assert gitwrap.out(["symbolic-ref", "--short", "HEAD"], repo) == "main"
+    assert gitwrap.out(["status", "--porcelain"], repo) == ""
+    out = capsys.readouterr().out
+    assert "the entry joined the open pull request on registry/p-2" in out
+
+
+def test_add_burst_skips_rejected_branches(repo, monkeypatch):
+    """A rejected-task branch (registry/p-9-rejected) is closed history: the
+    burst does not ride it."""
+    import conftest as conftest_helpers
+    from jearless import add as add_mod
+
+    monkeypatch.setattr(forge_mod, "add_ride", conftest_helpers.real_add_ride)
+    gitwrap.run(["push", "-q", "origin", "main:refs/heads/registry/p-9-rejected"], repo)
+    assert add_mod.add(repo, "p", "a fresh task") == 2
+    heads = gitwrap.out(["ls-remote", "--heads", "origin"], repo)
+    assert "registry/p-2" in heads  # a fresh branch for the fresh burst
+    assert heads.count("registry/p-9-rejected") == 1  # untouched

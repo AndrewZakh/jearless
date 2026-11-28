@@ -42,10 +42,26 @@ def _max_from_branches(cwd: Path, cfg: config.Config, project: str, remote: str)
     except gitwrap.GitError:
         return None
     best = 0
+    ride_prefix = f"registry/{project}-"
+    ride_branches: list[str] = []
     for name in heads:
         m = cfg.match_branch(name)
         if m and m.group("project") == project:
             best = max(best, int(m.group("num")))
+        elif name.startswith(ride_prefix) and not name.endswith("-rejected"):
+            # the add-ride branches (task tooling/63): the branch name freezes
+            # at the burst's first add, but the entries inside grow — read the
+            # branch's registry file, not the name
+            ride_branches.append(name)
+    for name in ride_branches:
+        for home in (f"{config.HOMEDIR}/{REGISTRY_NAME}", REGISTRY_NAME):
+            try:
+                text = gitwrap.out(["show", f"{remote}/{name}:{home}"], cwd)
+            except gitwrap.GitError:
+                continue  # the registry lives in the other home on that branch
+            branch_reg = registry.from_text(text, name)
+            best = max(best, branch_reg.max_id(project))
+            break
     return best
 
 
@@ -121,14 +137,6 @@ def add(
 
     path = reg.path  # the resolved home (or the .jearless birth path)
     path.parent.mkdir(parents=True, exist_ok=True)  # the .jearless birth
-    yaml = YAML(typ="rt")  # round-trip: comments survive the append
-    yaml.indent(mapping=2, sequence=4, offset=2)
-    yaml.width = 100000  # never wrap a long summary
-    data = yaml.load(path) if path.exists() else None
-    if data is None:
-        data = yaml.load(_TEMPLATE)
-    if not isinstance(data, dict):
-        raise JearlessError(f"{REGISTRY_NAME}: expected a mapping at the top level")
     entry: dict = {"id": next_id, "summary": summary}
     if deps:
         entry["depends_on"] = [
@@ -136,20 +144,42 @@ def add(
         ]
     if points is not None:
         entry["story_points"] = points
-    data.setdefault("tasks", {}).setdefault(project, []).append(entry)
-    yaml.dump(data, path)
+
+    def apply_entry(cwd: Path) -> None:
+        """Append the entry to the registry file as it exists in the current
+        worktree — the ride calls this on its own branch, so a burst appends
+        to the branch's version, never clobbering the entries before it."""
+        yaml = YAML(typ="rt")  # round-trip: comments survive the append
+        yaml.indent(mapping=2, sequence=4, offset=2)
+        yaml.width = 100000  # never wrap a long summary
+        data = yaml.load(path) if path.exists() else None
+        if data is None:
+            data = yaml.load(_TEMPLATE)
+        if not isinstance(data, dict):
+            raise JearlessError(f"{REGISTRY_NAME}: expected a mapping at the top level")
+        data.setdefault("tasks", {}).setdefault(project, []).append(entry)
+        yaml.dump(data, path)
+
     if gitwrap.is_repo(cwd):
         print(f"task {project}/{next_id} added")
-        forge.registry_pr(
+        rode = forge.add_ride(
             cwd,
+            project=project,
+            num=next_id,
             files=[str(path)],
-            branch=f"registry/{project}-{next_id}",
             title=f"tasks.yml: {project}/{next_id} — {summary}",
             body=f"{project}/{next_id}: {summary}\n\n(the registry mutation rides the forge — task tooling/53)",
             label="registry",
             base=cfg.trunk_ref,
             trunk=cfg.trunk_ref,
+            remote=remote,
+            apply_entry=apply_entry,
         )
+        if not rode:
+            apply_entry(cwd)
+            gitwrap.run(["add", str(path)], cwd)
+            print("the registry edit is written and staged — open the pull request by hand")
     else:
+        apply_entry(cwd)
         print(f"task {project}/{next_id} added — the registry is written; commit it when the repo exists")
     return next_id
