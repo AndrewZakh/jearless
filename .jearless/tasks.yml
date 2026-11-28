@@ -48,7 +48,23 @@ tasks:
       story_points: 5
     - id: 64
       summary: 'trailer attribution — changelog and doctor attribute commits via Task: trailers'
+      description: |
+        The adopter bridge for squash-mandated orgs (the forge's squash
+        button kills the branch name - the task key dies with it). If a
+        commit carries a Task: <project>/<id> trailer, changelog/doctor
+        attribute it to the task even without a merge commit naming the
+        branch. jear message <id> generates the trailer; this task teaches
+        the readers. Design round approved 2026-11-24; scoped separately
+        from the reporter stack.
+        The hostile review's P0 direction (2026-11-28): the merge subject is
+        editable in the forge UI and forgeable by hand - the parser reads %B
+        (the full body) and attributes via Task: trailers first, keeping the
+        subject regexes as the legacy fallback. A configurable merge_regex
+        for other forges is consciously deferred - the priority is hardening
+        the GitHub mechanics. The tip-commit-in-take variant (take stops
+        being zero-commit) is a separate design decision, out of this scope.
       story_points: 2
+
     - id: 65
       summary: rhythm — the week and month cuts
       description: |
@@ -59,3 +75,57 @@ tasks:
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
       rejected: the work shipped via the registration ride whose merge the taxonomy cannot parse (registry/tooling-65, merged as pull request 34) - the week and month cuts are in main since then; the unit closes, the naming fix is tooling/69
+    - id: 70
+      summary: validation hardening — the contract holds at the trust boundary
+      description: |
+        The hostile review's live-reproduced gaps: id: true loads as a task
+        (True is an int - the known trap, missed in one spot), story_points
+        accepts -7 and 0 (registry and CLI --points), and a hand-edited
+        project name (Bad/../Name) loads and later reaches branch
+        construction. The contract must hold at the trust boundary - on
+        read: bool ids refused, story_points >= 1, project names validated
+        by PROJECT_RE at load, --points validated in the CLI.
+      story_points: 1
+    - id: 71
+      summary: polish pack — the hostile review's small findings
+      description: |
+        The hostile review's small findings, bundled: the unreachable
+        "not implemented" tail and the PHASES relic (a missing dispatch
+        would die with a bare KeyError, not a JearlessError); the README's
+        "one binary" oversell (it is a Python package via pipx); SECURITY.md
+        pins the sprint-comment workflow pattern (fork PRs get a read-only
+        token - same-repo exposure only, pinned consciously); the sprint
+        number resolver reads one for-each-ref instead of N rev-parses.
+      story_points: 1
+    - id: 72
+      summary: CSV formula injection — neutralize in export
+      description: |
+        A summary starting with =, +, - or @ executes as a formula when the
+        CSV export opens in a spreadsheet. The formula is not in git or YAML
+        - it is free text a human pasted from mail or a ticket. Low
+        severity (needs both a hostile summary and Excel); the export
+        neutralizes the leading character. Backlogged by the owner's
+        reviewer; recorded here so it is not a blind spot.
+      story_points: 1
+    - id: 73
+      summary: events — the lifecycle as a versioned JSON stream
+      description: |
+        The parked Event Model hypothesis (the third review's section 4),
+        now with the design settled: a deterministic PULL-based export
+        dissolves four of the six integration questions - idempotency
+        (stable event ids = type + key + sha), ordering (git topo-order),
+        replay (re-run the command), partial failure (no delivery: the
+        consumer pulls, jearless never pushes). Source of truth: the export
+        is read-only; consumers never write back. Schema evolution: a
+        version envelope.
+        The events, derived from the existing machinery (no new walks):
+        task.created (the registry birth commit), task.started (the
+        branch's first own commit), task.merged (the first-arrival merge),
+        task.returned (each re-merge beyond the first), task.rejected (the
+        commit that added the rejected field), sprint.opened (the plan's
+        git birth), release.tagged (the annotated tag).
+        jear events --since REF --format json; the consumer pulls and
+        dedupes by id. The Prometheus/Grafana integration is an external
+        consumer of this stream (the review's section 3.5 - the core stays
+        narrow).
+      story_points: 3

@@ -1,0 +1,15 @@
+plan:
+  goal: the data boundary — the events stream, the attribution hardening, the multi-branch {n}, and the small fixes
+  tasks:
+    - task: tooling/70
+      planned: {start: 2026-11-28, end: 2026-11-28}
+    - task: tooling/71
+      planned: {start: 2026-11-28, end: 2026-11-28}
+    - task: tooling/72
+      planned: {start: 2026-11-28, end: 2026-11-29}
+    - task: tooling/64
+      planned: {start: 2026-11-29, end: 2026-11-30}
+    - task: tooling/73
+      planned: {start: 2026-11-29, end: 2026-12-01}
+    - task: tooling/67
+      planned: {start: 2026-12-01, end: 2026-12-03}
