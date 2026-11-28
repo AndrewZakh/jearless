@@ -1,0 +1,71 @@
+%%{init: {"themeCSS": "svg{background-color:#0d1117} text{fill:#e6edf3} .section0,.section1,.section2,.section3{fill:transparent} .task,.rect{fill:#58a6ff;stroke:#1f6feb} .grid .tick line{stroke:#30363d} .grid path{stroke:#30363d}"}}%%
+gantt
+    title jearless — snapshot v1.9.0
+    dateFormat YYYY-MM-DDTHH:mm:ss
+    axisFormat %d.%m %H:%M
+%% visibility floor: 15:22:00 per bar (63 bar(s) stretched) — exact times live in git
+    section tooling
+    take — claim a task with a single push :tooling_2, 2026-11-06T20:14:45, 2026-11-07T11:36:45
+    add — append a task to the registry :tooling_1, 2026-11-06T20:16:11, 2026-11-07T11:38:11
+    sprint — a join of three sources :tooling_3, 2026-11-06T20:18:06, 2026-11-07T11:40:06
+    changelog — a generator over merge commits :tooling_4, 2026-11-06T20:34:25, 2026-11-07T11:56:25
+    doctor — the visible hole :tooling_5, 2026-11-06T20:35:40, 2026-11-07T11:57:40
+    timeline — live and snapshot :tooling_6, 2026-11-06T20:44:07, 2026-11-07T12:06:07
+    retro — plan versus actual :tooling_7, 2026-11-06T20:45:03, 2026-11-07T12:07:03
+    release step — tag  changelog and timeline snapshot in one move :tooling_9, 2026-11-06T21:36:41, 2026-11-07T12:58:41
+    add — duplicate guard  keyword-overlap warning and confirmation :tooling_10, 2026-11-07T06:57:24, 2026-11-07T22:19:24
+    graph — the dependency view  task links and a mermaid flowchart :tooling_12, 2026-11-14T11:48:59, 2026-11-15T03:10:59
+    sprint — markdown dashboard  --write with default path :tooling_13, 2026-11-14T12:09:19, 2026-11-15T03:31:19
+    double-merge resilience — the same branch merged twice after a restore :tooling_11, 2026-11-14T12:26:23, 2026-11-15T03:48:23
+    sprint dashboard on every MR — a GitHub Action posting a sticky PR comment :tooling_14, 2026-11-14T12:41:18, 2026-11-15T04:03:18
+    archive — moving done tasks out :tooling_8, 2026-11-14T13:11:57, 2026-11-15T04:33:57
+    housekeeping — all artifacts under .jearless/ (registry move  resolution order) :tooling_15, 2026-11-14T20:48:11, 2026-11-15T12:10:11
+    planning — the sprint plan contract  plan/sprint_N.yml :tooling_16, 2026-11-14T21:00:10, 2026-11-15T12:22:10
+    report — the release-time PM snapshot (velocity  cycle time  rework) :tooling_17, 2026-11-14T21:13:50, 2026-11-15T12:35:50
+    RAG — the red-yellow-green view over plan x state  on demand :tooling_18, 2026-11-14T21:25:37, 2026-11-15T12:47:37
+    take — typed branches  --type fix|chore|feature (default feature) :tooling_19, 2026-11-15T05:27:02, 2026-11-15T20:49:02
+    retro — join plan/sprint_N.yml instead of the authored md gantt (unification tail) :tooling_20, 2026-11-15T06:01:49, 2026-11-15T21:23:49
+    logo — vector redraw of the mascot :tooling_24, 2026-11-16T20:11:26, 2026-11-20T09:59:46
+    registry race — test two concurrent adds and document the resolution flow :tooling_21, 2026-11-16T20:24:21, 2026-11-17T11:46:21
+    mailmap — normalize author identity for attribution (%aN) :tooling_22, 2026-11-16T20:32:06, 2026-11-17T11:54:06
+    release checklist — publish to PyPI after jear release :tooling_23, 2026-11-16T20:39:09, 2026-11-17T12:01:09
+    ci — a test gate workflow  pytest and ruff on pull requests :tooling_28, 2026-11-17T00:04:28, 2026-11-17T15:26:28
+    doctor_ignore — the scar ledger for accepted holes :tooling_31, 2026-11-17T00:18:00, 2026-11-17T15:40:00
+    windows — reconcile the OS-Independent claim with the tzset conftest :tooling_29, 2026-11-17T04:48:20, 2026-11-17T20:10:20
+    board — the kanban view over the canonical states :tooling_25, 2026-11-17T04:59:31, 2026-11-17T20:21:31
+    retake — reopening done tasks with a declared kind :tooling_26, 2026-11-17T05:42:29, 2026-11-17T21:04:29
+    burndown — sprint burn-down and velocity trend via xychart :tooling_27, 2026-11-17T06:44:46, 2026-11-17T22:06:46
+    docs — storefront restructure  manifest  contributing  examples  horizons :tooling_30, 2026-11-17T07:15:40, 2026-11-17T22:37:40
+    integration_ref — the GitFlow mode for done-detection and live views :tooling_32, 2026-11-18T01:41:50, 2026-11-18T17:03:50
+    trunk_ref and integration_ref templates — master and release-sN support :tooling_33, 2026-11-18T02:10:14, 2026-11-18T17:32:14
+    find — search across the eternal registry :tooling_35, 2026-11-18T23:24:42, 2026-11-19T14:46:42
+    rejected — the fourth derived state and the reject command :tooling_38, 2026-11-19T05:06:17, 2026-11-19T20:28:17
+    storefront polish — plan  EngineerOps in English  cookbook rename :tooling_39, 2026-11-19T07:42:50, 2026-11-19T23:04:50
+    doctor acknowledge — the ledger UX command :tooling_36, 2026-11-19T12:42:10, 2026-11-20T04:04:10
+    housekeeping pack — doctor in the CI gate  xcf ignored  take blocked-warning :tooling_37, 2026-11-19T12:43:59, 2026-11-20T04:05:59
+    archive-aware identity — take and sprint over the union :tooling_40, 2026-11-20T08:58:15, 2026-11-21T00:20:15
+    duplicate keys — the loader refuses project/id collisions :tooling_41, 2026-11-20T09:02:06, 2026-11-21T00:24:06
+    retro sprint window — birth(N) to birth(N+1) :tooling_42, 2026-11-20T09:29:44, 2026-11-21T00:51:44
+    honest metrics — fix share  return rate  backlog growth :tooling_43, 2026-11-20T09:38:45, 2026-11-21T01:00:45
+    docs pack — the review round :tooling_44, 2026-11-20T09:41:55, 2026-11-21T01:03:55
+    next-ID allocation over the union — add collides with archived ids :tooling_46, 2026-11-20T10:17:20, 2026-11-21T01:39:20
+    report first-arrival by history order — the fix merges first  the swap :tooling_47, 2026-11-20T10:40:40, 2026-11-21T02:02:40
+    sprint-scoped CI dashboards — GitLab analog and examples :tooling_50, 2026-11-20T10:50:47, 2026-11-21T02:12:47
+    sprint-scoped CI dashboards — GitLab analog and examples :tooling_50_fix, 2026-11-20T11:12:20, 2026-11-21T02:34:20
+    retro plan stamp — name the version actually read :tooling_48, 2026-11-20T12:08:40, 2026-11-21T03:30:40
+    local polish — pre-commit dup check  README take wording  tag recovery :tooling_49, 2026-11-20T12:17:49, 2026-11-21T03:39:49
+    release two-phase — the artifacts ride a PR :tooling_51, 2026-11-20T16:14:34, 2026-11-21T07:36:34
+    registry mutations ride PRs — add  reject  archive :tooling_52, 2026-11-20T16:31:41, 2026-11-21T07:53:41
+    auto-PR via the forge API — labels on  self-opening :tooling_53, 2026-11-20T17:11:16, 2026-11-21T08:33:16
+    the constitution amendment — PR-only main  the 1.0 ceremony :tooling_54, 2026-11-20T17:30:59, 2026-11-21T08:52:59
+    reporter scaffold — Points-in-time and review latency :tooling_56, 2026-11-24T18:44:18, 2026-11-25T10:06:18
+    rhythm — commit-hour maps and assignment hints :tooling_57, 2026-11-24T19:06:42, 2026-11-25T10:28:42
+    jear prune and jear message — the lifecycle and trailer commands :tooling_58, 2026-11-25T00:54:57, 2026-11-25T16:16:57
+    authorship diagram — lines by author  volume not value :tooling_59, 2026-11-25T01:02:40, 2026-11-25T16:24:40
+    merge semantics matrix — documented and edge-tested :tooling_60_fix, 2026-11-25T01:16:30, 2026-11-25T16:38:30
+    manifest  unglue the GitFlow promotion sentence :tooling_55, 2026-11-25T04:07:20, 2026-11-25T19:29:20
+    GitFlow edge verification — partial promotion and re-integration :tooling_61, 2026-11-25T04:27:01, 2026-11-25T19:49:01
+    sprint-{n}  follow the integration branch that exists :tooling_66, 2026-11-25T05:50:05, 2026-11-25T21:12:05
+    export — task data as CSV and JSON :tooling_68, 2026-11-27T23:09:51, 2026-11-28T14:31:51
+    family docs pack — the pattern and the proposal framing :tooling_62, 2026-11-27T23:31:50, 2026-11-28T14:53:50
+    batch registry edits — one ride for N adds :tooling_63, 2026-11-27T23:54:54, 2026-11-28T15:16:54
