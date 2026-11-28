@@ -115,3 +115,22 @@ def test_sequential_burst_joins_the_open_branch(two_clones, monkeypatch, capsys)
     assert "first of the burst" in branch_file and "second of the burst" in branch_file
     # the ride returned to main and the trunk never saw the burst directly
     assert gitwrap.lines(["log", "origin/main", "--merges", "--format=%s"], alpha) == []
+
+
+def test_three_add_burst_allocates_from_the_content(two_clones, monkeypatch, capsys):
+    """Task tooling/78: the ride branch's NAME freezes at the burst's first
+    add, its content grows with every add. The parseable name (tooling/69)
+    made the branch match the work-branch pattern, and the name-based read
+    buried the content-read — the third add allocated the taken id again.
+    A registry-type branch is read by content, never by name."""
+    monkeypatch.setattr(forge_module, "add_ride", conftest_helpers.real_add_ride)
+
+    alpha, _beta = two_clones
+    assert add_mod.add(alpha, "p", "first of the burst") == 2
+    assert add_mod.add(alpha, "p", "second of the burst") == 3
+    assert add_mod.add(alpha, "p", "third of the burst") == 4  # the name says 2; the content says 3
+
+    branch_file = gitwrap.out(["show", "origin/registry/p/2:tasks.yml"], alpha)
+    assert "third of the burst" in branch_file
+    ids = [line.strip() for line in branch_file.splitlines() if line.strip().startswith("- id:")]
+    assert len(ids) == len(set(ids))  # no duplicates
