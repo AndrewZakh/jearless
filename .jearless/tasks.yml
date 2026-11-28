@@ -59,3 +59,6 @@ tasks:
         applies; the labels sort lexicographically = chronologically.
       story_points: 1
       rejected: the work shipped via the registration ride whose merge the taxonomy cannot parse (registry/tooling-65, merged as pull request 34) - the week and month cuts are in main since then; the unit closes, the naming fix is tooling/69
+    - id: 70
+      summary: validation hardening — the contract holds at the trust boundary
+      story_points: 1
