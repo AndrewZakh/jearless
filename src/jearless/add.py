@@ -43,12 +43,18 @@ def _max_from_branches(cwd: Path, cfg: config.Config, project: str, remote: str)
     for name in heads:
         m = cfg.match_branch(name)
         if m and m.group("type") == "registry" and m.group("project") == project:
-            # the ride branch (task tooling/69): its NAME freezes at the
-            # burst's first add, but the entries inside grow — read the
-            # registry file, not the name (the tooling/63 content-read; the
-            # 69 rename had silently buried it under the work-branch match,
-            # task tooling/78)
-            ride_branches.append(name)
+            if name.endswith("-rejected"):
+                # closed history: the NAME is the claim (task tooling/63) —
+                # its content is just the trunk's registry, the number it
+                # claims must stay taken
+                best = max(best, int(m.group("num")))
+            else:
+                # the live ride branch (task tooling/69): its NAME freezes at
+                # the burst's first add, but the entries inside grow — read
+                # the registry file, not the name (the tooling/63
+                # content-read; the 69 rename had silently buried it under
+                # the work-branch match, task tooling/78)
+                ride_branches.append(name)
         elif m and m.group("project") == project:
             best = max(best, int(m.group("num")))
         elif name.startswith(ride_prefix) and not name.endswith("-rejected"):
