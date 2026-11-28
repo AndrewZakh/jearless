@@ -95,9 +95,8 @@ def compute(
         live.setdefault(key, []).append(name)
 
     done: dict[tuple[str, int], set[str]] = {}  # key -> shas of done-merges, all refs
-    refs_to_walk = [f"{remote}/{cfg.trunk_ref}"]
-    if cfg.integration_ref:
-        refs_to_walk.append(cfg.live_ref(cwd, remote))  # GitFlow mode (task tooling/32)
+    # trunk + every family branch (task tooling/67)
+    refs_to_walk = cfg.integration_refs(cwd, remote)
     for ref in refs_to_walk:
         try:
             merges = gitwrap.lines(["log", ref, "--merges", "--format=%H%x1f%s"], cwd)
@@ -112,6 +111,19 @@ def compute(
             if m:
                 done.setdefault((m.group("project"), int(m.group("num"))), set()).add(sha)
 
+    # the sibling tips that matter for reopen (task tooling/67): non-trunk
+    # delivery refs whose tip carries UNPROMOTED work — a retake forked from
+    # the newest sprint carries that tip whole, while the done merge may rest
+    # on an older unpromoted sibling, outside the fork base. A sibling whose
+    # tip is the trunk's own history (promoted, or an empty newborn at the
+    # trunk's tip) is trunk-equivalent: carrying it means "forked from the
+    # trunk's past", the pre-merge leftover the stale rule protects.
+    trunk_ref = f"{remote}/{cfg.trunk_ref}"
+    sibling_tips = [
+        r for r in refs_to_walk
+        if r != trunk_ref and not gitwrap.is_ancestor(r, trunk_ref, cwd)
+    ]
+
     def _reopened(branch_name: str, done_shas: set[str]) -> bool:
         """Derived reopen (task tooling/26) by SHA, not clocks: the live branch
         forked at-or-after ANY done-merge of the task (a done sha is an ancestor
@@ -122,13 +134,25 @@ def compute(
         The fork point is taken against every ref the merges were read from
         (task tooling/61): in GitFlow mode a merge may sit on the integration
         branch alone, before any promotion — measured only against the trunk
-        it would be invisible and a live retake would stay done."""
+        it would be invisible and a live retake would stay done.
+
+        Task tooling/67 adds the sibling case: a retake forked from the newest
+        sprint carries that sprint's tip while the done merge rests on an
+        older unpromoted sibling — outside the fork base's history, invisible
+        to the fork-point rule. A branch carrying a sibling sprint's tip whole
+        reopens too. The trunk's tip is deliberately not a sibling: a branch
+        forked from the trunk's past is the pre-merge leftover the stale rule
+        protects, and no SHA can tell it from a retake."""
+        rbranch = f"{remote}/{branch_name}"
         for ref in refs_to_walk:
             try:
-                base = gitwrap.out(["merge-base", ref, branch_name], cwd)
+                base = gitwrap.out(["merge-base", ref, rbranch], cwd)
             except GitError:
                 continue  # no common history with this ref — try the next
             if any(gitwrap.is_ancestor(done_sha, base, cwd) for done_sha in done_shas):
+                return True
+        for ref in sibling_tips:
+            if gitwrap.is_ancestor(ref, rbranch, cwd):
                 return True
         return False
 

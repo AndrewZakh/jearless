@@ -41,66 +41,72 @@ class Config:
         return self.branch_pattern.match(name)
 
     def live_ref(self, cwd: Path, remote: str) -> str:
-        """The tip unreleased work integrates into. Trunk: origin/<trunk_ref>.
-        GitFlow: origin/<integration_ref> with {n} resolved to the latest plan
-        number whose branch exists — and no plans committed means trunk
-        behavior everywhere (the same rule the board and the burndown follow).
+        """The tip unreleased work forks from. Trunk: origin/<trunk_ref>.
+        GitFlow: the integration branch — for a {n} pattern, the NEWEST
+        UNPROMOTED family branch (task tooling/67); when every family branch
+        is promoted, the trunk. A fixed name stays as-is.
 
-        With {n} the plan number alone is not enough (task tooling/66). A
-        sprint's plan is often committed before its branch is created; reading
-        the number blindly then points at a branch that does not exist, and
-        jear take refuses while the work on the previous branch drops out of
-        view. So {n} walks the plan numbers from the newest down and stops at
-        the first whose branch is there.
-
-        "Is there" is read from the local remote refs, not from the remote
-        itself: this function stays free of network calls. The live commands
-        fetch first, so for them the answer is current. Without a fetch it is
-        as fresh as the last one — the same as any other history read.
+        The resolution is branch-driven, not plan-driven: branches matching
+        the pattern speak for themselves. "Is there" is read from the local
+        remote refs, not from the remote itself: this function stays free of
+        network calls. The live commands fetch first, so for them the answer
+        is current. Without a fetch it is as fresh as the last one — the same
+        as any other history read.
         """
         if not self.integration_ref:
             return f"{remote}/{self.trunk_ref}"
-        ref = self.integration_ref
-        if "{n}" in ref:
-            resolved = _resolve_sprint_number(cwd, remote, ref)
-            if resolved is None:
+        if _FAMILY_SLOT in self.integration_ref:
+            family = _family_branches(cwd, remote, self.integration_ref)
+            if not family:
                 return f"{remote}/{self.trunk_ref}"
-            ref = ref.replace("{n}", str(resolved))
-        return f"{remote}/{ref}"
+            return f"{remote}/{family[0][1]}"  # newest first
+        return f"{remote}/{self.integration_ref}"
 
-
-def _resolve_sprint_number(cwd: Path, remote: str, pattern: str) -> int | None:
-    """The newest plan number whose branch exists; None when none does."""
-    # one for-each-ref returns every remote branch in a single call
-    # (the hostile review's P2: N rev-parse subprocesses on hot paths)
-    names = set(
-        gitwrap.lines(
+    def integration_refs(self, cwd: Path, remote: str) -> list[str]:
+        """Every ref the delivery surfaces are read from: the trunk plus, in
+        GitFlow mode, the integration branch. For a {n} pattern that is EVERY
+        family branch (task tooling/67) — a sprint forked from the trunk while
+        its predecessor is unpromoted would otherwise vanish from done. A
+        fixed name stays single. A promoted member adds nothing to the union
+        walk (its history is the trunk's), and an empty newborn sprint — a
+        branch at the trunk's tip — still counts: it is the active surface,
+        not a delivered one."""
+        trunk = f"{remote}/{self.trunk_ref}"
+        if not self.integration_ref:
+            return [trunk]
+        if _FAMILY_SLOT in self.integration_ref:
+            return [trunk] + [
+                f"{remote}/{name}" for _num, name in _family_branches(cwd, remote, self.integration_ref)
+            ]
+        # a fixed branch that does not exist yet contributes nothing
+        names = set(gitwrap.lines(
             ["for-each-ref", "--format=%(refname:short)", f"refs/remotes/{remote}"], cwd
-        )
-    )
-    for number in sorted(plan_numbers(cwd), reverse=True):
-        if f"{remote}/{pattern.replace('{n}', str(number))}" in names:
-            return number
-    return None
+        ))
+        fixed = f"{remote}/{self.integration_ref}"
+        return [trunk] + ([fixed] if fixed in names else [])
 
 
-def plan_numbers(cwd: Path) -> list[int]:
-    """Every plan number under .jearless/plans/ (empty when none)."""
-    plans = cwd / HOMEDIR / "plans"
-    found: list[int] = []
-    if plans.exists():
-        for path in plans.glob("sprint_*.yml"):
-            m = re.match(r"sprint_(\d+)\.yml", path.name)
-            if m:
-                found.append(int(m.group(1)))
-    return found
+_FAMILY_SLOT = "{n}"
 
 
-def latest_plan_number(cwd: Path) -> int:
-    """max plan number across .jearless/plans/ (0 when none) — the CURRENT
-    sprint; next_plan_number in plan.py is this + 1 (kept there, imported here
-    would be a cycle)."""
-    return max(plan_numbers(cwd), default=0)
+def _family_branches(cwd: Path, remote: str, pattern: str) -> list[tuple[int, str]]:
+    """Every branch matching the {n} pattern, newest first — the {n} slot
+    takes digits (task tooling/67). No promotion filter: a promoted member
+    adds nothing to a union walk, and an empty newborn sprint must remain
+    the fork target."""
+    parts = pattern.split(_FAMILY_SLOT)
+    rx = re.compile(re.escape(parts[0]) + r"(\d+)" + "".join(re.escape(p) for p in parts[1:]))
+    prefix = f"{remote}/"
+    family: list[tuple[int, str]] = []
+    for name in gitwrap.lines(
+        ["for-each-ref", "--format=%(refname:short)", f"refs/remotes/{remote}"], cwd
+    ):
+        if not name.startswith(prefix):
+            continue
+        m = rx.fullmatch(name[len(prefix):])
+        if m:
+            family.append((int(m.group(1)), name[len(prefix):]))
+    return sorted(family, reverse=True)
 
 
 def _compile_branch_pattern(pattern: str) -> re.Pattern:
