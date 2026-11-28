@@ -6,3 +6,4 @@ d200781  # the day-granularity retro filter — superseded by 1834299, content s
 c0a9722  # initial commit — the egg before the chicken
 cf1d514  # the board-parser restore — committed directly to main (branch-before-commit slip, caught by doctor)
 f98484d  # the per-task journal — committed directly to main (branch-before-commit slip #3, caught by doctor)
+d1d64ae  # the hostile review's small fixes - the agent committed and pushed straight to main while on the wrong branch; the work is sound, the process broke. The sixth scar.
