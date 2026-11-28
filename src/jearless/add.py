@@ -43,16 +43,25 @@ def _max_from_branches(cwd: Path, cfg: config.Config, project: str, remote: str)
         return None
     best = 0
     ride_prefix = f"registry/{project}-"
+    ride_branches: list[str] = []
     for name in heads:
         m = cfg.match_branch(name)
         if m and m.group("project") == project:
             best = max(best, int(m.group("num")))
-        elif name.startswith(ride_prefix):
-            # the add-ride branches (task tooling/63): registry/<project>-<num>
-            # carries task <num> while its pull request is open
-            tail = name[len(ride_prefix):]
-            if tail.isdigit():
-                best = max(best, int(tail))
+        elif name.startswith(ride_prefix) and not name.endswith("-rejected"):
+            # the add-ride branches (task tooling/63): the branch name freezes
+            # at the burst's first add, but the entries inside grow — read the
+            # branch's registry file, not the name
+            ride_branches.append(name)
+    for name in ride_branches:
+        for home in (f"{config.HOMEDIR}/{REGISTRY_NAME}", REGISTRY_NAME):
+            try:
+                text = gitwrap.out(["show", f"{remote}/{name}:{home}"], cwd)
+            except gitwrap.GitError:
+                continue  # the registry lives in the other home on that branch
+            branch_reg = registry.from_text(text, name)
+            best = max(best, branch_reg.max_id(project))
+            break
     return best
 
 

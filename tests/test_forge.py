@@ -134,6 +134,11 @@ def test_add_burst_rides_one_branch(repo, monkeypatch, capsys):
     assert "registry/p-3" not in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
     branch_file = gitwrap.out(["show", "origin/registry/p-2:tasks.yml"], repo)
     assert "first batch task" in branch_file and "second batch task" in branch_file
+    # the ids on the branch are distinct: the allocator reads the branch's
+    # registry content, not the frozen branch name (caught by the live probe)
+    import re as _re
+    ids = _re.findall(r"- id: (\d+)", branch_file)
+    assert sorted(ids) == ["1", "2", "3"], ids
     # the ride returned to the starting branch and left it clean
     assert gitwrap.out(["symbolic-ref", "--short", "HEAD"], repo) == "main"
     assert gitwrap.out(["status", "--porcelain"], repo) == ""
