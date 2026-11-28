@@ -132,3 +132,4 @@ tasks:
     - id: 74
       summary: trailers in the state join — the board sees trailer-declared deliveries
       story_points: 2
+      description: "The follow-up flagged by tooling/64's review: the state join derives done only from a merge commit naming the task (the README state table). A squash-mandated org's board shows the task available forever while the changelog already credits its trailer-declared delivery.\nScope: the join learns the trailer as a done signal — a trunk first-parent commit carrying Task: p/N; reopen measures live branches against those shas; the README state table and the board follow.\nOpen questions for the design: the GitFlow integration chain (is a trailer on the integration branch a done signal pre-promotion?), the interplay with rejected and archived tasks, and whether the reporter stack's cycle time counts trailer deliveries (scoped out of tooling/64)."
