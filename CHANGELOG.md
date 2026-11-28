@@ -1,4 +1,20 @@
 # Changelog
+## v1.9.0 (2026-11-28)
+### Added
+- tooling-55: manifest: unglue the GitFlow promotion sentence
+- tooling-56: reporter scaffold — Points-in-time and review latency
+- tooling-57: rhythm — commit-hour maps and assignment hints
+- tooling-58: jear prune and jear message — the lifecycle and trailer commands
+- tooling-59: authorship diagram — lines by author, volume not value
+- tooling-61: GitFlow edge verification — partial promotion and re-integration
+- tooling-62: family docs pack — the pattern and the proposal framing
+- tooling-63: batch registry edits — one ride for N adds
+- tooling-66: sprint-{n}: follow the integration branch that exists
+- tooling-68: export — task data as CSV and JSON
+### Fixed
+- tooling-60: merge semantics matrix — documented and edge-tested
+# 7 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v1.0.0 (2026-11-20)
 ### Added
 - tooling-52: registry mutations ride PRs — add, reject, archive
