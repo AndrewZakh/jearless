@@ -129,3 +129,6 @@ tasks:
         consumer of this stream (the review's section 3.5 - the core stays
         narrow).
       story_points: 3
+    - id: 74
+      summary: trailers in the state join — the board sees trailer-declared deliveries
+      story_points: 2
