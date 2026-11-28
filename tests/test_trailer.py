@@ -9,9 +9,13 @@ merges, and a plain commit's subject is never trusted.
 import pytest
 
 from jearless import changelog as changelog_mod
+from jearless import config as config_mod
 from jearless import doctor as doctor_mod
 from jearless import gitwrap
+from jearless import registry as registry_mod
+from jearless import reject as reject_mod
 from jearless import state as state_mod
+from jearless import take as take_mod
 
 REGISTRY = """\
 tasks:
@@ -191,3 +195,65 @@ def test_doctor_bold_template_line_is_not_a_declaration(drepo, capsys):
     _squash(drepo, "code.py", "so-called task line", "**Task:** p/1 from a template")
     assert doctor_mod.run(drepo) == 1
     assert "unattributed commit" in capsys.readouterr().out
+
+
+# --- the state join reads trailers too (task tooling/74, the review's P0) ---
+
+
+def _states(clone):
+    cfg = config_mod.load(clone)
+    view = state_mod.compute(clone, cfg, registry_mod.load(clone))
+    return {tv.task.id: tv.state for tv in view.tasks}
+
+
+def test_squash_delivery_is_done_on_the_board(history):
+    """The critic's consequence 3: a squash-only org gets its board — the
+    branch is gone, the declaration is all that survives."""
+    _squash(history, "f1.py", "the delivery", "Task: p/1")
+    assert _states(history) == {1: "done", 2: "available"}
+
+
+def test_ghost_trailer_never_closes_the_task(history):
+    _squash(history, "f1.py", "claims a ghost", "Task: p/42")
+    assert _states(history) == {1: "available", 2: "available"}
+
+
+def test_edited_merge_subject_with_trailer_still_closes(history):
+    """The critic's consequence 2: the reviewer rewrote the subject at merge
+    time; the body declares. The board agrees with the changelog."""
+    _merge_branch(history, "feature/p/1-real", "the reviewer rewrote this", body="Task: p/1")
+    assert _states(history) == {1: "done", 2: "available"}
+
+
+def test_retake_after_a_squash_delivery_reopens(history):
+    _squash(history, "f1.py", "the delivery", "Task: p/1")
+    take_mod.take(history, "p", 1, kind="fix")
+    assert _states(history) == {1: "in_progress", 2: "available"}
+
+
+def test_rejected_wins_over_the_trailer_delivery(history):
+    _squash(history, "f1.py", "the delivery", "Task: p/1")
+    reject_mod.run(history, "p", 1, "withdrawn by the owner")
+    assert _states(history) == {1: "rejected", 2: "available"}
+
+
+def test_trailer_on_the_family_branch_is_done(origin_and_clone):
+    """GitFlow: the declaration on the unpromoted family branch integrates the
+    task — done reads the same surface the changelog reads."""
+    _bare, clone = origin_and_clone
+    (clone / "tasks.yml").write_text(REGISTRY, encoding="utf-8")
+    (clone / ".jearless.toml").write_text(
+        '[git]\nintegration_ref = "sprint-27"\n', encoding="utf-8"
+    )
+    gitwrap.run(["add", "."], clone)
+    gitwrap.run(["commit", "-q", "-m", "registry + config"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    gitwrap.run(["push", "-q", "origin", "main:sprint-27"], clone)
+    gitwrap.run(["checkout", "-q", "sprint-27"], clone)
+    (clone / "f1.py").write_text("work\n", encoding="utf-8")
+    gitwrap.run(["add", "f1.py"], clone)
+    gitwrap.run(["commit", "-q", "-m", "the delivery", "-m", "Task: p/1"], clone)
+    gitwrap.run(["push", "-q", "origin", "sprint-27"], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+    assert _states(clone) == {1: "done", 2: "available"}
