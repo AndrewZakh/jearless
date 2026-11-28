@@ -1,4 +1,19 @@
 # Changelog
+## v1.13.3 (2026-11-28)
+### Added
+- tooling-64: trailer attribution — changelog and doctor attribute commits via Task: trailers
+- tooling-67: sprint-{n}: see every unpromoted sprint branch
+- tooling-73: events — the lifecycle as a versioned JSON stream
+### Fixed
+- tooling-70: validation hardening — the contract holds at the trust boundary
+- tooling-72: CSV formula injection — neutralize in export
+- tooling-74: trailers in the state join — the board sees trailer-declared deliveries
+### Other
+- tooling-71: polish pack — the hostile review's small findings
+- tooling-74: trailers in the state join — the board sees trailer-declared deliveries
+- tooling-75: the ride race loser gets honest directions — push-rejected vs push-failed
+# 7 off-taxonomy merge(s) skipped — the visible hole (README)
+
 ## v1.13.2 (2026-11-28)
 ### Added
 - tooling-64: trailer attribution — changelog and doctor attribute commits via Task: trailers
