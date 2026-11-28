@@ -118,8 +118,8 @@ def merge_bars(
         sha, subject, cdate = line.split("\x1f", 2)
         branch = state.branch_from_merge_subject(subject)
         m = cfg.match_branch(branch) if branch else None
-        if not m:
-            continue
+        if not m or m.group("type") == "registry":
+            continue  # a registration takes no bar (task tooling/77)
         key = (m.group("project"), int(m.group("num")), branch)
         if key in bars:
             continue  # a re-merge: the first arrival already owns the bar
@@ -139,7 +139,11 @@ def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str
     bars = list(done)
     for name, sha in gitwrap.remote_heads(cwd, remote).items():
         m = cfg.match_branch(name)
-        if not m or (m.group("project"), int(m.group("num"))) in done_keys:
+        if (
+            not m
+            or m.group("type") == "registry"  # a ride claims no bar (tooling/77)
+            or (m.group("project"), int(m.group("num"))) in done_keys
+        ):
             continue
         first = _first_own_commit(cwd, sha, cfg.integration_refs(cwd, remote))
         if not first:

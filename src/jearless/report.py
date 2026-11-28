@@ -49,11 +49,15 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
     # on top, which let a later fix occupy the first-arrival slot of its feature
     for line in gitwrap.lines(["log", "--topo-order", "--reverse", *rev_range, "--merges", "--format=%H%x1f%s"], cwd):
         sha, subject = line.split("\x1f", 1)
-        total_merges += 1
         branch = state.branch_from_merge_subject(subject)
+        m = cfg.match_branch(branch) if branch else None
+        if m and m.group("type") == "registry":
+            # a registration is not work — off the entries and the
+            # fix-share denominator alike (task tooling/77)
+            continue
+        total_merges += 1
         if branch and branch.split("/", 1)[0] == "fix":
             fix_merges += 1
-        m = cfg.match_branch(branch) if branch else None
         if not m:
             continue
         key = (m.group("project"), int(m.group("num")))

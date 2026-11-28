@@ -134,3 +134,98 @@ def test_three_add_burst_allocates_from_the_content(two_clones, monkeypatch, cap
     assert "third of the burst" in branch_file
     ids = [line.strip() for line in branch_file.splitlines() if line.strip().startswith("- id:")]
     assert len(ids) == len(set(ids))  # no duplicates
+
+
+# --- bookkeeping rides claim nothing (task tooling/77) -------------------------
+
+
+def _states(clone):
+    from jearless import config as config_mod
+    from jearless import state as state_mod
+
+    cfg = config_mod.load(clone)
+    view = state_mod.compute(clone, cfg, registry.load(clone))
+    return {tv.task.id: tv.state for tv in view.tasks}
+
+
+def _register_never_taken(alpha, monkeypatch):
+    """A task added through the ride and merged as a registration — the work
+    never happened: no take, no work branch, no delivery."""
+    monkeypatch.setattr(forge_module, "add_ride", conftest_helpers.real_add_ride)
+    add_mod.add(alpha, "p", "registered, never taken")
+    gitwrap.run(["fetch", "-q", "origin"], alpha)
+    gitwrap.run(["checkout", "-q", "-B", "registry/p/2", "origin/registry/p/2"], alpha)
+    gitwrap.run(["checkout", "-q", "main"], alpha)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'registry/p/2'", "origin/registry/p/2"],
+        alpha,
+    )
+    gitwrap.run(["push", "-q", "origin", "main"], alpha)
+    gitwrap.run(["fetch", "-q", "origin"], alpha)
+
+
+def test_merged_registration_credits_nothing(two_clones, monkeypatch):
+    """The registration merge names the task — and credits nothing anywhere:
+    no done, no bar, no report merge, no event merged."""
+    import contextlib
+    import io
+
+    from jearless import changelog as changelog_mod
+    from jearless import config as config_mod
+    from jearless import events as events_mod
+    from jearless import report as report_mod
+    from jearless import timeline as timeline_mod
+
+    alpha, _beta = two_clones
+    _register_never_taken(alpha, monkeypatch)
+
+    assert _states(alpha) == {1: "available", 2: "available"}
+
+    cfg = config_mod.load(alpha)
+    refs = cfg.integration_refs(alpha, "origin")
+    bars = timeline_mod.merge_bars(alpha, cfg, registry.load(alpha), refs)
+    assert bars == []
+
+    first_sha, _fb, _returns, total, _fix = report_mod._task_merges(alpha, cfg, None, refs)
+    assert first_sha == {} and total == 0
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        changelog_mod.run(alpha)
+    out = buf.getvalue()
+    assert "p-2" not in out
+    assert "off-taxonomy" not in out  # sanctioned bookkeeping: not a hole either
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        events_mod.run(alpha)
+    stream = buf.getvalue()
+    assert "task.created:p/2" in stream
+    assert "task.merged:p/2" not in stream
+
+
+def test_a_work_merge_after_a_registration_still_credits(two_clones, monkeypatch):
+    """The exclusion is scoped to bookkeeping kinds: the real delivery — a
+    work branch merged after the registration — credits exactly as before."""
+    alpha, _beta = two_clones
+    _register_never_taken(alpha, monkeypatch)
+    branch = alpha_git_take(alpha)
+    _work_and_merge(alpha, branch)
+    assert _states(alpha) == {1: "available", 2: "done"}
+
+
+def alpha_git_take(alpha):
+    from jearless import take as take_mod
+
+    return take_mod.take(alpha, "p", 2)
+
+
+def _work_and_merge(alpha, branch):
+    (alpha / "work.txt").write_text("done\n", encoding="utf-8")
+    gitwrap.run(["add", "work.txt"], alpha)
+    gitwrap.run(["commit", "-q", "-m", "the real work"], alpha)
+    gitwrap.run(["push", "-q", "-u", "origin", branch], alpha)
+    gitwrap.run(["checkout", "-q", "main"], alpha)
+    gitwrap.run(["merge", "--no-ff", "-q", "-m", f"Merge branch '{branch}'", branch], alpha)
+    gitwrap.run(["push", "-q", "origin", "main"], alpha)
+    gitwrap.run(["fetch", "-q", "origin"], alpha)
