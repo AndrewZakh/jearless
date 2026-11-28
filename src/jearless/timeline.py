@@ -78,26 +78,35 @@ def own_commits(cwd: Path, merge_sha: str) -> list[str]:
     return revs.splitlines()
 
 
-def _first_own_commit(cwd: Path, sha: str, excluded: str) -> str | None:
-    """The oldest commit reachable from the branch tip but not from main.
+def _first_own_commit(cwd: Path, sha: str, excluded: str | list[str]) -> str | None:
+    """The oldest commit reachable from the branch tip but not from the
+    delivery refs (the trunk, or — in GitFlow mode — every unpromoted family
+    branch, task tooling/67).
 
-    A take-created branch pointing at the main tip has no own commits yet —
+    A take-created branch pointing at the fork tip has no own commits yet —
     there is no honest start, and no bar (sprint already shows it as in_progress).
     """
-    revs = gitwrap.out(["rev-list", "--reverse", sha, "--not", excluded], cwd)
+    refs = excluded if isinstance(excluded, list) else [excluded]
+    revs = gitwrap.out(["rev-list", "--reverse", sha, "--not", *refs], cwd)
     return revs.splitlines()[0] if revs else None
 
 
-def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) -> list[Bar]:
+def merge_bars(
+    cwd: Path, cfg: config.Config, reg: registry.Registry, refs: str | list[str]
+) -> list[Bar]:
     """Done tasks: ONE bar per BRANCH (task tooling/26 refines tooling/11).
 
     The same branch merged twice is a re-merge artifact — the first arrival
     owns that branch's bar. A DIFFERENT branch naming the same task is a
     declared re-take: new work, its own bar (id suffix _fix/_chore) — rework
-    must be visible on the chart.
+    must be visible on the chart. `refs` is one ref or several (task
+    tooling/67: the trunk plus every unpromoted family branch) — git walks
+    their union.
     """
+    if isinstance(refs, str):
+        refs = [refs]
     log = gitwrap.out(
-        ["log", "--topo-order", ref, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
+        ["log", "--topo-order", *refs, "--merges", "--format=%H%x1f%s%x1f%cd", f"--date=format-local:{_DATE}"],
         cwd,
         env=_UTC,
     )
@@ -124,7 +133,7 @@ def merge_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, ref: str) 
 
 def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str = "origin") -> list[Bar]:
     """Done tasks plus in-progress branches, the latter ending 'now'."""
-    done = merge_bars(cwd, cfg, reg, cfg.live_ref(cwd, remote))
+    done = merge_bars(cwd, cfg, reg, cfg.integration_refs(cwd, remote))
     done_keys = {(b.project, b.num) for b in done}
     now = _utc_now()
     bars = list(done)
@@ -132,7 +141,7 @@ def live_bars(cwd: Path, cfg: config.Config, reg: registry.Registry, remote: str
         m = cfg.match_branch(name)
         if not m or (m.group("project"), int(m.group("num"))) in done_keys:
             continue
-        first = _first_own_commit(cwd, sha, cfg.live_ref(cwd, remote))
+        first = _first_own_commit(cwd, sha, cfg.integration_refs(cwd, remote))
         if not first:
             continue
         bars.append(

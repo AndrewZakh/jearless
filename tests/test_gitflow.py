@@ -440,15 +440,17 @@ def test_sprint_n_take_works_before_the_new_branch_exists(sprint_repo):
 
 
 def test_sprint_n_moves_on_once_the_new_branch_exists(sprint_repo):
-    """When sprint-28 is created the tool follows it. This is the limit task
-    tooling/67 keeps: sprint-27 is not promoted, and it now drops out of view."""
+    """When sprint-28 is created the tool follows it — and task tooling/67
+    keeps sprint-27 in view: both family branches are walked, so the task
+    integrated on the unpromoted sprint-27 stays done. Until tooling/67 the
+    sprint-27 work dropped from done to available here."""
     clone = sprint_repo
     _open_sprint_28_without_its_branch(clone)
     gitwrap.run(["push", "-q", "origin", "main:sprint-28"], clone)
     gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
     cfg = config_mod.load(clone)
     assert cfg.live_ref(clone, "origin") == "origin/sprint-28"
-    assert _states(clone) == {1: "available", 2: "available"}
+    assert _states(clone) == {1: "done", 2: "available"}
 
 
 def test_sprint_n_without_any_branch_falls_back_to_the_trunk(origin_and_clone):
@@ -491,3 +493,106 @@ def test_sprint_n_needs_no_network(tmp_path, monkeypatch):
     monkeypatch.setattr(gitwrap, "remote_heads", no_network)
     cfg = config_mod.load(tmp_path)
     assert cfg.live_ref(tmp_path, "origin") == "origin/main"
+
+
+# --- several unpromoted sprints at once (task tooling/67) ----------------------
+
+
+def _open_sibling_sprint(clone):
+    """sprint-28 forked from main while sprint-27 is still unpromoted."""
+    gitwrap.run(["push", "-q", "origin", "main:sprint-28"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+
+
+def test_both_family_branches_are_walked(sprint_repo):
+    """The 67 core: the union walk covers trunk plus every family branch, so
+    the task done on the unpromoted sprint-27 stays done after sprint-28
+    appears. The refs come newest-first."""
+    clone = sprint_repo
+    _open_sibling_sprint(clone)
+    cfg = config_mod.load(clone)
+    assert cfg.integration_refs(clone, "origin") == [
+        "origin/main", "origin/sprint-28", "origin/sprint-27"
+    ]
+    assert _states(clone) == {1: "done", 2: "available"}
+
+
+def test_take_forks_from_the_newest_sibling(sprint_repo):
+    """New work builds on the newest sprint, not on the trunk."""
+    clone = sprint_repo
+    _open_sibling_sprint(clone)
+    branch = take_mod.take(clone, "shop", 2)
+    gitwrap.run(["fetch", "-q", "origin"], clone)
+    fork = gitwrap.out(["merge-base", f"origin/{branch}", "origin/sprint-28"], clone)
+    tip = gitwrap.out(["rev-parse", "--verify", "origin/sprint-28"], clone)
+    assert fork == tip
+
+
+def _deliver_shop_2_on_sprint_28(clone):
+    """A merge on the sibling: sprint-28 now carries unpromoted work."""
+    gitwrap.run(["checkout", "-q", "-b", "feature/shop/2-checkout", "origin/sprint-28"], clone)
+    (clone / "checkout.txt").write_text("work\n", encoding="utf-8")
+    gitwrap.run(["add", "checkout.txt"], clone)
+    gitwrap.run(["commit", "-q", "-m", "the checkout button"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "feature/shop/2-checkout"], clone)
+    gitwrap.run(["checkout", "-q", "-B", "sprint-28", "origin/sprint-28"], clone)
+    gitwrap.run(
+        ["merge", "--no-ff", "-q", "-m", "Merge branch 'feature/shop/2-checkout'",
+         "origin/feature/shop/2-checkout"],
+        clone,
+    )
+    gitwrap.run(["push", "-q", "origin", "sprint-28"], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+
+
+def test_changelog_lists_every_siblings_debt(sprint_repo):
+    """The unreleased changelog is the union: what each sibling still owes to
+    the trunk lists together, first arrival wins across the union."""
+    clone = sprint_repo
+    _open_sibling_sprint(clone)
+    _deliver_shop_2_on_sprint_28(clone)
+    assert changelog_mod.run(clone, from_tag="origin/main") == 0
+    out = capsys_text(changelog_mod, clone)
+    assert "- shop-1: add the cart page" in out
+    assert "- shop-2: add the checkout button" in out
+
+
+def capsys_text(changelog_mod, clone):
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        changelog_mod.run(clone, from_tag="origin/main")
+    return buf.getvalue()
+
+
+def test_retake_forked_from_the_newest_sibling_reopens(sprint_repo):
+    """The sibling case of the reopen rule: the fix branch forked from the
+    newest sprint carries that tip whole — the tip carries unpromoted work —
+    while the done merge rests on the unpromoted sibling, invisible to the
+    fork-point rule alone. A retake forked from an EMPTY sibling stays
+    conservative: its tip is the trunk's own history, the same SHA shape as
+    the pre-merge leftover (the stale rule below)."""
+    clone = sprint_repo
+    _open_sibling_sprint(clone)
+    _deliver_shop_2_on_sprint_28(clone)
+    take_mod.take(clone, "shop", 1, kind="fix")
+    assert _states(clone) == {1: "in_progress", 2: "done"}
+
+
+def test_branch_forked_from_the_trunks_past_stays_stale(sprint_repo):
+    """The conservative edge the sibling rule protects: a branch forked from
+    the trunk's past carries none of the integrated work and no sibling's
+    tip — it cannot reopen the task, done or not."""
+    clone = sprint_repo
+    _open_sibling_sprint(clone)
+    init = gitwrap.out(["log", "origin/main", "--format=%H", "--reverse"], clone).split()[0]
+    gitwrap.run(["checkout", "-q", "-b", "fix/shop/1-pre-merge", init], clone)
+    (clone / "stale.txt").write_text("stale\n", encoding="utf-8")
+    gitwrap.run(["add", "stale.txt"], clone)
+    gitwrap.run(["commit", "-q", "-m", "forked before the merge"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "fix/shop/1-pre-merge"], clone)
+    gitwrap.run(["checkout", "-q", "main"], clone)
+    gitwrap.run(["fetch", "-q", "--prune", "origin"], clone)
+    assert _states(clone) == {1: "done", 2: "available"}

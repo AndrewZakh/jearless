@@ -44,7 +44,7 @@ def _summary_for(reg: registry.Registry, project: str, num: int, slug: str | Non
 
 
 def _entries_from_history(
-    cwd: Path, cfg: config.Config, reg: registry.Registry, rev_range: str, from_tag: str | None
+    cwd: Path, cfg: config.Config, reg: registry.Registry, range_args: list[str], from_tag: str | None
 ) -> tuple[dict[str, list[tuple[tuple[str, int], str]]], int, int]:
     """Merge commits → entries; dedupe keys on the BRANCH (task tooling/26).
 
@@ -113,14 +113,14 @@ def _entries_from_history(
             if a:
                 shipped_before.add((a[0], a[1], a[4]))
 
-    for sha, parents, subject, body in _records(cwd, ["log", rev_range, "--merges"]):
+    for sha, parents, subject, body in _records(cwd, ["log", *range_args, "--merges"]):
         a = _attr(subject, body, is_merge=True)
         if a is None:
             skipped += 1  # off-taxonomy merge: the visible hole, counted aloud
             continue
         _enter(a)
     for sha, parents, subject, body in _records(
-        cwd, ["log", "--first-parent", "--no-merges", rev_range]
+        cwd, ["log", "--first-parent", "--no-merges", *range_args]
     ):
         a = _attr(subject, body, is_merge=False)
         if a is None:
@@ -135,15 +135,22 @@ def render(
     """The changelog as text; `header` overrides the section title (used by release)."""
     cfg = config.load(cwd)
     reg = registry.load_all(cwd)
-    # explicit tags = released ranges on main; no to_tag = the unreleased view
-    # (the integration tip in GitFlow mode, HEAD in trunk)
-    to_ref = to_tag if to_tag else cfg.live_ref(cwd, "origin")
-    rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
+    # explicit tags = released ranges on main; no to_tag = the unreleased
+    # view: the trunk together with every unpromoted family branch (task
+    # tooling/67) — the newest sprint alone cannot see an older unpromoted
+    # sibling's work. The header date reads the trunk tip (the release anchor).
+    if to_tag:
+        walk = [to_tag]
+        date_ref = to_tag
+    else:
+        walk = cfg.integration_refs(cwd, "origin")
+        date_ref = f"origin/{cfg.trunk_ref}"
+    range_args = ([f"^{from_tag}"] if from_tag else []) + walk
     try:
-        sections, skipped, remerged = _entries_from_history(cwd, cfg, reg, rev_range, from_tag)
-        date = gitwrap.out(["log", "-1", "--format=%cd", "--date=short", to_ref], cwd)
+        sections, skipped, remerged = _entries_from_history(cwd, cfg, reg, range_args, from_tag)
+        date = gitwrap.out(["log", "-1", "--format=%cd", "--date=short", date_ref], cwd)
     except gitwrap.GitError as exc:
-        raise JearlessError(f"cannot read history {rev_range}: {exc}") from exc
+        raise JearlessError(f"cannot read history {range_args}: {exc}") from exc
 
     lines = ["# Changelog"]
     title = header or to_tag or _UNRELEASED

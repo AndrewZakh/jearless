@@ -63,10 +63,12 @@ def _taken_at_delivered(cwd: Path, merge_sha: str) -> str:
     return timeline._author_date(cwd, own[0]) if own else ""
 
 
-def _taken_at_live(cwd: Path, branch: str, live_ref: str) -> str:
+def _taken_at_live(cwd: Path, branch: str, refs: list[str]) -> str:
     """The author date of the first commit of a task still in progress:
-    its commits not yet on the trunk. Empty when only the claim exists."""
-    revs = gitwrap.out(["rev-list", "--reverse", branch, "--not", live_ref], cwd)
+    its commits not yet on any delivery ref (the trunk, or — in GitFlow
+    mode — every unpromoted family branch, task tooling/67). Empty when
+    only the claim exists."""
+    revs = gitwrap.out(["rev-list", "--reverse", branch, "--not", *refs], cwd)
     own = revs.splitlines()
     return timeline._author_date(cwd, own[0]) if own else ""
 
@@ -128,10 +130,10 @@ def _rows(cwd: Path, cfg: config.Config, remote: str) -> list[dict]:
     """Every task in the union as one flat row, the join already applied."""
     reg = registry.load_all(cwd)
     view = state.compute(cwd, cfg, reg, remote)
-    live_ref = cfg.live_ref(cwd, remote)
+    refs = cfg.integration_refs(cwd, remote)
 
     first_sha, first_branch, _returns, _total, _fix = report_mod._task_merges(
-        cwd, cfg, None, live_ref
+        cwd, cfg, None, refs
     )
     pr_map = forge.pr_times_map(cwd)
     reg_live = registry.load(cwd)
@@ -158,7 +160,7 @@ def _rows(cwd: Path, cfg: config.Config, remote: str) -> list[dict]:
             merged_at = _committer_date(cwd, sha)
             taken_at = _taken_at_delivered(cwd, sha)
         elif tv and tv.branch:
-            taken_at = _taken_at_live(cwd, tv.branch, live_ref) or None
+            taken_at = _taken_at_live(cwd, tv.branch, refs) or None
 
         pr_created = pr_merged = None
         times = pr_map.get(delivering_branch or live_branch or "")

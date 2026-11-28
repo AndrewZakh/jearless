@@ -103,6 +103,7 @@ Every loud row lands in the ledger with a cause when accepted — the same
 | In GitFlow mode a retake made before promotion went unnoticed — the reopen was measured against the trunk, where the merge did not exist yet (tooling/61) | the fork point is measured against every ref the merges are read from |
 | The registration ride's merge was invisible to the join — tooling/65 sat available for days while its work shipped, and the changelog skipped it (registry/<project>-<num> does not parse) | ride branches take the parseable registry/<project>/<num> form; the allocator protects the ids the ride branches claim (tooling/69) |
 | The merge subject is editable in the forge UI and forgeable by hand; a squashed delivery loses the branch name entirely — the adopters' squash-mandated orgs had no attribution at all | attribution reads the full body: a `Task: <project>/<id>` trailer in the message's last paragraph wins; the subject regexes stay the legacy fallback for real merges; a plain commit's subject is never trusted (tooling/64) |
+| With a branch per sprint, no SHA can tell a retake forked from the newest sprint from a pre-merge leftover forked from the trunk's past — the done merge rests on the unpromoted sibling, outside both fork bases | the {n} family is walked whole (done, changelog, fork target); reopen adds one sibling case — a branch carrying a sibling tip with unpromoted work reopens; carrying the trunk's own history stays conservatively stale (tooling/67) |
 | PyPI drifted because publishing lived in someone's head | the release prints its checklist; the checklist is a file, not a habit |
 | Auto-committed reports resurrect the post-merge writer — a committed live report lies between runs, and a CI commit-back breaks "nothing automatic writes main" | dashboards ride the forge (PR/MR comments), pages or job artifacts; the tree holds only the release-time frozen slice (tooling/14, reaffirmed 2026-11-20) |
 | Direct pushes to a protected branch are the industry's antipattern — "таких проектов просто нет"; five of five of our scars were direct-to-main sins | main accepts changes only through PRs/MRs; the release rides one too; the emergency bypass is explicit and every use is a ledger scar (tooling/54) |
@@ -120,24 +121,27 @@ integration_ref = "dev"
 ```
 
 The name is yours: letters, digits, `-`, `_`, `.`, `/` and the `{n}` template.
-`{n}` resolves to the newest sprint **whose branch exists**, so `sprint-{n}`
-follows the sprint branches on their own. The trunk is configurable the same
-way (`trunk_ref`).
+The trunk is configurable the same way (`trunk_ref`).
 
-**One intermediate branch at a time.** `integration_ref` names a single
-branch; work flowing through `dev` and then a separate `release-1` is not
-tracked as two hops — point it at the one the team treats as "integrated".
-The same holds for `sprint-{n}`: one sprint branch is in view at a time, so
-deliver a sprint before creating the next sprint's branch.
+**One integration surface; the `{n}` family may span several branches.**
+`integration_ref` names one surface; work flowing through `dev` and then a
+separate `release-1` is not tracked as two hops — point it at the one the
+team treats as "integrated". But a `{n}` pattern defines a *family*: every
+branch matching it is an integration branch at once (task tooling/67). With
+`sprint-{n}`, `sprint-27` and `sprint-28` may both carry unreleased work;
+the tool sees both. A promoted member adds nothing — its history is the
+trunk's — and an empty newborn sprint still counts: it is the active
+surface, not a delivered one.
 
-In this mode done = "merged into main OR the integration branch"
+In this mode done = "merged into main OR any family branch"
 (the union kills the pre-promotion available-flicker), and every live view —
 the board, the sprint, the burndown, the changelog's unreleased section,
-take's fork base — reads the integration tip. Released (tag-based) views keep
-reading main: the promotion delivers the accumulated batch, and the changelog
-range catches it naturally via reachability. Promotions must be true merges.
-A squash promotion loses the task names, and `jear doctor` reports it.
-Our own repository stays trunk-based; the mode is for adopters.
+take's fork base — reads the trunk together with every family branch.
+Released (tag-based) views keep reading main: the promotion delivers
+the accumulated batch, and the changelog range catches it naturally via
+reachability. Promotions must be true merges. A squash promotion loses the
+task names, and `jear doctor` reports it. Our own repository stays
+trunk-based; the mode is for adopters.
 
 ### A GitFlow example: a branch per sprint (task tooling/61, tooling/66)
 
@@ -153,6 +157,11 @@ integration_ref = "sprint-{n}"
 `{n}` stands for a sprint number. A fixed name such as `dev` needs no
 template and works the same way; the rest of this cycle applies to it
 unchanged.
+
+The resolution is branch-driven (task tooling/67): the family is every
+branch on the remote matching the pattern — the `{n}` slot takes digits.
+Plans do not participate: a sprint plan committed before its branch stays
+harmless, and a branch created before its plan is seen the same way.
 
 The cycle of one sprint:
 
@@ -173,57 +182,73 @@ The cycle of one sprint:
 7. **Deliver.** Merge `sprint-27` into `main` with a true merge commit.
    Nothing changes on the board: the tasks were already done.
 
-**A plan committed before its branch.** A sprint plan may be committed before
-anyone has created that sprint's branch. `{n}` resolves to the newest
-sprint **whose branch exists**, so after `sprint_28.yml` is committed and
-while `sprint-28` is not there yet, the tool stays on `sprint-27`: tasks
-integrated there remain done, and `jear take` forks from `sprint-27` and
-works. *(Until tooling/66 the tool read the plan number alone. `jear take`
-then refused with `no origin/sprint-28`, and every task on `sprint-27` not
-yet promoted fell back from `done` to `available`.)*
+**A plan committed before its branch.** A sprint plan may be committed
+before anyone has created that sprint's branch. The resolution reads
+branches, not plans, so the plan alone changes nothing: the tool stays on
+`sprint-27`, tasks integrated there remain done, and `jear take` forks from
+`sprint-27` and works. *(Until tooling/66 the tool read the plan number
+alone. `jear take` then refused with `no origin/sprint-28`, and every task
+on `sprint-27` not yet promoted fell back from `done` to `available`.)*
 
 Every step above was run against exactly this configuration in a throwaway
 repository; the output quoted is what the tool printed.
 
-#### The limit that remains (task tooling/67)
+### Several unpromoted sprints at once (task tooling/67)
 
-**Deliver the previous sprint before creating the next sprint's branch.**
-If `sprint-28` is created while `sprint-27` is still not in `main`, the tool
-moves to `sprint-28` and `sprint-27` leaves its view:
+`{n}` is a family, not a pointer. When `sprint-28` is created while
+`sprint-27` is still not in `main`, both stay in view — the semantics:
 
-- tasks integrated on `sprint-27` show as `available` again, not `done`;
-- a task taken now forks from `sprint-28`, which does not contain the work
-  on `sprint-27`;
-- the changelog of the current branch does not list what `sprint-27` owes.
-
-Nothing is lost. The merges and the code stay on `sprint-27`; merging
-`sprint-27` into `main` puts every task back to `done`, and the changelog
-`--from origin/main --to origin/sprint-27` shows what it still owes until
-then. Reading several unpromoted sprint branches at once is task tooling/67.
+- **done** = merged into main OR any family branch. A task integrated on
+  `sprint-27` stays done after `sprint-28` appears.
+- **The fork base** = the newest family branch's tip; with no family branch
+  on the remote, the trunk. New work builds on the newest sprint.
+- **The unreleased changelog** = the union: main together with every
+  unpromoted family branch, first arrival wins across the union — a task
+  merged to `sprint-27` lists once, even after a re-merge to `sprint-28`.
+  The header date reads the trunk tip (the release anchor). The per-branch
+  debt stays one recipe away: `jear changelog --from origin/main --to
+  origin/sprint-27`.
+- **Reopen** = the fork-point rule of tooling/26/61, plus one sibling case
+  (tooling/67): a live branch reopens a done task when its fork point
+  contains a done merge — or when the branch carries a sibling sprint's tip
+  whole. The sibling case covers the retake forked from the newest sprint:
+  its history does not contain the done merge resting on the unpromoted
+  sibling, so the fork-point rule alone cannot see it. The trunk's tip is
+  deliberately not a sibling: a branch forked from the trunk's past is the
+  pre-merge leftover the stale rule protects, and no SHA can tell it from a
+  retake — the conservative reading wins there, so such rework becomes
+  visible only when its merge arrives (a return in the report).
 
 ### Where GitFlow mode holds (task tooling/61)
 
 Each line was run by hand in a throwaway repository and is pinned by a test
 in `tests/test_gitflow.py`.
 
-- **Done means integrated.** A task merged into the integration branch is
-  done even while main still lacks it. After a partial promotion — one task
+- **Done means integrated.** A task merged into any family branch is done
+  even while main still lacks it. After a partial promotion — one task
   promoted, another not — both read as done; the changelog from main to the
   integration tip lists exactly what the next promotion delivers.
 - **Re-integration is harmless.** Merging the same branch name into the
   integration branch a second time leaves the task done: the first arrival
   already shipped it.
-- **A retake reopens the task.** A fix branch forked from the integration tip
-  — past the task's own merge — puts the task back in progress, whether or
-  not the task has been promoted yet. (Until tooling/61 the reopen was
+- **A retake reopens the task.** A fix branch forked from the integration
+  tip — past the task's own merge — puts the task back in progress, whether
+  or not the task has been promoted yet. (Until tooling/61 the reopen was
   measured against the trunk alone, so a retake made before promotion went
-  unnoticed and the task stayed done.)
+  unnoticed and the task stayed done. Until tooling/67 the fork-point rule
+  could not see a retake forked from the newest sprint when the done merge
+  rested on an unpromoted sibling.)
 - **A branch forked before the merge is not a retake.** It carries none of
-  the integrated work, so it cannot reopen the task.
+  the integrated work, so it cannot reopen the task — and no SHA can tell
+  it from a retake forked from the trunk's past, so the conservative
+  reading wins (tooling/67). A branch carrying a sibling sprint's tip
+  whole is the one exception: it was cut where the newest sprint stands.
 - **Divergence is fine.** The integration branch ahead of main, main ahead of
   it, task branches deleted — the states do not depend on the two agreeing.
 
-Not covered, and not promised: promotions that are not true merges, and
-more than one integration branch at a time. The branch's own name is not a
-limit — `tests/test_gitflow.py` runs the same scenario under `dev`,
-`release-1`, `sprint-27`, `release/2.x` and `sprint-{n}`.
+Not covered, and not promised: promotions that are not true merges, several
+integration *surfaces* (work flowing through `dev` and then a separate
+`release-1` is one hop too many), and more than one `{n}` family — the
+config names one pattern. The branch's own name is not a limit —
+`tests/test_gitflow.py` runs the same scenario under `dev`, `release-1`,
+`sprint-27`, `release/2.x` and `sprint-{n}`.

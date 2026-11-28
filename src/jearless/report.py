@@ -24,11 +24,13 @@ def _prev_tag(cwd: Path, tag: str) -> str | None:
         return None  # no earlier tag: the whole history is the range
 
 
-def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: str):
+def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: str | list[str]):
     """First-arrival merge sha per task key in the range, plus the return bars
     (tooling/43): a merge under a key whose first arrival predates the bar is a
     RETURN — same-ID rework, counted each. Off-taxonomy merges count in the
-    fix-share denominator only: they are work, even when they are not tasks."""
+    fix-share denominator only: they are work, even when they are not tasks.
+    `to_ref` is one ref or several (task tooling/67: the trunk plus every
+    unpromoted family branch)."""
     shipped_before: set[tuple[str, int]] = set()
     if from_tag:
         for subject in gitwrap.lines(["log", from_tag, "--merges", "--format=%s"], cwd):
@@ -36,7 +38,8 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
             m = cfg.match_branch(branch) if branch else None
             if m:
                 shipped_before.add((m.group("project"), int(m.group("num"))))
-    rev_range = f"{from_tag}..{to_ref}" if from_tag else to_ref
+    refs = to_ref if isinstance(to_ref, list) else [to_ref]
+    rev_range = [f"^{from_tag}", *refs] if from_tag else refs
     first: dict[tuple[str, int], str] = {}
     first_branch: dict[tuple[str, int], str] = {}
     returns: list[tuple[tuple[str, int], str]] = []
@@ -44,7 +47,7 @@ def _task_merges(cwd: Path, cfg: config.Config, from_tag: str | None, to_ref: st
     fix_merges = 0
     # ancestors first (task tooling/47): the default log order lists fresh merges
     # on top, which let a later fix occupy the first-arrival slot of its feature
-    for line in gitwrap.lines(["log", "--topo-order", "--reverse", rev_range, "--merges", "--format=%H%x1f%s"], cwd):
+    for line in gitwrap.lines(["log", "--topo-order", "--reverse", *rev_range, "--merges", "--format=%H%x1f%s"], cwd):
         sha, subject = line.split("\x1f", 1)
         total_merges += 1
         branch = state.branch_from_merge_subject(subject)
