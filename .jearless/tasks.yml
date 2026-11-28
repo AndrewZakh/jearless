@@ -142,3 +142,6 @@ tasks:
     - id: 77
       summary: the join does not credit bookkeeping rides as delivery
       story_points: 2
+    - id: 78
+      summary: the id allocator reads the ride branch's name where its content grew (the 69/63 blind spot)
+      story_points: 1
