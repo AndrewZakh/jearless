@@ -66,6 +66,14 @@ def _entries_from_history(
     seen: set[tuple[str, int, str]] = set()
     shipped_before: set[tuple[str, int, str]] = set()
 
+    def _bookkeeping(subject: str) -> bool:
+        """A registration ride's merge sells nothing: sanctioned bookkeeping
+        passes silently — not an entry, not a skipped hole (task tooling/77,
+        the doctor's sanctioned-edit precedent)."""
+        branch = state.branch_from_merge_subject(subject)
+        m = cfg.match_branch(branch) if branch else None
+        return bool(m and m.group("type") == "registry")
+
     def _attr(subject: str, body: str, is_merge: bool):
         """(project, num, type, slug, dedupe-unit) — or None: unattributed."""
         tkey = state.task_trailer(body)
@@ -103,6 +111,8 @@ def _entries_from_history(
 
     if from_tag:
         for sha, parents, subject, body in _records(cwd, ["log", from_tag, "--merges"]):
+            if _bookkeeping(subject):
+                continue
             a = _attr(subject, body, is_merge=True)
             if a:
                 shipped_before.add((a[0], a[1], a[4]))
@@ -114,6 +124,8 @@ def _entries_from_history(
                 shipped_before.add((a[0], a[1], a[4]))
 
     for sha, parents, subject, body in _records(cwd, ["log", *range_args, "--merges"]):
+        if _bookkeeping(subject):
+            continue
         a = _attr(subject, body, is_merge=True)
         if a is None:
             skipped += 1  # off-taxonomy merge: the visible hole, counted aloud

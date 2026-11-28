@@ -26,6 +26,8 @@ def _find_task(reg: registry.Registry, project: str, num: int) -> registry.Task:
 def _taken_branch(heads: dict[str, str], cfg: config.Config, project: str, num: int) -> str | None:
     for name in heads:
         m = cfg.match_branch(name)
+        if m and m.group("type") == "registry":
+            continue  # a bookkeeping ride is transport, not occupancy (task tooling/77)
         if m and m.group("project") == project and int(m.group("num")) == num:
             return name
     return None

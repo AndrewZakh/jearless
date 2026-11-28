@@ -88,6 +88,11 @@ def compute(
         m = cfg.match_branch(name)
         if not m:
             continue  # off-taxonomy branches are not jearless business (README open question)
+        if m.group("type") == "registry":
+            # a bookkeeping ride claims nothing (task tooling/77): a
+            # registered task reads available until a work branch takes it —
+            # the ride branch is the registration's transport, not a start
+            continue
         key = (m.group("project"), int(m.group("num")))
         if key not in registry_keys:
             unknown.append(name)
@@ -109,6 +114,8 @@ def compute(
             if not branch:
                 continue
             m = cfg.match_branch(branch)
+            if m and m.group("type") == "registry":
+                continue  # a registration is not a delivery (task tooling/77)
             if m:
                 done.setdefault((m.group("project"), int(m.group("num"))), set()).add(sha)
 

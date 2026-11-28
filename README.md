@@ -62,7 +62,7 @@ The sprint board (mermaid kanban), the burn-down and the velocity trend (`xychar
 |---|---|
 | available | in `tasks.yml`, no branch on origin, no merge commit |
 | in_progress | a branch exists on origin |
-| done | a merge commit naming the task — or a commit declaring it with a `Task:` trailer on a delivery branch (the squash bridge reaches the board, tooling/74) |
+| done | a merge commit naming the task — or a commit declaring it with a `Task:` trailer on a delivery branch (the squash bridge reaches the board, tooling/74); a bookkeeping ride (`registry/…`) is registration, never delivery (tooling/77) |
 | rejected | the task carries a `rejected:` cause — it wins over every other state |
 
 An archived task (moved out at a release) leaves the working set: it shows on the board only while a live branch carries it — a retake by its old ID works (`jear take --type fix`, task tooling/40).
