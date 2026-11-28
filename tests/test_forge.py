@@ -31,7 +31,7 @@ def test_open_pr_passes_labels_and_falls_back_unlabeled(tmp_path, monkeypatch):
         return "https://example/pr/1"
 
     monkeypatch.setattr(forge_mod, "_run", fake_run)
-    url = forge_mod.open_pr(tmp_path, "main", "registry/p-9", "t", "b", labels=("registry",))
+    url = forge_mod.open_pr(tmp_path, "main", "registry/p/9", "t", "b", labels=("registry",))
     assert url == "https://example/pr/1"
     assert seen[0][-2:] == ["--label", "registry"]  # the labeled attempt first
     assert "--label" not in seen[1]  # the unlabeled retry saves the PR
@@ -55,11 +55,11 @@ def test_open_pr_gitlab_api(tmp_path, monkeypatch):
 
     def fake_urlopen(request, timeout):
         assert request.headers.get("Private-token") == "gl-secret"
-        assert b'"source_branch": "registry/p-9"' in request.data
+        assert b'"source_branch": "registry/p/9"' in request.data
         return FakeResponse()
 
     monkeypatch.setattr(forge_mod.urllib.request, "urlopen", fake_urlopen)
-    url = forge_mod.open_pr(tmp_path, "main", "registry/p-9", "t", "b", labels=("registry",))
+    url = forge_mod.open_pr(tmp_path, "main", "registry/p/9", "t", "b", labels=("registry",))
     assert url.endswith("/-/merge_requests/3")
 
 
@@ -80,7 +80,7 @@ def test_registry_pr_ride_branch_commit_push_pr(repo, monkeypatch, capsys):
     assert forge_mod.registry_pr(
         repo,
         files=["tasks.yml"],
-        branch="registry/p-2",
+        branch="registry/p/2",
         title="tasks.yml: p/2 — second",
         body="the ride",
         label="registry",
@@ -88,10 +88,10 @@ def test_registry_pr_ride_branch_commit_push_pr(repo, monkeypatch, capsys):
         trunk="main",
     )
     assert "PR: https://example/pr/9" in capsys.readouterr().out
-    branch_tip = gitwrap.out(["rev-parse", "registry/p-2"], repo)
+    branch_tip = gitwrap.out(["rev-parse", "registry/p/2"], repo)
     assert "second" in gitwrap.out(["show", f"{branch_tip}:tasks.yml"], repo)  # committed on the branch
     assert gitwrap.out(["symbolic-ref", "--short", "HEAD"], repo) == "main"  # back where we started
-    assert gitwrap.out(["rev-parse", "origin/registry/p-2"], repo) == branch_tip  # pushed
+    assert gitwrap.out(["rev-parse", "origin/registry/p/2"], repo) == branch_tip  # pushed
 
 
 def test_registry_pr_manual_fallback_keeps_the_edit_staged(repo, monkeypatch, capsys):
@@ -103,7 +103,7 @@ def test_registry_pr_manual_fallback_keeps_the_edit_staged(repo, monkeypatch, ca
     assert not forge_mod.registry_pr(
         repo,
         files=["tasks.yml"],
-        branch="registry/p-2",
+        branch="registry/p/2",
         title="tasks.yml: p/2 — second",
         body="the ride",
         label="registry",
@@ -112,7 +112,7 @@ def test_registry_pr_manual_fallback_keeps_the_edit_staged(repo, monkeypatch, ca
     )
     assert "open the PR by hand" in capsys.readouterr().out
     # the edit is committed on the branch (safe), never lost
-    branch_tip = gitwrap.out(["rev-parse", "registry/p-2"], repo)
+    branch_tip = gitwrap.out(["rev-parse", "registry/p/2"], repo)
     assert "second" in gitwrap.out(["show", f"{branch_tip}:tasks.yml"], repo)
 
 
@@ -130,9 +130,9 @@ def test_add_burst_rides_one_branch(repo, monkeypatch, capsys):
     assert add_mod.add(repo, "p", "second batch task") == 3
 
     assert len(opens) == 1  # one pull request for the whole burst
-    assert "registry/p-2" in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
-    assert "registry/p-3" not in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
-    branch_file = gitwrap.out(["show", "origin/registry/p-2:tasks.yml"], repo)
+    assert "registry/p/2" in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
+    assert "registry/p/3" not in gitwrap.out(["ls-remote", "--heads", "origin"], repo)
+    branch_file = gitwrap.out(["show", "origin/registry/p/2:tasks.yml"], repo)
     assert "first batch task" in branch_file and "second batch task" in branch_file
     # the ids on the branch are distinct: the allocator reads the branch's
     # registry content, not the frozen branch name (caught by the live probe)
@@ -143,18 +143,20 @@ def test_add_burst_rides_one_branch(repo, monkeypatch, capsys):
     assert gitwrap.out(["symbolic-ref", "--short", "HEAD"], repo) == "main"
     assert gitwrap.out(["status", "--porcelain"], repo) == ""
     out = capsys.readouterr().out
-    assert "the entry joined the open pull request on registry/p-2" in out
+    assert "the entry joined the open pull request on registry/p/2" in out
 
 
 def test_add_burst_skips_rejected_branches(repo, monkeypatch):
-    """A rejected-task branch (registry/p-9-rejected) is closed history: the
+    """A rejected-task branch (registry/p/9-rejected) is closed history: the
     burst does not ride it."""
     import conftest as conftest_helpers
     from jearless import add as add_mod
 
     monkeypatch.setattr(forge_mod, "add_ride", conftest_helpers.real_add_ride)
-    gitwrap.run(["push", "-q", "origin", "main:refs/heads/registry/p-9-rejected"], repo)
-    assert add_mod.add(repo, "p", "a fresh task") == 2
+    gitwrap.run(["push", "-q", "origin", "main:refs/heads/registry/p/9-rejected"], repo)
+    # the parseable name now feeds the allocator: id 9 is claimed by the
+    # rejected task's branch, so the fresh task takes 10 — protective
+    assert add_mod.add(repo, "p", "a fresh task") == 10
     heads = gitwrap.out(["ls-remote", "--heads", "origin"], repo)
-    assert "registry/p-2" in heads  # a fresh branch for the fresh burst
-    assert heads.count("registry/p-9-rejected") == 1  # untouched
+    assert "registry/p/10" in heads  # a fresh branch for the fresh burst
+    assert heads.count("registry/p/9-rejected") == 1  # untouched
