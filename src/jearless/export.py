@@ -229,8 +229,19 @@ def run(
         writer = csv.writer(buf)
         writer.writerow(_COLUMNS)
         for row in rows:
-            flat = [row[c] for c in _COLUMNS]
-            flat[_COLUMNS.index("in_period")] = "true" if row["in_period"] else "false"
+            flat = []
+            for c in _COLUMNS:
+                value = row[c]
+                if c == "in_period":
+                    flat.append("true" if value else "false")
+                    continue
+                # the formula-injection neutralization (task tooling/72): a
+                # spreadsheet executes a cell starting with =, +, - or @ —
+                # prefix it so it stays text. The content is unchanged in
+                # git and YAML; only the CSV cell is guarded.
+                if isinstance(value, str) and value[:1] in ("=", "+", "-", "@"):
+                    value = "'" + value
+                flat.append(value)
             writer.writerow(flat)
         text = buf.getvalue()
     else:

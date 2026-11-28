@@ -33,6 +33,14 @@ open a regular issue asking for a private contact, without the details.
 
 Please do not open a public issue with the specifics of an unpatched problem.
 
+## The dashboards workflow
+
+The sprint-comment workflow installs the pull request's own jearless
+(`pip install .`) and runs it with the `pull-requests: write` permission.
+Fork pull requests receive a read-only token, so the exposure is
+same-repository only. The pattern must not move to `pull_request_target` —
+if a trigger change is ever proposed, this note is the tripwire.
+
 ## What to expect
 
 This is a one-maintainer project without a fixed response window. Reports are

@@ -168,3 +168,20 @@ def test_export_requires_remote(repo, monkeypatch):
     monkeypatch.setattr(gitwrap, "run", no_fetch)
     with pytest.raises(Exception, match="cannot fetch"):
         export_mod.run(repo)
+
+
+def test_csv_formula_injection_neutralized(repo, capsys):
+    """task tooling/72: a summary starting with = is prefixed in the CSV cell
+    so a spreadsheet keeps it text."""
+    (repo / ".jearless" / "tasks.yml").write_text(
+        'tasks:\n  p:\n    - id: 1\n      summary: "=cmd|\' /C calc\'!A0"\n      story_points: 2\n',
+        encoding="utf-8",
+    )
+    gitwrap.run(["add", ".jearless"], repo)
+    gitwrap.run(["commit", "-q", "-m", "a hostile summary"], repo)
+    gitwrap.run(["push", "-q", "origin", "main"], repo)
+    assert export_mod.run(repo) == 0
+    out = capsys.readouterr().out
+    rows = [r for r in csv.reader(io.StringIO(out, newline="")) if r and r and r[0] == "p"]
+    assert rows[0][2].startswith("'")  # the guard prefix
+    assert rows[0][2].lstrip("'").startswith("=cmd")  # the content survives, guarded

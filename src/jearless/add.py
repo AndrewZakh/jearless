@@ -6,7 +6,6 @@ confirmation. The most common duplicate in nature is a re-suggested DONE
 task — hence the derived state next to each match.
 """
 
-import re
 import sys
 from pathlib import Path
 
@@ -14,10 +13,7 @@ from ruamel.yaml import YAML
 
 from jearless import config, duplicate, forge, gitwrap, registry, state
 from jearless.errors import JearlessError
-from jearless.registry import REGISTRY_NAME
-
-# Project names live in branch names: lowercase latin, digits, underscores.
-PROJECT_RE = re.compile(r"^[a-z0-9_]+$")
+from jearless.registry import PROJECT_RE, REGISTRY_NAME
 
 # The header a newborn registry is born with — the same covenant comment as the seeded one.
 _TEMPLATE = """\
@@ -107,6 +103,8 @@ def add(
     summary = summary.strip()
     if not summary:
         raise JearlessError("summary must not be empty")
+    if points is not None and points < 1:
+        raise JearlessError("--points must be >= 1 (tooling/70)")
 
     cfg = config.load(cwd)
     _guard(cwd, cfg, summary, remote, yes)

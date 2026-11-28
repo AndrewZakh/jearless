@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from jearless import registry
+from jearless import add as add_mod
+from jearless import gitwrap, registry
+from jearless.errors import JearlessError
 from jearless.registry import RegistryError
 
 MINIMAL = """\
@@ -158,3 +160,45 @@ def test_check_links_self_reference():
     reg = registry.Registry(tasks={"p": [registry.Task("p", 1, "a", depends_on=(("p", 1),))]})
     with pytest.raises(registry.RegistryError, match="cycle"):
         registry.check_links(reg)
+
+
+def test_bool_id_refused(tmp_path):
+    """task tooling/70: True is an int in Python — the loader refuses it."""
+    (tmp_path / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: true\n      summary: bool id\n", encoding="utf-8"
+    )
+    with pytest.raises(RegistryError, match="booleans are integers"):
+        registry.load_path(tmp_path / "tasks.yml")
+
+
+def test_story_points_below_one_refused(tmp_path):
+    """task tooling/70: negative and zero points refuse."""
+    for points in ("-7", "0"):
+        (tmp_path / "tasks.yml").write_text(
+            f"tasks:\n  p:\n    - id: 1\n      summary: s\n      story_points: {points}\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(RegistryError, match="an integer >= 1"):
+            registry.load_path(tmp_path / "tasks.yml")
+
+
+def test_project_name_validated_on_load(tmp_path):
+    """task tooling/70: the contract holds at the trust boundary — on read."""
+    (tmp_path / "tasks.yml").write_text(
+        'tasks:\n  "Bad/../Name":\n    - id: 1\n      summary: bad\n', encoding="utf-8"
+    )
+    with pytest.raises(RegistryError, match=r"not a \[a-z0-9_\] name"):
+        registry.load_path(tmp_path / "tasks.yml")
+
+
+def test_cli_points_below_one_refused(origin_and_clone):
+    """task tooling/70: --points is validated in the CLI too."""
+    _bare, clone = origin_and_clone
+    (clone / "tasks.yml").write_text(
+        "tasks:\n  p:\n    - id: 1\n      summary: seed\n", encoding="utf-8"
+    )
+    gitwrap.run(["add", "tasks.yml"], clone)
+    gitwrap.run(["commit", "-q", "-m", "registry"], clone)
+    gitwrap.run(["push", "-q", "-u", "origin", "main"], clone)
+    with pytest.raises(JearlessError, match="--points must be >= 1"):
+        add_mod.add(clone, "p", "a task", points=-5)

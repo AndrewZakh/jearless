@@ -13,6 +13,10 @@ from jearless.errors import JearlessError
 
 REGISTRY_NAME = "tasks.yml"
 
+# Project names live in branch names: lowercase latin, digits, underscores
+# (the contract holds at the trust boundary - validated on read, tooling/70).
+PROJECT_RE = re.compile(r"^[a-z0-9_]+$")
+
 # Live-state fields are forbidden in the registry: git knows the state (README).
 FORBIDDEN_FIELDS = {"status"}
 
@@ -134,16 +138,28 @@ def _task_from_entry(project: str, entry: object, where: str) -> Task:
                 f"{where}: the field '{banned}' is forbidden — live state is derived"
                 " from git, not stored (README)"
             )
-    if "id" not in entry or not isinstance(entry["id"], int) or entry["id"] < 1:
-        raise RegistryError(f"{where}: the field 'id' is required — an integer >= 1")
+    if (
+        "id" not in entry
+        or not isinstance(entry["id"], int)
+        or isinstance(entry["id"], bool)
+        or entry["id"] < 1
+    ):
+        raise RegistryError(
+            f"{where}: the field 'id' is required — an integer >= 1"
+            " (booleans are integers in Python and are refused, tooling/70)"
+        )
     if not isinstance(entry.get("summary"), str) or not entry["summary"].strip():
         raise RegistryError(f"{where}: the field 'summary' is required — a non-empty string")
     description = entry.get("description", "")
     if not isinstance(description, str):
         raise RegistryError(f"{where}: 'description' must be a string")
     points = entry.get("story_points")
-    if points is not None and not isinstance(points, int):
-        raise RegistryError(f"{where}: 'story_points' must be an integer")
+    if points is not None and (
+        isinstance(points, bool) or not isinstance(points, int) or points < 1
+    ):
+        raise RegistryError(
+            f"{where}: 'story_points' must be an integer >= 1 (tooling/70)"
+        )
     rejected = entry.get("rejected")
     # key presence, not value: a bare `rejected:` (null) is also invisible debt
     if "rejected" in entry and (not isinstance(rejected, str) or not rejected.strip()):
@@ -245,6 +261,11 @@ def from_data(data: object, source: str) -> Registry:
     registry = Registry()
     seen: dict[tuple[str, int], int] = {}
     for project, entries in data.get("tasks", {}).items():
+        if not PROJECT_RE.match(str(project)):
+            raise RegistryError(
+                f"{source}: project '{project}' is not a [a-z0-9_] name - "
+                "it lives in branch names (tooling/70)"
+            )
         if not isinstance(entries, list):
             raise RegistryError(f"{source}: project '{project}' — a list of tasks expected")
         units = []

@@ -10,7 +10,7 @@ It runs on **PURE git** — no server, no database, no daemons — which makes i
 
 *Why the name: by ear — a faint echo of Jira; by sight — fearless; spelled with an error — and we track errors for a living; a jearless sprint — a fast run without fat. The mascot: a hedgehog whose spines are a gear.*
 
-A git-native task tracker: the registry is a versioned YAML, the state is derived from branches and merge commits, the changelog, reports and charts are generated at release time. No tracker service, no database, no daemons — one dependency (ruamel.yaml), one binary, your own repository as the single source of truth.
+A git-native task tracker: the registry is a versioned YAML, the state is derived from branches and merge commits, the changelog, reports and charts are generated at release time. No tracker service, no database, no daemons — one dependency (ruamel.yaml), one Python package (pipx), your own repository as the single source of truth.
 
 ## Install
 

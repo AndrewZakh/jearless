@@ -31,17 +31,6 @@ from jearless import take as take_mod
 from jearless import timeline as timeline_mod
 from jearless.errors import JearlessError
 
-PHASES = {
-    "add": 1,
-    "take": 1,
-    "sprint": 1,
-    "changelog": 2,
-    "doctor": 2,
-    "timeline": 3,
-    "retro": 3,
-    "archive": 4,
-}
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -240,6 +229,8 @@ def main(argv: list[str] | None = None) -> int:
                 to_boundary=args.to_boundary,
                 output=args.output,
             )
+        # every command dispatches above (task tooling/71): the Phase 0
+        # "not implemented" tail and the PHASES map retired with it
         if args.command == "log":
             return log_mod.run(cwd, args.project, args.id, remote=args.remote)
         if args.command == "find":
@@ -254,8 +245,6 @@ def main(argv: list[str] | None = None) -> int:
             return plan_mod.run(cwd, Path(args.file), gantt=args.gantt)
         if args.command == "report":
             return report_mod.run(cwd, args.tag)
-        print(f"not implemented (Phase {PHASES[args.command]}) — see PLAN.md")
-        return 0
     except JearlessError as exc:
         print(f"jear: {exc}", file=sys.stderr)
         return 1

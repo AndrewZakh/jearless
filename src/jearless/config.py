@@ -1,11 +1,11 @@
 """The .jearless.toml config: the branch regex, the changelog line template, sections."""
 
 import re
-import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from jearless import gitwrap
 from jearless.errors import JearlessError
 
 CONFIG_NAME = ".jearless.toml"
@@ -69,25 +69,17 @@ class Config:
         return f"{remote}/{ref}"
 
 
-def _remote_branch_exists(cwd: Path, remote: str, branch: str) -> bool:
-    """Whether the local git knows `branch` on `remote` — a local read."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", f"{remote}/{branch}"],
-            cwd=cwd,
-            capture_output=True,
-            check=False,
-        )
-    except OSError:
-        return False  # git itself is not available
-    return result.returncode == 0
-
-
 def _resolve_sprint_number(cwd: Path, remote: str, pattern: str) -> int | None:
     """The newest plan number whose branch exists; None when none does."""
-    numbers = sorted(plan_numbers(cwd), reverse=True)
-    for number in numbers:
-        if _remote_branch_exists(cwd, remote, pattern.replace("{n}", str(number))):
+    # one for-each-ref returns every remote branch in a single call
+    # (the hostile review's P2: N rev-parse subprocesses on hot paths)
+    names = set(
+        gitwrap.lines(
+            ["for-each-ref", "--format=%(refname:short)", f"refs/remotes/{remote}"], cwd
+        )
+    )
+    for number in sorted(plan_numbers(cwd), reverse=True):
+        if f"{remote}/{pattern.replace('{n}', str(number))}" in names:
             return number
     return None
 
